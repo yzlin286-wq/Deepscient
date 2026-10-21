@@ -10,7 +10,7 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -422,17 +422,17 @@ const ctx = {
 mod.apply(ctx)
 const byName = (name) => registrations.filter((r) => r.name === name)
 
-check('一共注册 19 个槽', () => assert.equal(registrations.length, 19, registrations.map((r) => r.name).join(',')))
+check('一共注册 21 个槽', () => assert.equal(registrations.length, 21, registrations.map((r) => r.name).join(',')))
 check('品牌图标槽', () => assert.equal(byName('sidebar.brand.mark').length, 1))
 check('品牌名槽', () => assert.equal(byName('sidebar.brand.name').length, 1))
 check('欢迎页品牌槽（第一屏不露外壳标记）', () =>
   assert.equal(byName('conversation.hero.brand.mark').length, 1))
 check('侧栏一级面板 6 个（不再是二级页签）', () => assert.equal(byName('sidebar.panellist').length, 6))
 check('主区域面板 6 个', () => assert.equal(byName('main').length, 6))
-check('设置分区槽', () => assert.equal(byName('settings.section').length, 1))
+check('设置分区槽（参数 + 账号）', () => assert.equal(byName('settings.section').length, 2))
 check('输入区底部胶囊槽（token 计费）', () => assert.equal(byName('conversation.composer.dock').length, 1))
 check('胶囊 id 不与出厂那颗撞名', () => assert.equal(byName('conversation.composer.dock')[0].id, 'deepscient-usage'))
-check('浮层槽（使用引导）', () => assert.equal(byName('shell.overlay').length, 1))
+check('浮层槽（登录门 + 使用引导）', () => assert.equal(byName('shell.overlay').length, 2))
 check('引导浮层 id', () => assert.equal(byName('shell.overlay')[0].id, 'deepscient-onboarding'))
 
 const PAGE_KEYS = ['workbench', 'stages', 'tools', 'billing', 'sources', 'docs']
@@ -587,8 +587,61 @@ if (existsSync(dshCli)) {
 /* ── 5. HTTP 面 ─────────────────────────────────────────────────────────── */
 
 section('HTTP 接口')
+
+/* ── 应用账号 ─────────────────────────────────────────────────────────────
+   课题、需求书、概览、设置这些「某个人的」数据要登录。所以这一节先证明门是关着的，
+   再（有凭据时）登录进去验后面的东西。
+   凭据从环境变量来，脚本不自己建账号——本机第一个账号该由人来注册。 */
+const VERIFY_USER = process.env.DEEPSCIENT_VERIFY_USER ?? ''
+const VERIFY_PASS = process.env.DEEPSCIENT_VERIFY_PASSWORD ?? ''
+let sessionCookie = ''
+
+/* 没有凭据时，如果这台机器上还没有任何账号，就临时建一个跑完即焚的。
+   为什么这样安全：注册只对第一个账号开放，验完把 auth 目录删掉，
+   环境回到"还没有账号"，本机第一个账号仍然由人在浏览器里注册。
+   已经有账号又没给凭据时，不碰任何东西，让断言自己报错。 */
+let provisioned = null
+if (!VERIFY_USER) {
+  const probe = await fetch(`${base}/deepscient/auth/state`)
+  const state = await probe.json().catch(() => null)
+  if (state && state.hasUsers === false) {
+    const username = 'verify-temp'
+    const password = `t${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
+    const reg = await fetch(`${base}/deepscient/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ username, password, displayName: 'verify-temp' }),
+    })
+    const raw = reg.headers.getSetCookie?.() ?? [reg.headers.get('set-cookie') ?? '']
+    const hit = raw.map((c) => String(c).match(/deepscient_session=[^;]+/)).find(Boolean)
+    if (reg.ok && hit) {
+      sessionCookie = hit[0]
+      provisioned = join(process.env.USERPROFILE ?? homedir(), '.deepscient', 'science', 'auth')
+      process.on('exit', () => {
+        try {
+          rmSync(provisioned, { recursive: true, force: true })
+          console.log('\n  临时验收账号已清除，本机第一个账号仍由你来注册。')
+        } catch {}
+      })
+    }
+  }
+}
+
+if (VERIFY_USER && VERIFY_PASS) {
+  const res = await fetch(`${base}/deepscient/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({ username: VERIFY_USER, password: VERIFY_PASS }),
+  })
+  const raw = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie') ?? '']
+  const hit = raw.map((c) => String(c).match(/deepscient_session=[^;]+/)).find(Boolean)
+  if (res.ok && hit) sessionCookie = hit[0]
+}
+
 async function get(path) {
-  const res = await fetch(`${base}${path}`, { headers: { accept: 'application/json' } })
+  const headers = { accept: 'application/json' }
+  if (sessionCookie) headers.cookie = sessionCookie
+  const res = await fetch(`${base}${path}`, { headers })
   const text = await res.text()
   let body = null
   try {
@@ -597,6 +650,45 @@ async function get(path) {
     body = { __raw: text }
   }
   return { status: res.status, body, text }
+}
+
+await checkAsync('账号状态端点可用（不泄露任何凭据）', async () => {
+  const res = await fetch(`${base}/deepscient/auth/state`)
+  const state = await res.json()
+  assert.equal(res.status, 200)
+  assert.equal(typeof state.hasUsers, 'boolean')
+  assert.ok(!('hash' in state) && !('salt' in state), JSON.stringify(state))
+  assert.ok(!JSON.stringify(state).includes('"hash"'), JSON.stringify(state))
+})
+
+await checkAsync('没登录读课题接口是 401', async () => {
+  const res = await fetch(`${base}/deepscient/api/projects`)
+  assert.equal(res.status, 401)
+  const body = await res.json()
+  assert.equal(body.error, 'auth-required')
+})
+
+await checkAsync('没登录不能改设置', async () => {
+  const res = await fetch(`${base}/deepscient/api/settings`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  assert.equal(res.status, 401)
+})
+
+await checkAsync('能力清单不需要登录（健康检查与工具表）', async () => {
+  for (const path of ['/deepscient/api/health', '/deepscient/api/tools', '/deepscient/api/workflow']) {
+    const res = await fetch(`${base}${path}`)
+    assert.equal(res.status, 200, path)
+  }
+})
+
+if (!sessionCookie) {
+  console.log('')
+  console.log('  ! 没有凭据：设置 DEEPSCIENT_VERIFY_USER / DEEPSCIENT_VERIFY_PASSWORD 才能验需要登录的接口。')
+  console.log('  ! 下面这些断言会失败，不是功能坏了。')
+  console.log('')
 }
 
 await checkAsync('未带 token 的首页是 401', async () => {
@@ -740,7 +832,7 @@ check('settings 有默认值', () => assert.equal(settingsBefore.body.values.alp
 
 const putRes = await fetch(`${base}/deepscient/api/settings`, {
   method: 'PUT',
-  headers: { 'content-type': 'application/json' },
+  headers: sessionCookie ? { 'content-type': 'application/json', cookie: sessionCookie } : { 'content-type': 'application/json' },
   body: JSON.stringify({ alpha: 0.01, nonsense: 1 }),
 })
 const putBody = await putRes.json()
@@ -750,7 +842,7 @@ check('非法项被拒并回报', () => assert.deepEqual(putBody.rejected, ['non
 const settingsAfter = await get('/deepscient/api/settings')
 check('落盘后读回是新值', () => assert.equal(settingsAfter.body.values.alpha, 0.01))
 // 复原，别把验收痕迹留在用户配置里
-await fetch(`${base}/deepscient/api/settings`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ alpha: 0.05 }) })
+await fetch(`${base}/deepscient/api/settings`, { method: 'PUT', headers: { 'content-type': 'application/json', ...(sessionCookie ? { cookie: sessionCookie } : {}) }, body: JSON.stringify({ alpha: 0.05 }) })
 const restored = await get('/deepscient/api/settings')
 check('α 已复原', () => assert.equal(restored.body.values.alpha, 0.05))
 
@@ -961,6 +1053,7 @@ const verifyDry = await fetch(`${base}/deepscient/api/sources/verify`, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ id: 'arxiv', dry: true }),
+  headers: { 'content-type': 'application/json', ...(sessionCookie ? { cookie: sessionCookie } : {}) },
 })
 const verifyDryBody = await verifyDry.json()
 check('dry 验源 200 且是 ready', () => {
@@ -1075,7 +1168,7 @@ section('第三方技能与 MCP')
     assert.ok(tokens > 0 && tokens < 12000, `估算 ${tokens}`)
   })
 
-  const skillsCheck = await fetch(`${base}/deepscient/api/skills/check`, { method: 'POST' })
+  const skillsCheck = await fetch(`${base}/deepscient/api/skills/check`, { method: 'POST', headers: sessionCookie ? { cookie: sessionCookie } : {} })
   const checkBody = await skillsCheck.json()
   check('skills/check 200', () => assert.equal(skillsCheck.status, 200))
   check('已装技能全部通过', () => assert.equal(checkBody.ok, true, JSON.stringify(checkBody).slice(0, 300)))
@@ -1140,11 +1233,11 @@ section('第三方技能与 MCP')
 }
 
 section('建课题接口')
-const emptyTitle = await fetch(`${base}/deepscient/api/projects`, {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ title: '   ' }),
-})
+  const emptyTitle = await fetch(`${base}/deepscient/api/projects`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(sessionCookie ? { cookie: sessionCookie } : {}) },
+    body: JSON.stringify({ title: '   ' }),
+  })
 const emptyTitleBody = await emptyTitle.json()
 check('空标题 400', () => assert.equal(emptyTitle.status, 400))
 check('空标题带错误码', () => assert.equal(emptyTitleBody.error, 'title-required'))

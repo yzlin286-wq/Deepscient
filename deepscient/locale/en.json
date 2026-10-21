@@ -193,5 +193,30 @@
       "intro": "I am opening a new project. Here is the need, stated up front:",
       "ask": "Start with action draft of science_requirement_brief to structure this into a requirement brief and show me the gaps; I will fill them and then commit to open the project."
     }
+  },
+  "auth": {
+    "settings": "Account",
+    "loginTitle": "Sign in to DeepScient",
+    "registerTitle": "Create the first account",
+    "loginIntro": "This instance already has an account. Sign in to see your own projects and research briefs.",
+    "registerIntro": "No account exists on this machine yet. The first one is the owner, and registration closes right after.",
+    "username": "Username",
+    "displayName": "Display name (optional)",
+    "password": "Password",
+    "login": "Sign in",
+    "register": "Create account",
+    "working": "Working…",
+    "failed": "That did not work. Try again.",
+    "unreachable": "Cannot reach the local account service. Check that the instance is still running.",
+    "loginHint": "The session lasts 30 days. A forgotten password can only be reset by clearing the local account store — this is a single-machine tool with no email recovery.",
+    "registerHint": "At least 8 characters. The account lives on this machine only and is never uploaded.",
+    "signedInAs": "Signed in as",
+    "current": "Current password",
+    "next": "New password",
+    "change": "Change password",
+    "logout": "Sign out",
+    "changed": "Password updated. Sessions on other devices are now invalid.",
+    "notLoggedIn": "Not signed in.",
+    "loading": "Loading…"
   }
 }

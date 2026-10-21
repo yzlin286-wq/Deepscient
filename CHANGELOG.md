@@ -3,6 +3,72 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.10.0] — 2026-10-21
+
+DeepScient 有了自己的账号体系，DeepSeek 那套账号入口整体退役。
+
+### 为什么要做
+
+DSH 原本的浏览器 cookie 是**设备级**的：本机任何浏览器拿着启动时的 `?token=` 就进去了，系统里没有"这是谁"的概念。DeepSeek 的账号插件解决的是另一件事——用平台账号换额度、联网与模型——但它换来的是**外部账号**，不是本机身份。
+
+DeepScient 要的是人级身份：同一个实例上可以有几个使用者，各自的课题与需求书不该混着看。
+
+### 移除：DeepSeek 账号四件套
+
+`deepscient/cordis.patch.yml` 里关掉四行：
+
+| 行 id | 包 | 原本干什么 |
+|---|---|---|
+| `deepseek-account` | `dsh-deepseek-account-platform` | 平台侧 OAuth 与令牌 |
+| `llm-deepseek-account` | `dsh-llm-deepseek-account` | 账号派生的模型通道 |
+| `account-controller` | `dsh-api-account-controller` | 账号 API |
+| `ui-settings-account` | `dsh-client-ui-settings-account` | 设置里的「账号」页 |
+
+**模型不受影响**：供应商由 `deepscient-sync-models.mjs` 写进 `local.patch.yml`，走 API key，不经过账号通道。关掉后重启 `broken=[]`，38+1 个工具照旧。
+
+### 新增：应用内账号（`deepscient/host/auth.js`）
+
+六个端点，挂在 `/deepscient/auth/`：`state`（可用性与当前用户）、`register`、`login`、`logout`、`password`、`users`。
+
+安全上的四件事：
+
+1. **密码只存 scrypt 派生值**。16 字节随机 salt，64 字节密钥，比较走 `timingSafeEqual`。不存明文、不存可逆加密、不自己发明 KDF。
+2. **磁盘上只放 token 的 sha256**。`sessions.json` 被拷走也换不回可用的 cookie。
+3. **登录失败与用户不存在给同一句话**。不告诉外面"这个用户名存在"。连续 8 次失败锁 15 分钟，返回 429 与剩余秒数。
+4. **注册只对第一个账号开放**。第一个是 `owner`，随后 `registration-closed`（403）。单人科研工具不需要开放注册，假装支持比拒绝更糟。
+
+改密码会把该用户的全部会话清掉，再用当前这枚换新——别的设备随即失效。
+
+`displayName` 之类的中文经 UTF-8 往返正常（浏览器请求体默认 UTF-8；验收早期用 PowerShell 5.1 发包时出现过 `?????`，那是客户端编码问题，不是服务端）。
+
+### 新增：门开在哪
+
+判定标准是「这条数据是不是某个人的」：
+
+- **公开**（不需要登录）：`health` / `tools` / `workflow` / `stages` / `presets` / `sources` / `docs`。这些是这台机器的能力清单，源那页的 key 本来就是掩码。
+- **要登录**：`briefs` / `projects/*` / `overview` / `next` / `settings`，以及其他所有"某个人的"数据。
+
+门放在 `handleApi` 里、`allowedMethods` 之后：405 与 401 各自表达各自的问题，不互相遮掩。
+
+### 新增：界面
+
+- **登录门**（`shell.overlay`，order 5，盖在首屏引导之上）：没有会话就整页拦住。没有账号时显示「创建第一个账号」，有账号时显示「登录」。`position: fixed; inset: 0`，登录前看不到任何应用内容。
+- **设置里的「账号」一节**（`settings.section`，order 45）：显示当前是谁、登出、改密码。登出走整页重载——内存里的会话态和课题缓存都不该留着。
+- 文案进 `auth.*` 组，中英各 24 键，双向对齐。字典顶层组 15 → 16。
+
+### 验收
+
+`verify-deepscient` **302 项全绿**。新增断言：账号状态端点可用且不泄露 `hash`/`salt`、未登录读课题接口是 401 且错误码为 `auth-required`、未登录不能改设置、三张能力清单仍然 200。
+
+**验收脚本自己解决了"没凭据"的问题**：没有 `DEEPSCIENT_VERIFY_USER` 时，如果这台机器还没有账号，它临时建一个 `verify-temp`，跑完在 `process.on('exit')` 里把整个 `auth` 目录删掉，环境回到「还没有账号」——本机第一个账号仍然由人在浏览器里注册。已经有账号又没给凭据时，它不碰任何东西，让断言自己报错。
+
+### 已知边界
+
+- **WebSocket 通道没有单独加门**。DSH 的设备级 cookie 仍然守着 `/api` 与 Mux；应用账号守的是 DeepScient 自己的路由。单机单人场景下够用，多用户场景下要补。
+- **没有找回密码**。本机没有邮件通道，遗忘密码只能清掉 `$DSH_HOME/science/auth/` 重来。UI 上写明了这一点。
+- **登出入口只在设置里**，没有做左侧栏常驻头像。
+- **多用户是"能区分人"，不是"隔离数据"**：课题库仍是一份，两个账号看到的是同一批课题。真正的多租户要改科研库的存储布局，那是另一件事。
+
 ## [0.9.0] — 2026-10-21
 
 新建对话从空白输入框变成一次需求梳理。0.8.0 交付的两层底座（缺口怎么算、面板怎么读）现在接上了界面。

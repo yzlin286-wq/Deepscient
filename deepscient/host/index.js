@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { handleApi } from './api.js'
+import { handleAuth } from './auth.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const pkgDir = join(here, '..')
@@ -129,6 +130,8 @@ export function apply(ctx) {
         path: '/deepscient',
         handler: async (req, res) => {
           if (!isLoopback(req)) return forbidden(res)
+          // 账号路由先过：登录页要在没有会话的情况下也能把话说清楚。
+          if (await handleAuth(req, res)) return
           const handled = await handleApi(req, res, ctx)
           if (handled) return
           // /deepscient 下没有页面，其余路径明确 404，别掉进 SPA 回退。

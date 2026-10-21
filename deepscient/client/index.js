@@ -938,6 +938,210 @@ window.__ModuleLoader__.load({
        出厂的用量胶囊（总 token · 缓存命中 x%）已被首屏样式摘掉；这里补一个只讲 token 的，
        点了就打开「计费」页。数据来自本机日志的汇总，不额外请求模型。               */
 
+    /* ── 应用账号：登录门 + 设置页 ─────────────────────────────────────────
+       Host 侧把"谁在用"认在会话 cookie 上（deepscient/host/auth.js）。这里做两件事：
+       没有会话就整页拦住登录卡片；有会话就在设置里给一条登出与改密码的入口。 */
+
+    const AU = {
+      overlay: {
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--dsh-bg, #fff)', padding: '24px',
+      },
+      card: {
+        width: 'min(400px, 92vw)', padding: '24px', borderRadius: '14px',
+        border: '1px solid var(--dsh-border, #d8d8d8)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.16)', textAlign: 'left',
+      },
+      brand: { fontSize: '12px', letterSpacing: '0.08em', opacity: 0.5, marginBottom: '6px' },
+      title: { fontSize: '20px', fontWeight: 650, marginBottom: '6px' },
+      intro: { fontSize: '12px', opacity: 0.65, lineHeight: 1.6, marginBottom: '18px' },
+      row: { marginBottom: '12px' },
+      label: { display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px' },
+      input: {
+        width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: '13px',
+        borderRadius: '8px', border: '1px solid var(--dsh-border, #d8d8d8)',
+        background: 'transparent', color: 'inherit', fontFamily: 'inherit',
+      },
+      submit: {
+        width: '100%', padding: '10px', borderRadius: '9px', fontSize: '13px', cursor: 'pointer',
+        border: '1px solid #1f6f5c', background: '#1f6f5c', color: '#fff', fontWeight: 600,
+      },
+      submitOff: { opacity: 0.45, cursor: 'not-allowed' },
+      error: {
+        fontSize: '12px', color: '#b3261e', marginTop: '10px', lineHeight: 1.5,
+        whiteSpace: 'pre-wrap',
+      },
+      hint: { fontSize: '11px', opacity: 0.55, marginTop: '10px', lineHeight: 1.5 },
+    }
+
+    /** 这几个端点要带着 cookie，且要能读出服务端说的错误原因。 */
+    async function authCall(path, options) {
+      const response = await fetch('/deepscient/auth' + path, {
+        method: options?.method ?? 'GET',
+        credentials: 'same-origin',
+        headers: options?.body ? { 'content-type': 'application/json; charset=utf-8' } : undefined,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+      })
+      let data = null
+      try { data = await response.json() } catch { data = null }
+      return { ok: response.ok, status: response.status, data }
+    }
+
+    function makeAuthGate(ctx) {
+      return function AuthGate() {
+        const [state, setState] = useState({ phase: 'loading', hasUsers: false, user: null })
+        const [form, setForm] = useState({ username: '', password: '', displayName: '' })
+        const [error, setError] = useState('')
+        const [busy, setBusy] = useState(false)
+        const revision = useLocaleRevision()
+
+        const probe = () => {
+          authCall('/state').then(
+            (result) => {
+              if (!result.ok || !result.data) {
+                setState({ phase: 'anon', hasUsers: false, user: null })
+                setError(tf('auth.unreachable'))
+                return
+              }
+              const { hasUsers, user } = result.data
+              setState({ phase: user ? 'authed' : 'anon', hasUsers, user })
+            },
+            () => setState({ phase: 'anon', hasUsers: false, user: null }),
+          )
+        }
+
+        useEffect(probe, [])
+
+        const registering = state.hasUsers === false
+        const set = (id) => (event) => setForm((prev) => ({ ...prev, [id]: event.target.value }))
+
+        const submit = async () => {
+          if (busy) return
+          setBusy(true)
+          setError('')
+          const path = registering ? '/register' : '/login'
+          const body = registering
+            ? { username: form.username, password: form.password, displayName: form.displayName }
+            : { username: form.username, password: form.password }
+          const result = await authCall(path, { method: 'POST', body })
+          setBusy(false)
+          if (!result.ok) {
+            setError(result.data?.message || tf('auth.failed'))
+            return
+          }
+          setState({ phase: 'authed', hasUsers: true, user: result.data?.user ?? null })
+        }
+
+        if (state.phase === 'authed') return null
+        if (state.phase === 'loading') return null
+
+        const ready = form.username.trim().length >= 2 && form.password.length >= 8
+
+        return h('div', { style: AU.overlay, 'data-deepscient-auth': 'gate' },
+          h('div', { style: AU.card },
+            h('div', { style: AU.brand }, 'DeepScient'),
+            h('div', { style: AU.title }, tf(registering ? 'auth.registerTitle' : 'auth.loginTitle')),
+            h('div', { style: AU.intro }, tf(registering ? 'auth.registerIntro' : 'auth.loginIntro')),
+            h('div', { style: AU.row },
+              h('label', { style: AU.label }, tf('auth.username')),
+              h('input', {
+                type: 'text', style: AU.input, autoComplete: 'username',
+                value: form.username, onChange: set('username'),
+              }),
+            ),
+            registering
+              ? h('div', { style: AU.row },
+                  h('label', { style: AU.label }, tf('auth.displayName')),
+                  h('input', {
+                    type: 'text', style: AU.input,
+                    value: form.displayName, onChange: set('displayName'),
+                  }),
+                )
+              : null,
+            h('div', { style: AU.row },
+              h('label', { style: AU.label }, tf('auth.password')),
+              h('input', {
+                type: 'password', style: AU.input,
+                autoComplete: registering ? 'new-password' : 'current-password',
+                value: form.password, onChange: set('password'),
+                onKeyDown: (event) => { if (event.key === 'Enter' && ready) submit() },
+              }),
+            ),
+            h('button', {
+              type: 'button',
+              style: ready && !busy ? AU.submit : { ...AU.submit, ...AU.submitOff },
+              disabled: !ready || busy,
+              onClick: submit,
+            }, busy ? tf('auth.working') : tf(registering ? 'auth.register' : 'auth.login')),
+            error ? h('div', { style: AU.error }, error) : null,
+            h('div', { style: AU.hint }, tf(registering ? 'auth.registerHint' : 'auth.loginHint')),
+          ),
+        )
+      }
+    }
+
+    /** 设置里的「账号」一节：显示是谁、登出、改密码。 */
+    function makeAccountSection() {
+      return function AccountSection() {
+        const [state, setState] = useState({ phase: 'loading', user: null })
+        const [form, setForm] = useState({ current: '', next: '' })
+        const [note, setNote] = useState('')
+        const revision = useLocaleRevision()
+
+        useEffect(() => {
+          authCall('/state').then(
+            (result) => setState({ phase: 'ready', user: result.data?.user ?? null }),
+            () => setState({ phase: 'ready', user: null }),
+          )
+        }, [])
+
+        const logout = async () => {
+          await authCall('/logout', { method: 'POST' })
+          // 整页重载最干净：内存里的会话态、课题缓存都不该留着。
+          window.location.reload()
+        }
+
+        const change = async () => {
+          setNote('')
+          const result = await authCall('/password', { method: 'POST', body: form })
+          setNote(result.ok ? tf('auth.changed') : (result.data?.message || tf('auth.failed')))
+          if (result.ok) setForm({ current: '', next: '' })
+        }
+
+        if (state.phase === 'loading') return h('div', { style: S.sub }, tf('auth.loading'))
+        if (!state.user) return h('div', { style: S.sub }, tf('auth.notLoggedIn'))
+
+        return h('div', null,
+          h('div', { style: S.title }, state.user.displayName || state.user.username),
+          h('div', { style: S.sub }, tf('auth.signedInAs') + ' ' + state.user.username + ' · ' + state.user.role),
+          h('div', { style: { ...S.row, marginTop: '16px' } },
+            h('label', { style: S.label }, tf('auth.current')),
+            h('input', {
+              type: 'password', style: S.input, value: form.current,
+              onChange: (e) => setForm({ ...form, current: e.target.value }),
+            }),
+          ),
+          h('div', { style: S.row },
+            h('label', { style: S.label }, tf('auth.next')),
+            h('input', {
+              type: 'password', style: S.input, value: form.next,
+              onChange: (e) => setForm({ ...form, next: e.target.value }),
+            }),
+          ),
+          h('div', { style: { display: 'flex', gap: '8px', marginTop: '14px' } },
+            h('button', {
+              type: 'button', style: S.button,
+              disabled: form.current.length === 0 || form.next.length < 8,
+              onClick: change,
+            }, tf('auth.change')),
+            h('button', { type: 'button', style: { ...S.button, borderColor: '#b3261e', color: '#b3261e' }, onClick: logout }, tf('auth.logout')),
+          ),
+          note ? h('div', { style: S.sub }, note) : null,
+        )
+      }
+    }
+
     /* ── 科研需求向导 ─────────────────────────────────────────────────────
        新建会话时点开，十组字段一次问完；生成的是一条给科研合伙人的任务书，
        不是替用户做决定。字段留空就不写进任务书——空着比编一个更有用。
@@ -1843,6 +2047,16 @@ window.__ModuleLoader__.load({
       // 首次打开的分步引导：只在 onboardingDone 不为 true 时渲染。
       ctx.slots.inject('shell.overlay', () =>
         ctx.slots.register({ name: 'shell.overlay', id: 'deepscient-onboarding', order: 900, locale: NS }, Onboarding))
+
+      // 应用账号：没有会话就整页拦住登录卡片。order 很小 = 盖在首屏引导之上。
+      const AuthGate = makeAuthGate(ctx)
+      ctx.slots.inject('shell.overlay', () =>
+        ctx.slots.register({ name: 'shell.overlay', id: 'deepscient-auth-gate', order: 5, locale: NS }, AuthGate))
+
+      // 设置里的「账号」一节：登出与改密码。
+      const AccountSection = makeAccountSection()
+      ctx.slots.inject('settings.section', () =>
+        ctx.slots.register({ name: 'settings.section', id: 'deepscient-account', order: 45, locale: NS, label: () => t('auth.settings') }, AccountSection))
     }
 
     return { inject: ['slots', 'locale'], apply }

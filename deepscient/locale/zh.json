@@ -193,5 +193,30 @@
       "intro": "我要开一个新课题，先把需求说清楚：",
       "ask": "请先用 science_requirement_brief 的 draft 把它结构化成需求书，把缺口列给我；我补齐后再 commit 建课题。"
     }
+  },
+  "auth": {
+    "settings": "账号",
+    "loginTitle": "登录 DeepScient",
+    "registerTitle": "创建第一个账号",
+    "loginIntro": "这个实例已经有账号了。登录后才能看自己的课题与需求书。",
+    "registerIntro": "这台机器上还没有任何账号。第一个账号是负责人（owner），注册随即关闭。",
+    "username": "用户名",
+    "displayName": "称呼（可留空）",
+    "password": "密码",
+    "login": "登录",
+    "register": "创建账号",
+    "working": "处理中…",
+    "failed": "没能完成，再试一次。",
+    "unreachable": "连不上本机的账号服务，检查实例是否还在运行。",
+    "loginHint": "会话保持 30 天。遗忘密码只能清掉本机账号库重来——这是单机工具，没有邮件找回。",
+    "registerHint": "密码至少 8 位。账号只存在本机，不上传任何地方。",
+    "signedInAs": "当前登录",
+    "current": "当前密码",
+    "next": "新密码",
+    "change": "改密码",
+    "logout": "登出",
+    "changed": "密码已更新，其他设备上的会话已失效。",
+    "notLoggedIn": "还没有登录。",
+    "loading": "读取中…"
   }
 }

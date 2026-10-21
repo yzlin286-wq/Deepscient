@@ -12,6 +12,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { currentUser, isPublicApi } from './auth.js'
 import { getDoc, listDocs } from './content.js'
 import { readSettings, writeSettings } from './settings.js'
 import { dshHome, pkgDir, science, scienceRoot } from './science.js'
@@ -938,6 +939,19 @@ export async function handleApi(req, res, ctx = null) {
   if (!allowed.includes(method)) {
     json(res, 405, { error: 'method-not-allowed', allow: allowed.join(', ') })
     return true
+  }
+
+  // ── 账号门 ───────────────────────────────────────────────────────────────
+  // 认人是第一步：没有会话就不往下走。公开那几项是这台机器的能力清单，
+  // 不含任何"某个人的"数据；课题、需求书、概览、设置一律要登录。
+  // 放在 allowedMethods 之后：405 与 401 各自表达各自的问题，不互相遮掩。
+  if (!isPublicApi(rest)) {
+    const user = currentUser(req)
+    if (!user) {
+      json(res, 401, { error: 'auth-required', message: '先登录。' })
+      return true
+    }
+    req.deepscientUser = user
   }
 
   let sci
