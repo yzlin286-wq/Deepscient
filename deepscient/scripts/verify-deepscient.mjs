@@ -546,7 +546,7 @@ if (existsSync(dshCli)) {
   }
   check('能 dump 出本实例的合成配置', () => assert.ok(dump.length > 1000, `${dump.length} 字节`))
   const scienceEntries = [...new Set([...dump.matchAll(/@local\/dsh-science\/[a-z-]+/g)].map((m) => m[0]))]
-  check('科研插件挂了 10 个', () => assert.equal(scienceEntries.length, 10, scienceEntries.join(',')))
+  check('科研插件挂了 11 个', () => assert.equal(scienceEntries.length, 11, scienceEntries.join(',')))
   check('9 个插件就是 dsh-science 导出的那 9 个入口', () => {
     for (const name of ['tools', 'science-tools', 'method-tools', 'discipline-tools', 'lab-tools', 'analysis-tools', 'manuscript-tools', 'coach-tools', 'frontier-tools']) {
       assert.ok(scienceEntries.includes(`@local/dsh-science/${name}`), name)
@@ -793,7 +793,21 @@ check('科研模式占着 standard 这个 id', () => {
   const row = presetsApi.body.items.find((p) => p.id === 'standard')
   assert.equal(row.name, '科研模式')
 })
-check('预设只剩一个（其余关了）', () => assert.equal(presetsApi.body.items.length, 1, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
+check('军团八个预设：主预设 + 七个角色', () => assert.equal(presetsApi.body.items.length, 8, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
+  check('七个角色都在名册里', () => {
+    const ids = presetsApi.body.items.map((p) => p.id)
+    for (const role of ['science-survey', 'science-strategist', 'science-experimenter', 'science-analyst', 'science-writer', 'science-critic', 'science-rebuttal']) {
+      assert.ok(ids.includes(role), `缺角色 ${role}，实际：${ids.join(',')}`)
+    }
+  })
+  check('主预设的子 agent 名册与角色一一对上', () => {
+    const src = readFileSync('dsh-science/presets/science.patch.yml', 'utf8')
+    const listed = [...src.matchAll(/^\s+-\s+(science-(?:survey|strategist|experimenter|analyst|writer|critic|rebuttal))\s*$/gm)].map((m) => m[1])
+    const unique = [...new Set(listed)]
+    assert.equal(unique.length, 7, `allowedAgentPresets 里应列 7 个角色，实际列了 ${unique.join(',')}`)
+    const ids = presetsApi.body.items.map((p) => p.id)
+    for (const role of unique) assert.ok(ids.includes(role), `allowedAgentPresets 写了不存在的 ${role} —— 这会让主预设 broken`)
+  })
 // 「新建会话失败」只有一个可查的原因：预设还在 roster 上、但 broken 不为空，或者 id 解析不到。
 check('预设清单透出 broken（否则前端只能看到一句失败）', () => {
   for (const p of presetsApi.body.items) assert.ok('broken' in p, JSON.stringify(p))

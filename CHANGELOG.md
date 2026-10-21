@@ -3,6 +3,49 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.8.0] — 2026-10-21
+
+科研模式从「一个万能 agent」变成「一支有分工的军团」，新建会话从空白输入框变成需求梳理。
+
+### 新增：七个可派发的智能体角色
+
+`dsh-science/presets/science-roles.patch.yml`（新文件，637 行）。每个角色是一整套独立组装：自己的 persona、自己的技能指引、自己的工具边界。主预设通过 `tool-subagent` 的 `allowedAgentPresets` 把它们列给模型，模型派活时用 `agent_preset` 点名。
+
+| preset id | 角色 | 工具边界要点 |
+|---|---|---|
+| `science-survey` | 文献侦察兵 | 检索/预印本/缺口/新颖性；不给跑实验、不给排版 |
+| `science-strategist` | 选题与选刊参谋 | 学科画像/贡献设计/期刊匹配与情报；不做设计细节 |
+| `science-experimenter` | 实验执行者 | 方案/受控执行/指纹/溯源；不给写稿与选刊 |
+| `science-analyst` | 统计与图 | 假设检查/效应量/期刊规格作图；不解释理论含义 |
+| `science-writer` | 写作与排版 | paper.md 一份真源/要件检查/四件套出件；不重算统计 |
+| `science-critic` | 审稿人 | 投稿前门禁/查重/顶刊达标/证据链；**不改稿** |
+| `science-rebuttal` | 返修答辩 | 意见拆条/response letter/返修人力估算 |
+
+技术前提（实测确认，不是推测）：`dsh-subagent-spawn-in-process` 的 `agentPreset: true`，`dsh-tool-subagent` 支持 `agent_preset` 枚举 + `allowedAgentPresets` 白名单，子 agent 走 `applyChildComposition` 独立组装。fork provider 的 `agentPreset` 是 `false`，所以军团只能派 spawn 子代理。`persona` 字段在 tool-subagent 上已废弃，角色身份只能靠 preset 的 persona 插件给。
+
+**风险与守门**：`allowedAgentPresets` 里写一个激活失败的 id，整个科研模式会变 broken——不是降级，是完全不可用。`verify` 加了一条断言专门守这个：名册里每个 id 都必须在 presets 列表里真实存在。
+
+### 新增：需求梳理层
+
+- **`science_requirement_brief`**（`dsh-science/lib/brief-tools.js`）—— 四个 action：`draft`（把一句话描述结构化成需求书并算出缺口）、`refine`（补一轮）、`commit`（校验后建课题）、`read`/`list`。
+  缺口是**算出来的**，每条带 `why`（为什么缺）与 `unlocks`（补上它能解锁哪一步），有的还带 `fix`（给用户的改写句式）。判定是纯规则：空泛词（「感兴趣」「想研究」）缺少比较结构会判 blocking，涉及人的研究缺 ethics 直接 blocking。
+  **不编造**：缺 ethics 就是缺，不填占位符。
+  需求书落 `$DSH_HOME/science/briefs/*.json`，人可读可改可版本对比。
+- **`GET /deepscient/api/briefs`** —— 只读端点。写操作留给工具，面板只负责看与引导：一份表单直接写库会绕开缺口判定，那正是要防的事。
+
+### 改动：提示词
+
+- 主 persona 的「工作方式」开头加硬约束：**新建会话第一件事不是开工，是问清楚**。缺的四样（资源/时间人力/目标产出/约束）要一轮问完再 commit，需求书没 commit 不进 S0。写明理由：没有它的课题会在 S1 卡「检索范围没定义」、在 S3 卡「样本量算不出来」。
+- 旧的「派活第一行写 `scienceRole: <code>`」删除。那只是一个 prompt 字符串，没有任何代码读取它——五个角色实际上是同一个 agent。换成按 `agent_preset` 点名的对照表，每条给判据。
+
+### 校验
+
+`verify-deepscient` 296 项全绿。新增断言：八个预设（主 + 七角色）、七个角色 id 齐全、主预设名册的每一项都真实存在。`/api/tools` 报 39 个工具（`science_requirement_brief` 已注册）。`/api/briefs` 返回 200。
+
+### 未完成
+
+**新建会话的向导 UI 还没做**。本轮交付的是它的两层底座：需求梳理工具（缺口怎么算）与只读端点（面板怎么读）。面板侧的六步表单与「写进输入框」按钮（`inputActions.insertText`）留到下一轮——那需要在 `conversation.input.activity` 或 `conversation.input.dock` 上挂组件，并补 `wizard.*` 双语字典。
+
 ## [0.7.1] — 2026-10-21
 
 把「研究预印本」做成一次检索就能用的一等能力，并更正上一版的一处误判。

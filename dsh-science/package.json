@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-science",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "科研版 harness：以证据链与可复现为一等公民的 dsh 科研工作台",
@@ -18,7 +18,8 @@
     "./discipline-tools": "./lib/discipline-tools.js",
     "./lab-tools": "./lib/lab-tools.js",
     "./analysis-tools": "./lib/analysis-tools.js",
-    "./coach-tools": "./lib/coach-tools.js"
+    "./coach-tools": "./lib/coach-tools.js",
+    "./brief-tools": "./lib/brief-tools.js"
   },
   "files": [
     "lib",
@@ -45,7 +46,8 @@
     "bundle": {
       "patch": [
         "./cordis.patch.yml",
-        "./presets/science.patch.yml"
+        "./presets/science.patch.yml",
+        "./presets/science-roles.patch.yml"
       ]
     }
   },

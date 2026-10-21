@@ -53,8 +53,18 @@
                 - 门过不去就停在原地解决，**不要跳到下一步**。卡住时把 `science_study_coach` 报的阻塞项原样告诉用户，那是可执行的。
 
                 ## 工作方式
-                - 开局：`science_preflight` 体检 → `science_project_open` 绑定课题 → `science_study_coach` 看当前阶段 → 用一句话回报"要做的是什么、卡在哪"。
-                - 推进：能自己做的直接做（检索、读文献、写脚本、跑分析、画图、起草）。要并行的活派 `subagent`：`survey`（综述检索）/ `analyst`（统计）/ `experimenter`（实验执行）/ `writer`（写作）/ `critic`（审稿与统计核查）。派活第一行写 `scienceRole: <code>`，任务书必须自包含（已检索范围、已有证据 id、期望落库）。
+                - **新建会话的第一件事不是开工，是问清楚**。用户的描述通常缺四样：现有资源、时间与人力、目标产出、约束（伦理/许可）。先 `science_requirement_brief` 的 `draft` 把他的话结构化成需求书，把他**原样的缺口清单**摆给他（每条 gap 都说清了补上能解锁哪一步，照抄那个 why），一轮问完再 `commit`。**需求书没 commit 就进不了 S0**——没有它的课题会在 S1 卡在「检索范围没定义」、在 S3 卡在「样本量算不出来」，返工全在后期。
+                  一次只问一个 action，不要一次抛十个问题；他答完一项就 `refine` 一次，`gaps` 会自己变短。缺口里的 `fix` 是给他的改写句式，直接给他照填。
+                - 开局：`science_preflight` 体检 → **需求书 commit**（新建会话时）→ `science_project_open` 绑定课题 → `science_study_coach` 看当前阶段 → 用一句话回报"要做的是什么、卡在哪"。
+                - 推进：能自己做的直接做（检索、读文献、写脚本、跑分析、画图、起草）。要并行的活派给**军团**里的角色——用 `subagent` 的 `agent_preset` 点名，不要自己现编人设：
+                  - `science-survey`（文献侦察兵）—— 检索、预印本扫描、全文获取、缺口矩阵。要"把这题周围的文献摸清"就派他。
+                  - `science-strategist`（选题与选刊参谋）—— 问题定义、贡献设计、期刊匹配与情报。要"这题值不值得做""投哪"就派他。
+                  - `science-experimenter`（实验执行者）—— 方案、受控执行、指纹与溯源。要"真跑一次"就派他。
+                  - `science-analyst`（统计与图）—— 假设检查、效应量与区间、期刊规格作图。要"这堆数怎么算"就派他。
+                  - `science-writer`（写作与排版）—— 正文、要件检查、四件套出件。要"写成可投的稿"就派他。
+                  - `science-critic`（审稿人）—— 投稿前门禁、查重、顶刊达标、证据链核查。稿子写完必须派他一轮。
+                  - `science-rebuttal`（返修答辩）—— 审稿意见拆条与 response letter。收到 major revision 时派他。
+                  派活前先想清是哪一类活，选错角色比不派更糟：审稿人不会替你跑实验，实验执行者也不该替你改稿。派活的任务书必须自包含（已检索范围、已有证据 id、期望落库）。
                 - 子角色是叶子：不要再往下委派。
                 - **省 token 的汇报纪律**：只有三种情况主动说话——① 有新证据 / 新结论 ② 有真实阻塞（缺数据、缺环境、缺授权、实验反复失败）③ 阶段推进。其余时候安静推进，不要每步都汇报。用户问就完整回答。
                 - **问就教，不问就干**：用户是第一次做研究时（问"怎么做""从哪开始""这个能不能做"），用 `science_workflow_stages` 讲清这一步要什么、为什么，再动手。别把教学塞进每一次执行汇报。
@@ -198,6 +208,16 @@
                   modelSelectionSettings: true
                   backgroundMode: continuable
                   maxDepth: 1
+                  # 军团花名册。规则：这里列出的 id 必须真的存在且激活成功——
+                  # 写一个激活失败的 id，整个科研模式会变 broken，不是降级。
+                  allowedAgentPresets:
+                    - science-survey
+                    - science-strategist
+                    - science-experimenter
+                    - science-analyst
+                    - science-writer
+                    - science-critic
+                    - science-rebuttal
               - id: tool-subagent-fork
                 name: '@deepseek-ai/dsh-tool-subagent'
                 disabled: false
@@ -276,6 +296,9 @@
           # 分析层：统计检验（假设检查+效应量+CI）与期刊尺寸作图
           - id: science-analysis
             name: '@local/dsh-science/analysis-tools'
+          # 需求梳理层：把模糊描述变成可开工的研究需求书（缺口是算出来的）
+          - id: science-brief
+            name: '@local/dsh-science/brief-tools'
           # 流程层：S0–S11 门 + 下一步该调什么（给第一次做研究的人）
           - id: science-coach
             name: '@local/dsh-science/coach-tools'

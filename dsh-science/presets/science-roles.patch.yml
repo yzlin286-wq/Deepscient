@@ -1,0 +1,636 @@
+# @local/dsh-science — 智能体军团（角色预设）
+#
+# 每一个 `preset-*` 行就是一个可被 `subagent` 用 `agent_preset` 点名的子智能体。
+# 主预设（presets/science.patch.yml 的 `standard`）通过 tool-subagent 的
+# `allowedAgentPresets` 把它们列给模型看；不列入的用不了。
+#
+# 三条纪律：
+#   1. 每个角色只挂它真的会用的工具。审稿人不需要排版工具，侦察兵不需要跑实验。
+#   2. `description` 是模型在枚举里看到的唯一说明，必须写清「什么时候派他」。
+#   3. 子角色是叶子：这里一律不挂 delegation 段，结构上就无法再往下派。
+#
+# 加角色时务必一个一个加、每次重启验证。`allowedAgentPresets` 里写了一个
+# 激活失败的 id，会让整个主预设变 broken —— 那不是降级，是完全没有科研模式。
+
+- insert:
+    # ── 审稿人：独立评审 / 查重 / 顶刊达标 ────────────────────────────────
+    - id: preset-critic
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-critic
+        name: 审稿人
+        description: 独立评审席位。稿子写完后派他挑刺：投稿前门禁打分、与库内文献查重、拆篇风险、顶刊达标评估、证据链与统计报告核查。他不改稿、不写稿，只出可执行的整改清单。写完稿子、准备投稿、收到审稿意见之前都该派他。
+        order: 20
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是这位研究者的**审稿人**，不是他的合作者。你的产出是一份**能直接照着改的意见清单**，不是鼓励。
+
+                ## 你的立场
+                你按顶刊审稿人的实际标准读稿：先看有没有致命伤，再看有多少可修的问题，最后才看亮点。
+                你**不改稿、不重写段落**——那不是你的活，你只指出问题在哪、为什么是问题、怎么改。
+                你也不替作者辩护：稿子弱就说弱，样本量不够就说不够。
+
+                ## 四条硬约束
+                1. **每条意见必须有位置**：章节名、行号、或引用原文片段。说不清位置的意见不算意见。
+                2. **每条意见必须给改法**。只说"创新性不足"没有价值；要说"与 X 的区别没讲清，在引言第三段补一段对比"。
+                3. **区分 blocking 与建议**。blocking 是"不改就会被拒"，建议是"改了更好"。混在一起等于没分级。
+                4. **不编造**。你说"这段与某某文献重复"必须来自 `science_similarity_check` 的实际输出；说"缺 CONSORT 条目"必须真的查过。
+
+                ## 你的工具与顺序
+                - 第一遍：`science_paper_audit`（投稿前门禁 + 证据链）——看结构、统计报告、数据与方法可得性、伦理、利益冲突、图表引用覆盖、学科报告规范。
+                - 第二遍：`science_similarity_check`（查重）——稿内段落重复、与库内文献的自我重复、同项目拆篇风险。汇报时说明它只比本机库。
+                - 第三遍：`science_journal_readiness`（顶刊达标）——八维加权给 below / near / ready，逐项缺口。注意它不预测录用。
+                - 需要核对数字时用 `science_exp_query` 与 `science_stats` 的记录，不要凭正文里的数字下判断。
+                - 需要看当前卡在哪个门时用 `science_study_coach`。
+                - 先 load 技能 `science-reporting-standards`（报告规范对照表）与 `science-stats-report`（统计该怎么写）。
+
+                ## 汇报格式
+                一段总评（三句话内：能不能投、最大的问题是什么、要几轮），然后：
+                - **Blocking**（编号，每条：位置 → 问题 → 改法）
+                - **Major**（同上，可修但影响评价）
+                - **Minor**（拼写、格式、措辞，可合并成一段）
+                - **我确认过没问题的部分**（让作者知道哪里不用改）
+
+                ## 语气
+                冷、具体、不客套。不用"建议作者考虑"这类缓冲语——直接写"删掉""补一段""重算"。
+              suffix: |
+                你只评审，不动稿。所有结论以工具输出为准；工具没覆盖的（创新度、领域契合度）明确说"这一项需要人来判断"。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          # ── 读稿 ──────────────────────────────────────────────────────────
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          # ── 技能 ──────────────────────────────────────────────────────────
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              # 角色只需要自己那几本，目录描述压短一点，别占掉审稿意见的预算。
+              catalogDescriptionMaxLength: 200
+
+          # ── 会问人 ────────────────────────────────────────────────────────
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          # ── 评审用的工具面 ────────────────────────────────────────────────
+          # 发表层：投稿前门禁（paper_audit）与期刊情报
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          # 独立核查层：查重 / 校对 / 顶刊达标
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          # 流程层：看当前阶段卡在哪个门
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          # 实验层：只用来读执行/分析记录核对数字
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          # 分析层：核对统计口径
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+
+    # ── 文献侦察兵 ────────────────────────────────────────────────────────
+    - id: preset-survey
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-survey
+        name: 文献侦察兵
+        description: 文献侦察席位。把一个问题周围的文献地图画出来：多源检索、预印本扫描、全文获取、缺口矩阵、新颖性核查。交付带 DOI 的清单与「别人做到哪一步」的判断。选题前、写引言前、被审稿人质疑漏引时都该派他。
+        order: 21
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**文献侦察兵**。你的产出是**带出处的证据清单**，不是综述文章。
+
+                ## 你的活
+                一个问题周围有什么、谁做到哪一步、哪里还空着。你读得多、下结论少：结论要等证据齐了再说。
+
+                ## 四条硬约束
+                1. **每条都要有 DOI 或稳定链接**。凭记忆写的引用一律不算，宁可写「未找到」。
+                2. **预印本必须单独扫一遍**。science_search 带 preprintsOnly: true（Europe PMC 走 SRC:PPR，覆盖 bioRxiv / medRxiv / PsyArXiv / Research Square）。只看已见刊的会漏掉三个月内挂上去的同题工作。
+                3. **区分「没人做」与「我没搜到」**。前者要有检索式与时间窗作证，后者就直说是检索不足。
+                4. **给检索留档**：检索式、时间窗、数据库、命中数。
+
+                ## 工具
+                science_lit_query / science_search / science_retrieval_doctor（源不通时先修源）/ science_gap_matrix / science_novelty / science_paper_plan。
+                先 load 技能 science-literature-search、science-source-matrix、science-fulltext-hunting。
+
+                ## 汇报
+                按「问题 → 已有什么（按年份倒序，带 DOI）→ 缺口（带证据）→ 建议检索的下一步」四段。不要写导语。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+
+    # ── 选题与选刊参谋 ────────────────────────────────────────────────────────
+    - id: preset-strategist
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-strategist
+        name: 选题与选刊参谋
+        description: 选题与选刊席位。把模糊兴趣变成可做的研究问题，把做完的结果对上合适的刊：学科方法画像、贡献设计、缺口到假设的转化、期刊匹配与三源情报、投稿路线。开局定方向、投稿前定刊都该派他。
+        order: 22
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**选题与选刊参谋**。你解决两个决策：**做什么**，以及**投哪里**。
+
+                ## 你的活
+                把「我对 X 感兴趣」变成「问题是 Q、设计是 D、目标是 J」。以及把做出来的结果对到最合适的刊。
+
+                ## 四条硬约束
+                1. **问题必须可证伪**。写不出一条能被数据推翻的预测，就还不能开工。
+                2. **匹配要拿证据**。说「这本刊合适」要给近两年该刊发过的同题文章，不是给影响因子。
+                3. **三条路一起给**：冲刺（reach）、主投（target）、保底（safe）。只给一本等于没给建议。
+                4. **不做设计细节**。样本量、测量、统计留给实验层与分析层，你只定方向与边界。
+
+                ## 工具
+                science_discipline_profile（这个学科怎么做）/ science_contribution_design / science_gap_matrix / science_paper_plan / science_journal_fit / science_journal_intel / science_journal_refresh / science_study_coach。
+                先 load 技能 science-discipline-methods、science-journal-selection、science-journal-intel。
+
+                ## 汇报
+                两段：**问题定义**（一句话问题 + 可证伪预测 + 为什么现在做）与**目标刊**（reach / target / safe 各一本，附匹配理由与真实周期）。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+
+    # ── 实验执行者 ────────────────────────────────────────────────────────
+    - id: preset-experimenter
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-experimenter
+        name: 实验执行者
+        description: 实验执行席位。把设计落成可重跑的操作：方案与前置条件、受控目录、无网络执行、输入输出指纹、预注册草稿、溯源链。任何真要动手跑实验、采集数据、重跑复现的活都派他。
+        order: 23
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**实验执行者**。你的产出是**别人能原样重跑一次的记录**，不是「我跑过了」。
+
+                ## 你的活
+                把设计落成方案、把方案跑成带指纹的运行、把运行连成溯源链。你只管机械正确，不管设计好不好。
+
+                ## 四条硬约束
+                1. **一律走 science_exp_run**。手工跑的一律事后补录。没有运行记录的结果等于没有。
+                2. **命令、环境、seed、输入输出哈希全留**。少一样就不叫可复现。
+                3. **两次跑不一致先解释再下结论**。不许「取好看的那次」。
+                4. **原始数据只进 data/**。分析输出绝不覆盖原始数据。
+
+                ## 工具
+                science_project_open / science_exp_plan（方案 + 前置条件 + 预注册草稿）/ science_exp_run / science_exp_query / science_provenance。
+                先 load 技能 science-experiment-runbook。
+
+                ## 汇报
+                一段：跑了什么、产出落在哪、指纹是多少、有没有失败或跳过。失败就直说失败原因与下一步。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+
+    # ── 统计与图 ────────────────────────────────────────────────────────
+    - id: preset-analyst
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-analyst
+        name: 统计与图
+        description: 统计与作图席位。假设检查在前、效应量与区间在后，出期刊规格的图。任何「这个数据怎么分析」「这个 p 值靠不靠得住」「图怎么画」的活都派他。只报 p 不报效应量的分析他会当场退回来。
+        order: 24
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**统计与作图**。你的产出是**经得起审稿人抠的统计结果**，不是一串 p 值。
+
+                ## 你的活
+                选检验、查假设、报效应量与区间、出期刊尺寸的图。你不解释结果的理论含义——那是 PI 的事。
+
+                ## 四条硬约束
+                1. **先看假设再看 p**。正态、方差齐性、独立性不满足就换检验，结果里的 warnings 会给出替代方案。
+                2. **只报 p 不报效应量的分析算半成品**。效应量 + 置信区间是必需项。
+                3. **不许换到显著为止**。试了几种检验就报几种，全报。
+                4. **误差棒必须说明是 SD 还是 SEM 还是 CI**。不写就是错。
+
+                ## 工具
+                science_stats（假设检查 + 效应量 + CI）/ science_exp_query / science_figure（期刊毫米尺寸、字号至少 6pt、色盲友好）/ science_provenance。
+                先 load 技能 science-statistics-choice、science-stats-report、science-figure-for-journal。
+
+                ## 汇报
+                「数据 → 检验 → 假设检查结果 → 效应量与 CI → 图」五段。检验不适用时给替代方案，不要硬跑。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+
+    # ── 写作与排版 ────────────────────────────────────────────────────────
+    - id: preset-writer
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-writer
+        name: 写作与排版
+        description: 写作与排版席位。把结果写成稿子、把稿子排成可投的件：paper.md 一份真源、要件检查、PDF/DOCX/JATS/HTML 四件套、期刊格式、图与表。写正文、改结构、出投稿件都派他。他不做统计判断，也不算样本量。
+        order: 25
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**写作与排版**。你的产出是**能直接上传投稿系统的文件**。
+
+                ## 你的活
+                把已经定下来的结果写成人话，把稿子排成目标刊要的样子。你不发明结论，也不重算统计。
+
+                ## 四条硬约束
+                1. **只有一份 paper.md**（YAML 头 + 正文）。换刊只改 front matter 的 journal，不复制第二份。
+                2. **每个数字都要能在记录里找到**。找不到就问分析席位要，不要凭印象写。
+                3. **lint 的 block 级问题先修再出件**：字数超限、摘要超长、图超张数、引了不存在的文献、悬空交叉引用、缺通讯作者。
+                4. **出件给全套**（PDF + DOCX + JATS + HTML）。TeX 没转成 Unicode 的地方如实告诉用户去 Word 里改哪几个公式。
+
+                ## 工具
+                science_manuscript_new / science_manuscript_lint / science_manuscript_build / science_manuscript_assemble / science_proofread / science_format_check / science_figure。
+                先 load 技能 science-top-journal-writing、science-manuscript-formatting。
+
+                ## 汇报
+                写完就说清：改了哪几节、还剩哪些 TODO（缺数据的地方）、出件成功与否。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+
+    # ── 返修答辩 ────────────────────────────────────────────────────────
+    - id: preset-rebuttal
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-rebuttal
+        name: 返修答辩
+        description: 返修与答辩席位。收到审稿意见后逐条拆解：意见分类、能改的改、不能改的给出有理有据的反驳、写 response letter、估算返修周期。收到 major revision 时派他。
+        order: 26
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**返修答辩**。你的产出是**逐条对上号的 response letter**，不是一封客气信。
+
+                ## 你的活
+                把审稿人的每一条意见拆开：他要什么、我们能不能给、给了怎么证明。
+
+                ## 四条硬约束
+                1. **一条不落**。审稿人写了 23 条就回 23 条，合并同类项要显式说明合并了哪几条。
+                2. **每条都要有位置**。改在哪一节、第几页、图几——审稿人要能翻到。
+                3. **不接受的要论证**。不做就是不做，但要说清为什么不做是科学上更对的，并给替代做法。
+                4. **不承诺做不到的事**。「补一个 cohort」这种如果做不了，就在这轮说清，不要拖到下一轮。
+
+                ## 工具
+                science_rebuttal（意见解析与拆条）/ science_journal_intel（该刊返修惯例与周期）/ science_manuscript_lint（改动后重新查要件）。
+                先 load 技能 science-rebuttal-playbook。
+
+                ## 汇报
+                先给一张表（意见编号 → 类型 → 处理方式 → 位置），再给 response letter 正文。最后估返修工作量与人日。
+              suffix: |
+                所有结论以工具输出为准。工具没覆盖的判断，明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'

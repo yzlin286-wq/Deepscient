@@ -801,6 +801,47 @@ function routeNext(sci, projectId, url = null) {
  * artifacts 的 present 用「所在阶段是否完成」判定：一个阶段的门全过了才算产物齐，
  * 没过就标待产出。这是能力边界内的诚实近似——产物是否真的落盘由门自己查。
  */
+/* ── 需求书：只读 ───────────────────────────────────────────────────────────
+   写由 science_requirement_brief 工具负责（它才算缺口）。面板读文件，
+   看见的是同一份真源，不存在两份数据打架的可能。 */
+
+function briefDirPath() {
+  return join(dshHome(), 'science', 'briefs')
+}
+
+function routeBriefs() {
+  const dir = briefDirPath()
+  if (!existsSync(dir)) return { items: [], total: 0 }
+  const items = []
+  for (const name of readdirSync(dir)) {
+    if (!name.startsWith('brief-') || !name.endsWith('.json')) continue
+    try {
+      const brief = JSON.parse(readFileSync(join(dir, name), 'utf8'))
+      const gaps = Array.isArray(brief.gaps) ? brief.gaps : []
+      const blocking = gaps.filter((g) => g.severity === 'blocking')
+      items.push({
+        id: brief.id,
+        question: brief.question ?? '',
+        domain: brief.domain ?? '',
+        deliverables: brief.deliverables ?? '',
+        updatedAt: brief.updatedAt ?? brief.createdAt ?? null,
+        committed: Boolean(brief.projectId),
+        projectId: brief.projectId ?? null,
+        ready: blocking.length === 0,
+        gaps,
+        summary: {
+          blocking: blocking.length,
+          warnings: gaps.filter((g) => g.severity === 'warning').length,
+        },
+      })
+    } catch {
+      // 手工改坏的 JSON 只跳过这一份，不拖垮整页
+    }
+  }
+  items.sort((a, b) => String(b.updatedAt ?? b.id).localeCompare(String(a.updatedAt ?? a.id)))
+  return { items, total: items.length }
+}
+
 function routeOverview(sci, projectId, url = null) {
   const row = sci.store.db.prepare('SELECT * FROM project WHERE id = ?').get(projectId)
   const stagesRoute = routeStages(sci, projectId, url)
@@ -1071,7 +1112,9 @@ export async function handleApi(req, res, ctx = null) {
       return true
     }
 
-    if (parts[0] === 'projects' && parts[1]) {
+    if (parts[0] === 'briefs') return json(res, 200, routeBriefs())
+
+  if (parts[0] === 'projects' && parts[1]) {
       if (!needScience()) return true
       const projectId = decodeURIComponent(parts[1])
       const row = sci.store.db.prepare('SELECT * FROM project WHERE id = ?').get(projectId)
