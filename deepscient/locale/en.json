@@ -31,7 +31,9 @@
     "role": "Role",
     "settings": "Account",
     "stateMismatch": "This sign-in attempt is no longer valid. Please start again.",
+    "timeout": "The authorization window did not return. Try again, or check whether the browser blocked the popup.",
     "unreachable": "Could not reach the account service. Check your connection or whether the instance is still running.",
+    "unreachableTitle": "Cannot reach the account service",
     "updatedAt": "Updated",
     "waiting": "Waiting for approval on deepscient.com… this will continue automatically.",
     "website": "Open deepscient.com (sign up · balance · top-up)"
@@ -92,7 +94,9 @@
     "refresh": "Refresh",
     "retry": "Retry",
     "save": "Save",
-    "yes": "Yes"
+    "yes": "Yes",
+    "notReady": "Not ready",
+    "refreshing": "Refreshing…"
   },
   "docs": {
     "notPacked": "Documentation is not bundled yet (deepscient/docs/*.md)."
@@ -194,7 +198,71 @@
     "webhook": "Payment callback URL",
     "webhookHint": "Register this as a public HTTPS URL with the relay; expose this machine through a reverse proxy or tunnel first."
   },
-  "settings": "Research",
+  "settings": {
+    "addRow": "Add a row",
+    "alphaError": "α must be between 0 and 1 (excluding 0).",
+    "billingHint": "Rates are needed before the Billing page and the bottom pill can show an approximate amount. Cached and uncached input are priced separately: cache is usually an order of magnitude cheaper, and mixing them inflates the total.",
+    "billingTitle": "Billing rates (price per million tokens)",
+    "colCache": "Cache hit/M",
+    "colInput": "Input/M",
+    "colOutput": "Output/M",
+    "emptyPrice": "No rate rows yet.",
+    "field": {
+      "alpha": "Significance level α",
+      "billingBaseUrl": "New API relay URL",
+      "billingConsoleUrl": "Billing / balance page",
+      "billingCurrency": "Currency",
+      "billingProvider": "Billing source",
+      "correction": "Multiple comparison correction",
+      "defaultDiscipline": "Default discipline pack",
+      "defaultJournal": "Default target journal",
+      "effectSize": "Default effect size",
+      "evidenceStrictness": "Evidence chain strictness",
+      "figureUnits": "Figure units",
+      "locale": "Interface language",
+      "networkForSearch": "Allow network search"
+    },
+    "goSources": "Fill in literature / search APIs",
+    "guideHint": "The guide appears automatically the first time a browser opens this app; reopening it shows it again right away.",
+    "guideTitle": "Onboarding and integrations",
+    "introPrefix": "These are preferences, not capability switches. Changes apply immediately and are stored in the data root of this instance (",
+    "introSuffix": ").",
+    "ph": {
+      "billingBaseUrl": "https://<your New API relay URL>",
+      "billingConsoleUrl": "https://<relay>/panel/token",
+      "model": "Model name or *",
+      "provider": "tree or *"
+    },
+    "presetBroken": " (failed to activate)",
+    "presetCurrent": "Current presets: {list}",
+    "presetDefault": " (default)",
+    "presetFailed": " — failed to activate: {reason}",
+    "presetInspect": "Show the status of each plugin fiber",
+    "presetNone": "Could not read the preset registry yet.",
+    "presetTitle": "Preset diagnostics",
+    "presetUnavailable": "Could not read: {reason}",
+    "presetUnknown": "unknown reason",
+    "priceRowInvalid": "One rate row has only provider / model and no price; it will be dropped when saved.",
+    "rejected": "Rejected: {keys}",
+    "remove": "Delete",
+    "reopenDone": "Onboarding reopened: switch back to the chat or refresh the page to see it.",
+    "reopenGuide": "Reopen the onboarding guide",
+    "restore": "Revert",
+    "savedAt": "Saved {at}",
+    "skillsCatalog": "The catalog adds about {tokens} tokens to the system prompt (descriptions truncated at 260 characters). The host-level view lists {host} — sessions run in the research preset, so expected in session is authoritative.",
+    "skillsCheck": "Check installed skills",
+    "skillsCheckBad": "Issues found: {n}",
+    "skillsCheckOk": "All passed: {passed}/{checked}, manifest {pinned}/{rows} pinned",
+    "skillsCounts": "Bundled {bundled} · vendor {vendor} · own {user} · expected in session {session}",
+    "skillsFailLine": "{name}: {reason}",
+    "skillsHint": "Bundled research skills plus third-party vendor skills. Vendor skills are installed from the manifest by scripts/install-skills.mjs into $DSH_HOME/science/skills-vendor.",
+    "skillsNoVendor": "No vendor skills yet: run node scripts/install-skills.mjs --apply",
+    "skillsRoot": "Root: {path}",
+    "skillsShow": "Show installed skills",
+    "skillsTitle": "Skill catalog",
+    "title": "Research",
+    "wildcard": "An asterisk in provider / model means wildcard."
+  },
   "sources": {
     "colCredential": "Credential",
     "colFill": "Set value",
@@ -219,7 +287,12 @@
       "declared": "Saved; tools have not read it yet",
       "none": "No credential needed",
       "runtime": "Wired to tools"
-    }
+    },
+    "count": "Configured {ready}/{total}. Saving an empty value clears it.",
+    "foot": "Fields marked \"saved · runtime not reading yet\" can be saved and tested on this page, but the current dsh-science retrieval runtime does not consume them yet — this is not a save failure.",
+    "kindKey": "Key",
+    "noteDefault": "Credentials are written only to the local science/config.json.",
+    "verifyOk": "OK {ms}ms"
   },
   "stages": {
     "blockingCount": "{n} blocking",
@@ -230,7 +303,8 @@
     "gates": "Stage gates",
     "noGates": "No gates for this stage.",
     "noProject": "No project yet — create one in the Workbench.",
-    "summary": "{blocking} blocking · {warnings} warnings · {skipped} unrecorded · {manual} self-check"
+    "summary": "{blocking} blocking · {warnings} warnings · {skipped} unrecorded · {manual} self-check",
+    "incomplete": "Incomplete"
   },
   "tools": {
     "colArtifact": "Artifact",
@@ -258,12 +332,11 @@
       "subjects": "Sample you can reach"
     },
     "fill": "Write into the input",
-    "hint": {
-      "question": "One sentence: in which population, what compared with what, affecting what, over how long."
-    },
+    "hint": "Write down what you know; leaving a field blank is better than inventing. This produces a brief for your research assistant.",
     "mandate": {
       "ask": "Start with action draft of science_requirement_brief to structure this into a requirement brief and show me the gaps; I will fill them and then commit to open the project.",
-      "intro": "I am opening a new project. Here is the need, stated up front:"
+      "intro": "I am opening a new project. Here is the need, stated up front:",
+      "line": "- {label}: {value}"
     },
     "needQuestion": "The research question is the one field required to build a mandate.",
     "open": "Research brief",
@@ -281,10 +354,114 @@
       "subjects": "Population, where from, roughly how many"
     },
     "start": "Start now",
-    "title": "State the research need"
+    "title": "State the research need",
+    "hintField": {
+      "question": "One sentence: in which population, what compared with what, affecting what, over how long."
+    }
   },
   "workbench": {
     "noPrereg": "No preregistration id",
     "prereg": "Preregistration {ref}"
+  },
+  "brand": {
+    "tagline": "Research"
+  },
+  "guide": {
+    "aria": "DeepScient onboarding guide",
+    "check": {
+      "broken": " — failed to activate: {reason}",
+      "dataRoot": "Data root: {path}",
+      "intro": "First make sure the whole stack is actually up. If the five items below are all right, you can continue.",
+      "keyMissing": "not configured (Settings → Model)",
+      "modeBundled": "read from package",
+      "modeRuntime": "runtime",
+      "model": "Model: {model} — key {key}",
+      "notRead": "not read",
+      "preset": "Preset: {preset}",
+      "presetValue": "{name} ({id}){broken}",
+      "product": "Product: {product} {version}",
+      "science": "Research library: {state}",
+      "settingsPath": "Preferences file: {path}",
+      "stateLoaded": "Loaded ({mode})",
+      "stateUnavailable": "Not ready — {reason}",
+      "waiting": "waiting to read"
+    },
+    "model": {
+      "foot": "Each provider key is the billing entity; the bill lives in the relay, and this page only reports on the same basis.",
+      "goBilling": "See billing and key attribution",
+      "intro": "The model and its key decide what you can do and who gets billed.",
+      "noKeys": "No credential source found yet. The launcher injects keys through environment variables, or fill them in under Settings → Model."
+    },
+    "next": "Next",
+    "prev": "Back",
+    "project": {
+      "create": "Create this project",
+      "created": "Created: {title}",
+      "createdMeta": "id {id}; progress {progress}",
+      "domainPh": "Field / domain (optional, e.g. cognitive neuroscience)",
+      "intro": "A project = one story you can finish. Give it a title first; the field and target journal can change later.",
+      "journalPh": "Target journal (optional, e.g. Nature Human Behaviour)",
+      "titlePh": "Title, e.g. dose-response of sleep duration on working memory"
+    },
+    "rules": {
+      "intro": "Twelve workflows and 55 gates. Remember three things and you can start:",
+      "notice": "You can reopen this guide anytime: Settings → Research Workbench → Reopen the onboarding guide.",
+      "one": "Every claim must be pointable in the source — an assertion without a citation is a blocker, not close enough.",
+      "three": "A stage not passing means a gate is closed, not that the model is lazy: open Stages to see which gate it is, and it will tell you what to add.",
+      "two": "Data, code, figures and environment fingerprints are all recorded; a rerun must reproduce the same figure."
+    },
+    "session": {
+      "copied": "Copied",
+      "copy": "Copy",
+      "errorCreate": "Failed to create the project",
+      "errorGeneric": "Session did not start: the UI only says new session failed; the real reason is in Settings → Research → preset diagnostics (/presets/inspect)",
+      "errorKeyMissing": "Session did not start: the model key is not configured (Settings → Model). Configure it and click again.",
+      "errorNoPath": "There is no existing workspace and no project directory, so a workspace cannot be created",
+      "errorNoUi": "This shell has no uiWorkspace service, so a session cannot be started",
+      "errorNoWorkspaceId": "Workspace creation returned no id ({path})",
+      "intro": "Pick one and click Start a session with this: the session is created with the prompt already in the input — press Enter to run.",
+      "open": "Start a session with this",
+      "preset": "Preset: {name}",
+      "presetFailed": "Preset \"{name}\" failed to activate: {reason}",
+      "presetPending": "Preset: waiting for the registry",
+      "started": "Started",
+      "startedDetail": "Session started and the prompt is in the input box; press Enter to run.",
+      "starting": "Starting session…"
+    },
+    "skip": "Skip guide",
+    "sources": {
+      "foot": "After saving, close the panel to return here, then click Next.",
+      "go": "Fill in API keys",
+      "intro": "Literature / search APIs: {ready}/{total} configured. All are optional — the public pool works without them.",
+      "keys": "Semantic Scholar / CORE / Zotero / Exa: more reliable with a key, usable without one.",
+      "polite": "OpenAlex / Unpaywall / Crossref: just add an email to join the polite pool — the three easiest ones.",
+      "secrets": "Keys are written only to the local science/config.json — never uploaded or echoed back."
+    },
+    "start": "Start research",
+    "stepProgress": "{current} / {total}",
+    "template": {
+      "hypothesis": {
+        "tag": "Hypothesis and sample size",
+        "text": "Turn \"<phenomenon>\" into a testable hypothesis: H1 must state the independent variable, dependent variable and expected direction; use science_exp_plan for the smallest reproducible sample size and procedure, science_statistics_choice for the primary model, and list the preregistration points."
+      },
+      "map": {
+        "tag": "Literature map",
+        "text": "Build a literature map around \"<research question>\": use science_lit_query to pull the 15 core papers and science_gap_matrix to mark uncovered gaps; every conclusion must give its source, evidence strength, and reproducibility."
+      },
+      "topic": {
+        "tag": "Topic framing",
+        "text": "I am working on \"<direction>\". Start with science_frontier_scan to map frontier anchors from the last two years, then use science_novelty to score three candidate topics for novelty, and finally tell me only which one is worth a paper and why."
+      }
+    },
+    "title": "Start your first project"
+  },
+  "net": {
+    "notJson": "The response was not JSON ({status})",
+    "notJsonBody": "The response was not JSON ({status}): {body}",
+    "unreachable": "Cannot reach the local service; make sure the instance is still running."
+  },
+  "pill": {
+    "title": "Today's token usage only; amounts and details live on the Billing page, with the relay as source of truth.",
+    "tokens": "Today {n} tokens"
   }
 }

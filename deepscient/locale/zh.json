@@ -31,7 +31,9 @@
     "role": "角色",
     "settings": "账号",
     "stateMismatch": "这次登录已失效，请重新发起。",
+    "timeout": "授权窗口没有回来。重新点一次登录，或检查浏览器是否拦截了弹窗。",
     "unreachable": "连不上账号服务，检查网络或实例是否还在运行。",
+    "unreachableTitle": "连不上账号服务",
     "updatedAt": "更新于",
     "waiting": "等待官网确认授权…完成后会自动进入。",
     "website": "打开官网（注册 · 额度 · 充值）"
@@ -92,7 +94,9 @@
     "refresh": "刷新",
     "retry": "重试",
     "save": "保存",
-    "yes": "是"
+    "yes": "是",
+    "notReady": "未就绪",
+    "refreshing": "刷新中…"
   },
   "docs": {
     "notPacked": "说明文档还没打包进来（deepscient/docs/*.md）。"
@@ -194,7 +198,71 @@
     "webhook": "支付回填地址",
     "webhookHint": "需在中转站登记为 HTTPS 公网地址；本机通过反向代理或隧道暴露后再填。"
   },
-  "settings": "科研",
+  "settings": {
+    "addRow": "添加一行",
+    "alphaError": "α 必须在 0 与 1 之间（不含 0）。",
+    "billingHint": "填了价目，计费页和底部胶囊才会出现「≈金额」。命中缓存的输入与未命中的输入分开算：缓存通常便宜一个数量级，混在一起会虚高。",
+    "billingTitle": "计费价目（每百万 token 单价）",
+    "colCache": "缓存命中/M",
+    "colInput": "输入/M",
+    "colOutput": "输出/M",
+    "emptyPrice": "还没有价目行。",
+    "field": {
+      "alpha": "显著性水平 α",
+      "billingBaseUrl": "New API 中转站地址",
+      "billingConsoleUrl": "账单 / 余额页",
+      "billingCurrency": "币种",
+      "billingProvider": "计费口径来源",
+      "correction": "多重比较校正",
+      "defaultDiscipline": "默认学科包",
+      "defaultJournal": "默认目标刊",
+      "effectSize": "默认效应量",
+      "evidenceStrictness": "证据链严格度",
+      "figureUnits": "出图单位",
+      "locale": "界面语言",
+      "networkForSearch": "检索是否允许联网"
+    },
+    "goSources": "去填文献 / 检索 API",
+    "guideHint": "引导在新建的浏览器里第一次打开时自动出现；重开后立刻会再出现一次。",
+    "guideTitle": "使用引导与接入",
+    "introPrefix": "这些是偏好，不是能力开关。改完立刻生效，落在本实例自己的数据根里（",
+    "introSuffix": "）。",
+    "ph": {
+      "billingBaseUrl": "https://<你的 New API 中转站地址>",
+      "billingConsoleUrl": "https://<中转站>/panel/token",
+      "model": "模型名或 *",
+      "provider": "tree 或 *"
+    },
+    "presetBroken": "（激活失败）",
+    "presetCurrent": "当前预设：{list}",
+    "presetDefault": "（默认）",
+    "presetFailed": " — 激活失败：{reason}",
+    "presetInspect": "看每一行插件的状态",
+    "presetNone": "还没读到预设注册表。",
+    "presetTitle": "预设体检",
+    "presetUnavailable": "读不到：{reason}",
+    "presetUnknown": "未知原因",
+    "priceRowInvalid": "有一行价目只填了 provider / 模型，没有任何单价；这一行保存后会被丢弃。",
+    "rejected": "未接受：{keys}",
+    "remove": "删除",
+    "reopenDone": "使用引导已重新打开：切回对话或刷新页面就能看到",
+    "reopenGuide": "重新打开使用引导",
+    "restore": "还原",
+    "savedAt": "已保存 {at}",
+    "skillsCatalog": "目录进系统提示约 {tokens} tokens（描述按 260 字截断）。host 平面视图 {host} 条 —— 会话跑在科研预设里，以「会话里应有」为准。",
+    "skillsCheck": "检查已装技能",
+    "skillsCheckBad": "有 {n} 处问题",
+    "skillsCheckOk": "全部通过：{passed}/{checked} 条，manifest {pinned}/{rows} 条已 pin",
+    "skillsCounts": "随包 {bundled} 条 · vendor {vendor} 条 · 自己的 {user} 条 · 会话里应有 {session} 条",
+    "skillsFailLine": "{name}：{reason}",
+    "skillsHint": "随包科研技能 + 第三方 vendor 技能。vendor 由 scripts/install-skills.mjs 按 manifest 装，装在 $DSH_HOME/science/skills-vendor。",
+    "skillsNoVendor": "还没有 vendor 技能：跑 node scripts/install-skills.mjs --apply",
+    "skillsRoot": "根：{path}",
+    "skillsShow": "看装了哪些技能",
+    "skillsTitle": "技能目录",
+    "title": "科研",
+    "wildcard": "provider / 模型填 * 表示通配。"
+  },
   "sources": {
     "colCredential": "凭据",
     "colFill": "填写",
@@ -219,7 +287,12 @@
       "declared": "已保存·工具侧尚未读取",
       "none": "免凭据",
       "runtime": "已接入工具"
-    }
+    },
+    "count": "已配置 {ready}/{total}。留空保存即清除。",
+    "foot": "标「已保存·工具侧尚未读取」的字段：本页可以保存与连通性测试，但当前 dsh-science 版本的检索运行时还没消费它 —— 不是这里没存进去。",
+    "kindKey": "Key",
+    "noteDefault": "密钥只写入本机 science/config.json。",
+    "verifyOk": "通 {ms}ms"
   },
   "stages": {
     "blockingCount": "{n} 阻塞",
@@ -230,7 +303,8 @@
     "gates": "阶段门",
     "noGates": "这个阶段没有门。",
     "noProject": "还没有课题，先在工作台建一个。",
-    "summary": "阻塞 {blocking} · 警告 {warnings} · 未留记录 {skipped} · 自查 {manual}"
+    "summary": "阻塞 {blocking} · 警告 {warnings} · 未留记录 {skipped} · 自查 {manual}",
+    "incomplete": "未完成"
   },
   "tools": {
     "colArtifact": "这一步的产物",
@@ -258,12 +332,11 @@
       "subjects": "可招到的样本"
     },
     "fill": "写进输入框",
-    "hint": {
-      "question": "一句话写清：在什么对象里，什么相比什么，影响什么，观察多久。"
-    },
+    "hint": "先把已知的说清楚；留空比编一个更有用。最后会生成一条给科研助理的任务书。",
     "mandate": {
       "ask": "请先用 science_requirement_brief 的 draft 把它结构化成需求书，把缺口列给我；我补齐后再 commit 建课题。",
-      "intro": "我要开一个新课题，先把需求说清楚："
+      "intro": "我要开一个新课题，先把需求说清楚：",
+      "line": "- {label}：{value}"
     },
     "needQuestion": "至少填「研究问题」才能生成任务书。",
     "open": "科研需求",
@@ -281,10 +354,114 @@
       "subjects": "人群、从哪里来、大致多少人"
     },
     "start": "直接开始",
-    "title": "把研究需求说清楚"
+    "title": "把研究需求说清楚",
+    "hintField": {
+      "question": "一句话写清：在什么对象里，什么相比什么，影响什么，观察多久。"
+    }
   },
   "workbench": {
     "noPrereg": "无预注册编号",
     "prereg": "预注册 {ref}"
+  },
+  "brand": {
+    "tagline": "科研"
+  },
+  "guide": {
+    "aria": "DeepScient 使用引导",
+    "check": {
+      "broken": " — 激活失败：{reason}",
+      "dataRoot": "数据根：{path}",
+      "intro": "先确认这套东西真的起来了。下面五项都对，就可以往下走。",
+      "keyMissing": "未配置（设置 → 模型）",
+      "modeBundled": "包直读",
+      "modeRuntime": "运行中",
+      "model": "模型：{model} — key {key}",
+      "notRead": "未读到",
+      "preset": "预设：{preset}",
+      "presetValue": "{name}（{id}）{broken}",
+      "product": "产品：{product} {version}",
+      "science": "科研库：{state}",
+      "settingsPath": "偏好文件：{path}",
+      "stateLoaded": "已装载（{mode}）",
+      "stateUnavailable": "未就绪 — {reason}",
+      "waiting": "等待读取"
+    },
+    "model": {
+      "foot": "每个 provider 的 key 就是计费主体；账单在中转站，本页只做同口径统计。",
+      "goBilling": "看计费与 key 归属",
+      "intro": "模型和它的 key 决定你能干活、以及账记在谁头上。",
+      "noKeys": "还没读到凭据来源。启动器用环境变量注入 key，或在「设置 → 模型」里填。"
+    },
+    "next": "下一步",
+    "prev": "上一步",
+    "project": {
+      "create": "建这个课题",
+      "created": "已建好：{title}",
+      "createdMeta": "id {id}；进度 {progress}",
+      "domainPh": "学科/领域（可空，例：认知神经科学）",
+      "intro": "一个课题 = 一个能写完的故事。先给它一个题目，学科和目标刊可以以后改。",
+      "journalPh": "目标刊（可空，例：Nature Human Behaviour）",
+      "titlePh": "题目，例如：睡眠时长与工作记忆的剂量效应"
+    },
+    "rules": {
+      "intro": "十二条流程、55 道门。记住三条就够开工：",
+      "notice": "随时可以重开这份引导：设置 → 科研工作台 → 重新打开使用引导。",
+      "one": "每个结论都要能在原文里指出来 —— 没有出处的断言算阻塞，不算「差不多」。",
+      "three": "阶段没过是门没开，不是模型偷懒：去「流程」看是哪一道，它会告诉你补什么。",
+      "two": "数据、代码、图、环境指纹都留痕；重跑要能复现同一张图。"
+    },
+    "session": {
+      "copied": "已复制",
+      "copy": "复制",
+      "errorCreate": "建课题失败",
+      "errorGeneric": "会话没建起来：界面只说「新建会话失败」，真实原因在 设置 → 科研 → 预设体检（/presets/inspect）",
+      "errorKeyMissing": "会话没建起来：模型 key 未配置（设置 → 模型），配好再回来点一次",
+      "errorNoPath": "既没有现成工作区，也拿不到课题目录，没法建工作区",
+      "errorNoUi": "当前界面没有 uiWorkspace 服务，没法开会话",
+      "errorNoWorkspaceId": "建工作区没有返回 id（{path}）",
+      "intro": "选一条，点「用这条开会话」：会话会开好，这句话已经在输入框里，你确认后按回车就开跑。",
+      "open": "用这条开会话",
+      "preset": "预设：{name}",
+      "presetFailed": "预设「{name}」激活失败：{reason}",
+      "presetPending": "预设：等注册表回报",
+      "started": "已开好",
+      "startedDetail": "会话已开好，提示词已放进输入框；按回车就开跑。",
+      "starting": "正在开会话…"
+    },
+    "skip": "跳过引导",
+    "sources": {
+      "foot": "填完关掉面板页就能回到这里，再点下一步。",
+      "go": "去填 API",
+      "intro": "文献/检索 API：已配置 {ready}/{total}。全部可以不填，先用公开池也能跑。",
+      "keys": "Semantic Scholar / CORE / Zotero / Exa：有 key 更稳，没有也能用。",
+      "polite": "OpenAlex / Unpaywall / Crossref：填邮箱即可进 polite pool，最省事的三个。",
+      "secrets": "密钥只写到本机 science/config.json，不上传、不回显。"
+    },
+    "start": "开始科研",
+    "stepProgress": "{current} / {total}",
+    "template": {
+      "hypothesis": {
+        "tag": "假设与样本量",
+        "text": "把「<现象>」写成可检验的假设：H1 明确自变量、因变量与预期方向；用 science_exp_plan 给出最小可复现的样本量、实验步骤，用 science_statistics_choice 指定主分析模型，并列出预注册要点。"
+      },
+      "map": {
+        "tag": "文献地图",
+        "text": "围绕「<研究问题>」建一张文献地图：用 science_lit_query 取核心 15 篇，用 science_gap_matrix 标出未被覆盖的空白；每条结论都给出出处、证据强度、是否可复现。"
+      },
+      "topic": {
+        "tag": "选题定位",
+        "text": "我在做「<方向>」。先用 science_frontier_scan 扫近两年的前沿锚点，再用 science_novelty 给三个候选选题打新颖性分，最后只告诉我哪一个值得做成一篇、为什么。"
+      }
+    },
+    "title": "开始你的第一个课题"
+  },
+  "net": {
+    "notJson": "返回的不是 JSON（{status}）",
+    "notJsonBody": "返回的不是 JSON（{status}）：{body}",
+    "unreachable": "连不上本机服务，请确认实例还在运行。"
+  },
+  "pill": {
+    "title": "只统计今天消耗的 token；金额与明细在「计费」页，真值在 New API 中转站",
+    "tokens": "今日 {n} tokens"
   }
 }

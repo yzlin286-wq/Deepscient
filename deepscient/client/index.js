@@ -41,7 +41,9 @@ window.__ModuleLoader__.load({
       "auth.role": "角色",
       "auth.settings": "账号",
       "auth.stateMismatch": "这次登录已失效，请重新发起。",
+      "auth.timeout": "授权窗口没有回来。重新点一次登录，或检查浏览器是否拦截了弹窗。",
       "auth.unreachable": "连不上账号服务，检查网络或实例是否还在运行。",
+      "auth.unreachableTitle": "连不上账号服务",
       "auth.updatedAt": "更新于",
       "auth.waiting": "等待官网确认授权…完成后会自动进入。",
       "auth.website": "打开官网（注册 · 额度 · 充值）",
@@ -85,6 +87,7 @@ window.__ModuleLoader__.load({
       "billing.statTotal": "总消耗",
       "billing.statTotalHint": "{n} 条模型回复",
       "billing.title": "token 计费",
+      "brand.tagline": "科研",
       "common.cancel": "取消",
       "common.copied": "已复制",
       "common.copy": "复制",
@@ -93,7 +96,9 @@ window.__ModuleLoader__.load({
       "common.loadFailed": "读不到数据",
       "common.loading": "读取中…",
       "common.no": "否",
+      "common.notReady": "未就绪",
       "common.refresh": "刷新",
+      "common.refreshing": "刷新中…",
       "common.retry": "重试",
       "common.save": "保存",
       "common.yes": "是",
@@ -103,8 +108,78 @@ window.__ModuleLoader__.load({
       "gate.status.pass": "通过",
       "gate.status.skip": "未留记录",
       "gate.status.unknown": "未判定",
+      "guide.aria": "DeepScient 使用引导",
+      "guide.check.broken": " — 激活失败：{reason}",
+      "guide.check.dataRoot": "数据根：{path}",
+      "guide.check.intro": "先确认这套东西真的起来了。下面五项都对，就可以往下走。",
+      "guide.check.keyMissing": "未配置（设置 → 模型）",
+      "guide.check.modeBundled": "包直读",
+      "guide.check.modeRuntime": "运行中",
+      "guide.check.model": "模型：{model} — key {key}",
+      "guide.check.notRead": "未读到",
+      "guide.check.preset": "预设：{preset}",
+      "guide.check.presetValue": "{name}（{id}）{broken}",
+      "guide.check.product": "产品：{product} {version}",
+      "guide.check.science": "科研库：{state}",
+      "guide.check.settingsPath": "偏好文件：{path}",
+      "guide.check.stateLoaded": "已装载（{mode}）",
+      "guide.check.stateUnavailable": "未就绪 — {reason}",
+      "guide.check.waiting": "等待读取",
+      "guide.model.foot": "每个 provider 的 key 就是计费主体；账单在中转站，本页只做同口径统计。",
+      "guide.model.goBilling": "看计费与 key 归属",
+      "guide.model.intro": "模型和它的 key 决定你能干活、以及账记在谁头上。",
+      "guide.model.noKeys": "还没读到凭据来源。启动器用环境变量注入 key，或在「设置 → 模型」里填。",
+      "guide.next": "下一步",
+      "guide.prev": "上一步",
+      "guide.project.create": "建这个课题",
+      "guide.project.created": "已建好：{title}",
+      "guide.project.createdMeta": "id {id}；进度 {progress}",
+      "guide.project.domainPh": "学科/领域（可空，例：认知神经科学）",
+      "guide.project.intro": "一个课题 = 一个能写完的故事。先给它一个题目，学科和目标刊可以以后改。",
+      "guide.project.journalPh": "目标刊（可空，例：Nature Human Behaviour）",
+      "guide.project.titlePh": "题目，例如：睡眠时长与工作记忆的剂量效应",
+      "guide.rules.intro": "十二条流程、55 道门。记住三条就够开工：",
+      "guide.rules.notice": "随时可以重开这份引导：设置 → 科研工作台 → 重新打开使用引导。",
+      "guide.rules.one": "每个结论都要能在原文里指出来 —— 没有出处的断言算阻塞，不算「差不多」。",
+      "guide.rules.three": "阶段没过是门没开，不是模型偷懒：去「流程」看是哪一道，它会告诉你补什么。",
+      "guide.rules.two": "数据、代码、图、环境指纹都留痕；重跑要能复现同一张图。",
+      "guide.session.copied": "已复制",
+      "guide.session.copy": "复制",
+      "guide.session.errorCreate": "建课题失败",
+      "guide.session.errorGeneric": "会话没建起来：界面只说「新建会话失败」，真实原因在 设置 → 科研 → 预设体检（/presets/inspect）",
+      "guide.session.errorKeyMissing": "会话没建起来：模型 key 未配置（设置 → 模型），配好再回来点一次",
+      "guide.session.errorNoPath": "既没有现成工作区，也拿不到课题目录，没法建工作区",
+      "guide.session.errorNoUi": "当前界面没有 uiWorkspace 服务，没法开会话",
+      "guide.session.errorNoWorkspaceId": "建工作区没有返回 id（{path}）",
+      "guide.session.intro": "选一条，点「用这条开会话」：会话会开好，这句话已经在输入框里，你确认后按回车就开跑。",
+      "guide.session.open": "用这条开会话",
+      "guide.session.preset": "预设：{name}",
+      "guide.session.presetFailed": "预设「{name}」激活失败：{reason}",
+      "guide.session.presetPending": "预设：等注册表回报",
+      "guide.session.started": "已开好",
+      "guide.session.startedDetail": "会话已开好，提示词已放进输入框；按回车就开跑。",
+      "guide.session.starting": "正在开会话…",
+      "guide.skip": "跳过引导",
+      "guide.sources.foot": "填完关掉面板页就能回到这里，再点下一步。",
+      "guide.sources.go": "去填 API",
+      "guide.sources.intro": "文献/检索 API：已配置 {ready}/{total}。全部可以不填，先用公开池也能跑。",
+      "guide.sources.keys": "Semantic Scholar / CORE / Zotero / Exa：有 key 更稳，没有也能用。",
+      "guide.sources.polite": "OpenAlex / Unpaywall / Crossref：填邮箱即可进 polite pool，最省事的三个。",
+      "guide.sources.secrets": "密钥只写到本机 science/config.json，不上传、不回显。",
+      "guide.start": "开始科研",
+      "guide.stepProgress": "{current} / {total}",
+      "guide.template.hypothesis.tag": "假设与样本量",
+      "guide.template.hypothesis.text": "把「<现象>」写成可检验的假设：H1 明确自变量、因变量与预期方向；用 science_exp_plan 给出最小可复现的样本量、实验步骤，用 science_statistics_choice 指定主分析模型，并列出预注册要点。",
+      "guide.template.map.tag": "文献地图",
+      "guide.template.map.text": "围绕「<研究问题>」建一张文献地图：用 science_lit_query 取核心 15 篇，用 science_gap_matrix 标出未被覆盖的空白；每条结论都给出出处、证据强度、是否可复现。",
+      "guide.template.topic.tag": "选题定位",
+      "guide.template.topic.text": "我在做「<方向>」。先用 science_frontier_scan 扫近两年的前沿锚点，再用 science_novelty 给三个候选选题打新颖性分，最后只告诉我哪一个值得做成一篇、为什么。",
+      "guide.title": "开始你的第一个课题",
       "meta.description": "把选题、检索、样本量、清洗、统计、作图、写作、内审、投稿串成一条有门的流程，并在侧栏给出可直接看的研究状态面板。",
       "meta.title": "DeepScient 科研工作台",
+      "net.notJson": "返回的不是 JSON（{status}）",
+      "net.notJsonBody": "返回的不是 JSON（{status}）：{body}",
+      "net.unreachable": "连不上本机服务，请确认实例还在运行。",
       "overview.artifacts": "产出",
       "overview.counts": "文献 {papers} · 分析 {analyses} · 图 {figures}",
       "overview.current": "当前阶段",
@@ -128,6 +203,16 @@ window.__ModuleLoader__.load({
       "panel.stages": "流程",
       "panel.tools": "工具",
       "panel.workbench": "工作台",
+      "pill.title": "只统计今天消耗的 token；金额与明细在「计费」页，真值在 New API 中转站",
+      "pill.tokens": "今日 {n} tokens",
+      "reason.blocking": "阻塞",
+      "reason.blockingWith": "阻塞 {n}",
+      "reason.selfCheck": "自查",
+      "reason.todo": "待办",
+      "reason.unrecorded": "未留记录",
+      "reason.unrecordedWith": "未留记录 {n}",
+      "reason.warning": "警告",
+      "reason.warningWith": "警告 {n}",
       "relay.account": "我的额度",
       "relay.apiBase": "模型调用基址",
       "relay.apiKey": "API Key（脱敏）",
@@ -171,15 +256,65 @@ window.__ModuleLoader__.load({
       "relay.username": "中转站用户名",
       "relay.webhook": "支付回填地址",
       "relay.webhookHint": "需在中转站登记为 HTTPS 公网地址；本机通过反向代理或隧道暴露后再填。",
-      "reason.blocking": "阻塞",
-      "reason.blockingWith": "阻塞 {n}",
-      "reason.selfCheck": "自查",
-      "reason.todo": "待办",
-      "reason.unrecorded": "未留记录",
-      "reason.unrecordedWith": "未留记录 {n}",
-      "reason.warning": "警告",
-      "reason.warningWith": "警告 {n}",
-      "settings": "科研",
+      "settings.addRow": "添加一行",
+      "settings.alphaError": "α 必须在 0 与 1 之间（不含 0）。",
+      "settings.billingHint": "填了价目，计费页和底部胶囊才会出现「≈金额」。命中缓存的输入与未命中的输入分开算：缓存通常便宜一个数量级，混在一起会虚高。",
+      "settings.billingTitle": "计费价目（每百万 token 单价）",
+      "settings.colCache": "缓存命中/M",
+      "settings.colInput": "输入/M",
+      "settings.colOutput": "输出/M",
+      "settings.emptyPrice": "还没有价目行。",
+      "settings.field.alpha": "显著性水平 α",
+      "settings.field.billingBaseUrl": "New API 中转站地址",
+      "settings.field.billingConsoleUrl": "账单 / 余额页",
+      "settings.field.billingCurrency": "币种",
+      "settings.field.billingProvider": "计费口径来源",
+      "settings.field.correction": "多重比较校正",
+      "settings.field.defaultDiscipline": "默认学科包",
+      "settings.field.defaultJournal": "默认目标刊",
+      "settings.field.effectSize": "默认效应量",
+      "settings.field.evidenceStrictness": "证据链严格度",
+      "settings.field.figureUnits": "出图单位",
+      "settings.field.locale": "界面语言",
+      "settings.field.networkForSearch": "检索是否允许联网",
+      "settings.goSources": "去填文献 / 检索 API",
+      "settings.guideHint": "引导在新建的浏览器里第一次打开时自动出现；重开后立刻会再出现一次。",
+      "settings.guideTitle": "使用引导与接入",
+      "settings.introPrefix": "这些是偏好，不是能力开关。改完立刻生效，落在本实例自己的数据根里（",
+      "settings.introSuffix": "）。",
+      "settings.ph.billingBaseUrl": "https://<你的 New API 中转站地址>",
+      "settings.ph.billingConsoleUrl": "https://<中转站>/panel/token",
+      "settings.ph.model": "模型名或 *",
+      "settings.ph.provider": "tree 或 *",
+      "settings.presetBroken": "（激活失败）",
+      "settings.presetCurrent": "当前预设：{list}",
+      "settings.presetDefault": "（默认）",
+      "settings.presetFailed": " — 激活失败：{reason}",
+      "settings.presetInspect": "看每一行插件的状态",
+      "settings.presetNone": "还没读到预设注册表。",
+      "settings.presetTitle": "预设体检",
+      "settings.presetUnavailable": "读不到：{reason}",
+      "settings.presetUnknown": "未知原因",
+      "settings.priceRowInvalid": "有一行价目只填了 provider / 模型，没有任何单价；这一行保存后会被丢弃。",
+      "settings.rejected": "未接受：{keys}",
+      "settings.remove": "删除",
+      "settings.reopenDone": "使用引导已重新打开：切回对话或刷新页面就能看到",
+      "settings.reopenGuide": "重新打开使用引导",
+      "settings.restore": "还原",
+      "settings.savedAt": "已保存 {at}",
+      "settings.skillsCatalog": "目录进系统提示约 {tokens} tokens（描述按 260 字截断）。host 平面视图 {host} 条 —— 会话跑在科研预设里，以「会话里应有」为准。",
+      "settings.skillsCheck": "检查已装技能",
+      "settings.skillsCheckBad": "有 {n} 处问题",
+      "settings.skillsCheckOk": "全部通过：{passed}/{checked} 条，manifest {pinned}/{rows} 条已 pin",
+      "settings.skillsCounts": "随包 {bundled} 条 · vendor {vendor} 条 · 自己的 {user} 条 · 会话里应有 {session} 条",
+      "settings.skillsFailLine": "{name}：{reason}",
+      "settings.skillsHint": "随包科研技能 + 第三方 vendor 技能。vendor 由 scripts/install-skills.mjs 按 manifest 装，装在 $DSH_HOME/science/skills-vendor。",
+      "settings.skillsNoVendor": "还没有 vendor 技能：跑 node scripts/install-skills.mjs --apply",
+      "settings.skillsRoot": "根：{path}",
+      "settings.skillsShow": "看装了哪些技能",
+      "settings.skillsTitle": "技能目录",
+      "settings.title": "科研",
+      "settings.wildcard": "provider / 模型填 * 表示通配。",
       "sources.colCredential": "凭据",
       "sources.colFill": "填写",
       "sources.colSource": "数据源",
@@ -187,18 +322,23 @@ window.__ModuleLoader__.load({
       "sources.colValue": "当前值",
       "sources.colVerify": "验证",
       "sources.configured": "已配置",
+      "sources.count": "已配置 {ready}/{total}。留空保存即清除。",
       "sources.failed": "失败",
+      "sources.foot": "标「已保存·工具侧尚未读取」的字段：本页可以保存与连通性测试，但当前 dsh-science 版本的检索运行时还没消费它 —— 不是这里没存进去。",
       "sources.fromEnv": "来自环境变量 ",
       "sources.hasCredential": "有凭据",
       "sources.heading": "科研 / 文献 / 检索 API",
       "sources.kindEmail": "邮箱",
+      "sources.kindKey": "Key",
       "sources.kindNone": "免填",
       "sources.missingCredential": "缺凭据",
       "sources.noCredential": "无需凭据",
       "sources.notConfigured": "未配置",
+      "sources.noteDefault": "密钥只写入本机 science/config.json。",
       "sources.pasteKey": "粘贴 key 后保存",
       "sources.savedAt": "已保存 {id} {at}",
       "sources.test": "测试",
+      "sources.verifyOk": "通 {ms}ms",
       "sources.wired.declared": "已保存·工具侧尚未读取",
       "sources.wired.none": "免凭据",
       "sources.wired.runtime": "已接入工具",
@@ -208,6 +348,7 @@ window.__ModuleLoader__.load({
       "stages.colSeverity": "等级",
       "stages.colStatus": "状态",
       "stages.gates": "阶段门",
+      "stages.incomplete": "未完成",
       "stages.noGates": "这个阶段没有门。",
       "stages.noProject": "还没有课题，先在工作台建一个。",
       "stages.summary": "阻塞 {blocking} · 警告 {warnings} · 未留记录 {skipped} · 自查 {manual}",
@@ -232,9 +373,11 @@ window.__ModuleLoader__.load({
       "wizard.field.question": "研究问题",
       "wizard.field.subjects": "可招到的样本",
       "wizard.fill": "写进输入框",
-      "wizard.hint.question": "一句话写清：在什么对象里，什么相比什么，影响什么，观察多久。",
+      "wizard.hint": "先把已知的说清楚；留空比编一个更有用。最后会生成一条给科研助理的任务书。",
+      "wizard.hintField.question": "一句话写清：在什么对象里，什么相比什么，影响什么，观察多久。",
       "wizard.mandate.ask": "请先用 science_requirement_brief 的 draft 把它结构化成需求书，把缺口列给我；我补齐后再 commit 建课题。",
       "wizard.mandate.intro": "我要开一个新课题，先把需求说清楚：",
+      "wizard.mandate.line": "- {label}：{value}",
       "wizard.needQuestion": "至少填「研究问题」才能生成任务书。",
       "wizard.open": "科研需求",
       "wizard.openHint": "先花两分钟说清要研究什么，再开工",
@@ -283,7 +426,9 @@ window.__ModuleLoader__.load({
       "auth.role": "Role",
       "auth.settings": "Account",
       "auth.stateMismatch": "This sign-in attempt is no longer valid. Please start again.",
+      "auth.timeout": "The authorization window did not return. Try again, or check whether the browser blocked the popup.",
       "auth.unreachable": "Could not reach the account service. Check your connection or whether the instance is still running.",
+      "auth.unreachableTitle": "Cannot reach the account service",
       "auth.updatedAt": "Updated",
       "auth.waiting": "Waiting for approval on deepscient.com… this will continue automatically.",
       "auth.website": "Open deepscient.com (sign up · balance · top-up)",
@@ -327,6 +472,7 @@ window.__ModuleLoader__.load({
       "billing.statTotal": "Total tokens",
       "billing.statTotalHint": "{n} model replies",
       "billing.title": "Token billing",
+      "brand.tagline": "Research",
       "common.cancel": "Cancel",
       "common.copied": "Copied",
       "common.copy": "Copy",
@@ -335,7 +481,9 @@ window.__ModuleLoader__.load({
       "common.loadFailed": "Could not load data",
       "common.loading": "Loading…",
       "common.no": "No",
+      "common.notReady": "Not ready",
       "common.refresh": "Refresh",
+      "common.refreshing": "Refreshing…",
       "common.retry": "Retry",
       "common.save": "Save",
       "common.yes": "Yes",
@@ -345,8 +493,78 @@ window.__ModuleLoader__.load({
       "gate.status.pass": "Passed",
       "gate.status.skip": "Not recorded",
       "gate.status.unknown": "Unknown",
+      "guide.aria": "DeepScient onboarding guide",
+      "guide.check.broken": " — failed to activate: {reason}",
+      "guide.check.dataRoot": "Data root: {path}",
+      "guide.check.intro": "First make sure the whole stack is actually up. If the five items below are all right, you can continue.",
+      "guide.check.keyMissing": "not configured (Settings → Model)",
+      "guide.check.modeBundled": "read from package",
+      "guide.check.modeRuntime": "runtime",
+      "guide.check.model": "Model: {model} — key {key}",
+      "guide.check.notRead": "not read",
+      "guide.check.preset": "Preset: {preset}",
+      "guide.check.presetValue": "{name} ({id}){broken}",
+      "guide.check.product": "Product: {product} {version}",
+      "guide.check.science": "Research library: {state}",
+      "guide.check.settingsPath": "Preferences file: {path}",
+      "guide.check.stateLoaded": "Loaded ({mode})",
+      "guide.check.stateUnavailable": "Not ready — {reason}",
+      "guide.check.waiting": "waiting to read",
+      "guide.model.foot": "Each provider key is the billing entity; the bill lives in the relay, and this page only reports on the same basis.",
+      "guide.model.goBilling": "See billing and key attribution",
+      "guide.model.intro": "The model and its key decide what you can do and who gets billed.",
+      "guide.model.noKeys": "No credential source found yet. The launcher injects keys through environment variables, or fill them in under Settings → Model.",
+      "guide.next": "Next",
+      "guide.prev": "Back",
+      "guide.project.create": "Create this project",
+      "guide.project.created": "Created: {title}",
+      "guide.project.createdMeta": "id {id}; progress {progress}",
+      "guide.project.domainPh": "Field / domain (optional, e.g. cognitive neuroscience)",
+      "guide.project.intro": "A project = one story you can finish. Give it a title first; the field and target journal can change later.",
+      "guide.project.journalPh": "Target journal (optional, e.g. Nature Human Behaviour)",
+      "guide.project.titlePh": "Title, e.g. dose-response of sleep duration on working memory",
+      "guide.rules.intro": "Twelve workflows and 55 gates. Remember three things and you can start:",
+      "guide.rules.notice": "You can reopen this guide anytime: Settings → Research Workbench → Reopen the onboarding guide.",
+      "guide.rules.one": "Every claim must be pointable in the source — an assertion without a citation is a blocker, not close enough.",
+      "guide.rules.three": "A stage not passing means a gate is closed, not that the model is lazy: open Stages to see which gate it is, and it will tell you what to add.",
+      "guide.rules.two": "Data, code, figures and environment fingerprints are all recorded; a rerun must reproduce the same figure.",
+      "guide.session.copied": "Copied",
+      "guide.session.copy": "Copy",
+      "guide.session.errorCreate": "Failed to create the project",
+      "guide.session.errorGeneric": "Session did not start: the UI only says new session failed; the real reason is in Settings → Research → preset diagnostics (/presets/inspect)",
+      "guide.session.errorKeyMissing": "Session did not start: the model key is not configured (Settings → Model). Configure it and click again.",
+      "guide.session.errorNoPath": "There is no existing workspace and no project directory, so a workspace cannot be created",
+      "guide.session.errorNoUi": "This shell has no uiWorkspace service, so a session cannot be started",
+      "guide.session.errorNoWorkspaceId": "Workspace creation returned no id ({path})",
+      "guide.session.intro": "Pick one and click Start a session with this: the session is created with the prompt already in the input — press Enter to run.",
+      "guide.session.open": "Start a session with this",
+      "guide.session.preset": "Preset: {name}",
+      "guide.session.presetFailed": "Preset \"{name}\" failed to activate: {reason}",
+      "guide.session.presetPending": "Preset: waiting for the registry",
+      "guide.session.started": "Started",
+      "guide.session.startedDetail": "Session started and the prompt is in the input box; press Enter to run.",
+      "guide.session.starting": "Starting session…",
+      "guide.skip": "Skip guide",
+      "guide.sources.foot": "After saving, close the panel to return here, then click Next.",
+      "guide.sources.go": "Fill in API keys",
+      "guide.sources.intro": "Literature / search APIs: {ready}/{total} configured. All are optional — the public pool works without them.",
+      "guide.sources.keys": "Semantic Scholar / CORE / Zotero / Exa: more reliable with a key, usable without one.",
+      "guide.sources.polite": "OpenAlex / Unpaywall / Crossref: just add an email to join the polite pool — the three easiest ones.",
+      "guide.sources.secrets": "Keys are written only to the local science/config.json — never uploaded or echoed back.",
+      "guide.start": "Start research",
+      "guide.stepProgress": "{current} / {total}",
+      "guide.template.hypothesis.tag": "Hypothesis and sample size",
+      "guide.template.hypothesis.text": "Turn \"<phenomenon>\" into a testable hypothesis: H1 must state the independent variable, dependent variable and expected direction; use science_exp_plan for the smallest reproducible sample size and procedure, science_statistics_choice for the primary model, and list the preregistration points.",
+      "guide.template.map.tag": "Literature map",
+      "guide.template.map.text": "Build a literature map around \"<research question>\": use science_lit_query to pull the 15 core papers and science_gap_matrix to mark uncovered gaps; every conclusion must give its source, evidence strength, and reproducibility.",
+      "guide.template.topic.tag": "Topic framing",
+      "guide.template.topic.text": "I am working on \"<direction>\". Start with science_frontier_scan to map frontier anchors from the last two years, then use science_novelty to score three candidate topics for novelty, and finally tell me only which one is worth a paper and why.",
+      "guide.title": "Start your first project",
       "meta.description": "A gated path from question to submission — search, power, cleaning, statistics, figures, writing, internal review — plus a live project panel in the sidebar.",
       "meta.title": "DeepScient research workbench",
+      "net.notJson": "The response was not JSON ({status})",
+      "net.notJsonBody": "The response was not JSON ({status}): {body}",
+      "net.unreachable": "Cannot reach the local service; make sure the instance is still running.",
       "overview.artifacts": "Artifacts",
       "overview.counts": "{papers} papers · {analyses} analyses · {figures} figures",
       "overview.current": "Current stage",
@@ -370,6 +588,16 @@ window.__ModuleLoader__.load({
       "panel.stages": "Stages",
       "panel.tools": "Tools",
       "panel.workbench": "Workbench",
+      "pill.title": "Today's token usage only; amounts and details live on the Billing page, with the relay as source of truth.",
+      "pill.tokens": "Today {n} tokens",
+      "reason.blocking": "Blocking",
+      "reason.blockingWith": "{n} blocking",
+      "reason.selfCheck": "Self-check",
+      "reason.todo": "To do",
+      "reason.unrecorded": "Unrecorded",
+      "reason.unrecordedWith": "{n} unrecorded",
+      "reason.warning": "Warning",
+      "reason.warningWith": "{n} warning",
       "relay.account": "My quota",
       "relay.apiBase": "Model API base",
       "relay.apiKey": "API key (masked)",
@@ -413,15 +641,65 @@ window.__ModuleLoader__.load({
       "relay.username": "Relay username",
       "relay.webhook": "Payment callback URL",
       "relay.webhookHint": "Register this as a public HTTPS URL with the relay; expose this machine through a reverse proxy or tunnel first.",
-      "reason.blocking": "Blocking",
-      "reason.blockingWith": "{n} blocking",
-      "reason.selfCheck": "Self-check",
-      "reason.todo": "To do",
-      "reason.unrecorded": "Unrecorded",
-      "reason.unrecordedWith": "{n} unrecorded",
-      "reason.warning": "Warning",
-      "reason.warningWith": "{n} warning",
-      "settings": "Research",
+      "settings.addRow": "Add a row",
+      "settings.alphaError": "α must be between 0 and 1 (excluding 0).",
+      "settings.billingHint": "Rates are needed before the Billing page and the bottom pill can show an approximate amount. Cached and uncached input are priced separately: cache is usually an order of magnitude cheaper, and mixing them inflates the total.",
+      "settings.billingTitle": "Billing rates (price per million tokens)",
+      "settings.colCache": "Cache hit/M",
+      "settings.colInput": "Input/M",
+      "settings.colOutput": "Output/M",
+      "settings.emptyPrice": "No rate rows yet.",
+      "settings.field.alpha": "Significance level α",
+      "settings.field.billingBaseUrl": "New API relay URL",
+      "settings.field.billingConsoleUrl": "Billing / balance page",
+      "settings.field.billingCurrency": "Currency",
+      "settings.field.billingProvider": "Billing source",
+      "settings.field.correction": "Multiple comparison correction",
+      "settings.field.defaultDiscipline": "Default discipline pack",
+      "settings.field.defaultJournal": "Default target journal",
+      "settings.field.effectSize": "Default effect size",
+      "settings.field.evidenceStrictness": "Evidence chain strictness",
+      "settings.field.figureUnits": "Figure units",
+      "settings.field.locale": "Interface language",
+      "settings.field.networkForSearch": "Allow network search",
+      "settings.goSources": "Fill in literature / search APIs",
+      "settings.guideHint": "The guide appears automatically the first time a browser opens this app; reopening it shows it again right away.",
+      "settings.guideTitle": "Onboarding and integrations",
+      "settings.introPrefix": "These are preferences, not capability switches. Changes apply immediately and are stored in the data root of this instance (",
+      "settings.introSuffix": ").",
+      "settings.ph.billingBaseUrl": "https://<your New API relay URL>",
+      "settings.ph.billingConsoleUrl": "https://<relay>/panel/token",
+      "settings.ph.model": "Model name or *",
+      "settings.ph.provider": "tree or *",
+      "settings.presetBroken": " (failed to activate)",
+      "settings.presetCurrent": "Current presets: {list}",
+      "settings.presetDefault": " (default)",
+      "settings.presetFailed": " — failed to activate: {reason}",
+      "settings.presetInspect": "Show the status of each plugin fiber",
+      "settings.presetNone": "Could not read the preset registry yet.",
+      "settings.presetTitle": "Preset diagnostics",
+      "settings.presetUnavailable": "Could not read: {reason}",
+      "settings.presetUnknown": "unknown reason",
+      "settings.priceRowInvalid": "One rate row has only provider / model and no price; it will be dropped when saved.",
+      "settings.rejected": "Rejected: {keys}",
+      "settings.remove": "Delete",
+      "settings.reopenDone": "Onboarding reopened: switch back to the chat or refresh the page to see it.",
+      "settings.reopenGuide": "Reopen the onboarding guide",
+      "settings.restore": "Revert",
+      "settings.savedAt": "Saved {at}",
+      "settings.skillsCatalog": "The catalog adds about {tokens} tokens to the system prompt (descriptions truncated at 260 characters). The host-level view lists {host} — sessions run in the research preset, so expected in session is authoritative.",
+      "settings.skillsCheck": "Check installed skills",
+      "settings.skillsCheckBad": "Issues found: {n}",
+      "settings.skillsCheckOk": "All passed: {passed}/{checked}, manifest {pinned}/{rows} pinned",
+      "settings.skillsCounts": "Bundled {bundled} · vendor {vendor} · own {user} · expected in session {session}",
+      "settings.skillsFailLine": "{name}: {reason}",
+      "settings.skillsHint": "Bundled research skills plus third-party vendor skills. Vendor skills are installed from the manifest by scripts/install-skills.mjs into $DSH_HOME/science/skills-vendor.",
+      "settings.skillsNoVendor": "No vendor skills yet: run node scripts/install-skills.mjs --apply",
+      "settings.skillsRoot": "Root: {path}",
+      "settings.skillsShow": "Show installed skills",
+      "settings.skillsTitle": "Skill catalog",
+      "settings.title": "Research",
+      "settings.wildcard": "An asterisk in provider / model means wildcard.",
       "sources.colCredential": "Credential",
       "sources.colFill": "Set value",
       "sources.colSource": "Source",
@@ -429,18 +707,23 @@ window.__ModuleLoader__.load({
       "sources.colValue": "Current value",
       "sources.colVerify": "Verify",
       "sources.configured": "Configured",
+      "sources.count": "Configured {ready}/{total}. Saving an empty value clears it.",
       "sources.failed": "Failed",
+      "sources.foot": "Fields marked \"saved · runtime not reading yet\" can be saved and tested on this page, but the current dsh-science retrieval runtime does not consume them yet — this is not a save failure.",
       "sources.fromEnv": "From environment variable ",
       "sources.hasCredential": "Has credential",
       "sources.heading": "Research / literature / search APIs",
       "sources.kindEmail": "Email",
+      "sources.kindKey": "Key",
       "sources.kindNone": "None needed",
       "sources.missingCredential": "Missing credential",
       "sources.noCredential": "No credential required",
       "sources.notConfigured": "Not configured",
+      "sources.noteDefault": "Credentials are written only to the local science/config.json.",
       "sources.pasteKey": "Paste a key, then save",
       "sources.savedAt": "Saved {id} at {at}",
       "sources.test": "Test",
+      "sources.verifyOk": "OK {ms}ms",
       "sources.wired.declared": "Saved; tools have not read it yet",
       "sources.wired.none": "No credential needed",
       "sources.wired.runtime": "Wired to tools",
@@ -450,6 +733,7 @@ window.__ModuleLoader__.load({
       "stages.colSeverity": "Severity",
       "stages.colStatus": "Status",
       "stages.gates": "Stage gates",
+      "stages.incomplete": "Incomplete",
       "stages.noGates": "No gates for this stage.",
       "stages.noProject": "No project yet — create one in the Workbench.",
       "stages.summary": "{blocking} blocking · {warnings} warnings · {skipped} unrecorded · {manual} self-check",
@@ -474,9 +758,11 @@ window.__ModuleLoader__.load({
       "wizard.field.question": "Research question",
       "wizard.field.subjects": "Sample you can reach",
       "wizard.fill": "Write into the input",
-      "wizard.hint.question": "One sentence: in which population, what compared with what, affecting what, over how long.",
+      "wizard.hint": "Write down what you know; leaving a field blank is better than inventing. This produces a brief for your research assistant.",
+      "wizard.hintField.question": "One sentence: in which population, what compared with what, affecting what, over how long.",
       "wizard.mandate.ask": "Start with action draft of science_requirement_brief to structure this into a requirement brief and show me the gaps; I will fill them and then commit to open the project.",
       "wizard.mandate.intro": "I am opening a new project. Here is the need, stated up front:",
+      "wizard.mandate.line": "- {label}: {value}",
       "wizard.needQuestion": "The research question is the one field required to build a mandate.",
       "wizard.open": "Research brief",
       "wizard.openHint": "Spend two minutes saying what you want to study, before any work starts",
@@ -501,8 +787,23 @@ window.__ModuleLoader__.load({
        没有会话语义，也不需要经过 connection 的鉴权握手；一个同源 JSON 口就够，
        而且验证脚本可以直接 curl 它。                                          */
 
+    /* 401 是全局信号：任何接口发现会话过期，登录门都要重新探一次，而不是让各页各自报错。 */
+    const unauthorizedState = { at: 0 }
+    function notifyUnauthorized() {
+      const now = Date.now()
+      if (now - unauthorizedState.at < 1000) return
+      unauthorizedState.at = now
+      try { window.dispatchEvent(new CustomEvent('deepscient:unauthorized')) } catch {}
+    }
+
     async function getJson(path) {
-      const res = await fetch(`${API}${withLocale(path)}`, { credentials: 'same-origin', headers: { accept: 'application/json' } })
+      let res
+      try {
+        res = await fetch(`${API}${withLocale(path)}`, { credentials: 'same-origin', headers: { accept: 'application/json' } })
+      } catch {
+        throw new Error(tf('net.unreachable'))
+      }
+      if (res.status === 401) notifyUnauthorized()
       const text = await res.text()
       let body = null
       try {
@@ -590,12 +891,18 @@ window.__ModuleLoader__.load({
 
     /** 写端点：PUT / POST / DELETE 都用它，错误统一成 throw，交给调用方显示。 */
     async function sendJson(method, path, body) {
-      const res = await fetch(`${API}${path}`, {
-        method,
-        credentials: 'same-origin',
-        headers: { accept: 'application/json', 'content-type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      })
+      let res
+      try {
+        res = await fetch(`${API}${path}`, {
+          method,
+          credentials: 'same-origin',
+          headers: { accept: 'application/json', 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        })
+      } catch {
+        throw new Error(tf('net.unreachable'))
+      }
+      if (res.status === 401) notifyUnauthorized()
       const text = await res.text()
       let payload = null
       try {
@@ -1996,12 +2303,18 @@ window.__ModuleLoader__.load({
 
     /** 这几个端点要带着 cookie，且要能读出服务端说的错误原因。 */
     async function authCall(path, options) {
-      const response = await fetch('/deepscient/auth' + path, {
-        method: options?.method ?? 'GET',
-        credentials: 'same-origin',
-        headers: options?.body ? { 'content-type': 'application/json; charset=utf-8' } : undefined,
-        body: options?.body ? JSON.stringify(options.body) : undefined,
-      })
+      let response
+      try {
+        response = await fetch('/deepscient/auth' + path, {
+          method: options?.method ?? 'GET',
+          credentials: 'same-origin',
+          headers: options?.body ? { 'content-type': 'application/json; charset=utf-8' } : undefined,
+          body: options?.body ? JSON.stringify(options.body) : undefined,
+        })
+      } catch {
+        // 网络层失败不是「没登录」：调用方要靠 networkError 区分，别把人当成匿名。
+        return { ok: false, status: 0, data: null, networkError: true }
+      }
       let data = null
       try { data = await response.json() } catch { data = null }
       return { ok: response.ok, status: response.status, data }
@@ -2035,27 +2348,33 @@ window.__ModuleLoader__.load({
         const [error, setError] = useState('')
         useLocaleRevision()
 
-        useEffect(() => {
-          let alive = true
+        // 只读状态、只写 state：探针没有闭包依赖，可以安全地给事件与重试按钮复用。
+        const probe = () => {
           authCall('/state').then(
             (result) => {
-              if (!alive) return
-              if (!result.ok || !result.data) {
-                setState({ phase: 'anon' })
+              if (result.networkError || !result.ok || !result.data) {
+                setState({ phase: 'unreachable' })
                 setError(tf('auth.unreachable'))
                 return
               }
               authSite.site = result.data.site ?? null
               setState({ phase: result.data.loggedIn ? 'authed' : 'anon' })
-              if (!result.data.loggedIn) setError(authErrorText(result.data.error))
+              setError(result.data.loggedIn ? '' : authErrorText(result.data.error))
             },
             () => {
-              if (!alive) return
-              setState({ phase: 'anon' })
+              setState({ phase: 'unreachable' })
               setError(tf('auth.unreachable'))
             },
           )
-          return () => { alive = false }
+        }
+
+        useEffect(() => { probe() }, [])
+
+        // 任何接口撞上 401 都从这里回到探针：会话过期时登录门自己亮出来。
+        useEffect(() => {
+          const onUnauthorized = () => probe()
+          window.addEventListener('deepscient:unauthorized', onUnauthorized)
+          return () => window.removeEventListener('deepscient:unauthorized', onUnauthorized)
         }, [])
 
         // 授权在另一个窗口完成；这个页面自己发现登录态变了就重载，让 mux 用新身份重连。
@@ -2064,9 +2383,12 @@ window.__ModuleLoader__.load({
           const timer = setInterval(() => {
             authCall('/state').then((result) => {
               if (result.ok && result.data?.loggedIn) window.location.reload()
-            })
+            }, () => {})
           }, 2000)
-          const stop = setTimeout(() => setWaiting(false), 5 * 60 * 1000)
+          const stop = setTimeout(() => {
+            setWaiting(false)
+            setError(tf('auth.timeout'))
+          }, 5 * 60 * 1000)
           return () => { clearInterval(timer); clearTimeout(stop) }
         }, [waiting])
 
@@ -2074,38 +2396,69 @@ window.__ModuleLoader__.load({
           if (busy || waiting) return
           setBusy(true)
           setError('')
-          const result = await authCall('/authorize', { method: 'POST' })
-          setBusy(false)
-          if (!result.ok || !result.data?.authorizeUrl) {
-            setError(result.data?.message || tf('auth.failed'))
-            return
+          try {
+            const result = await authCall('/authorize', { method: 'POST' })
+            if (result.networkError) {
+              setError(tf('auth.unreachable'))
+              return
+            }
+            if (!result.ok || !result.data?.authorizeUrl) {
+              setError(result.data?.message || tf('auth.failed'))
+              return
+            }
+            const opened = window.open(result.data.authorizeUrl, '_blank', 'noopener,noreferrer')
+            // 弹窗被拦时退回同页跳转：官网回来会落在 /auth/callback，那一页再把人送回来。
+            if (!opened) {
+              window.location.href = result.data.authorizeUrl
+              return
+            }
+            setWaiting(true)
+          } catch {
+            setError(tf('auth.unreachable'))
+          } finally {
+            setBusy(false)
           }
-          const opened = window.open(result.data.authorizeUrl, '_blank', 'noopener,noreferrer')
-          // 弹窗被拦时退回同页跳转：官网回来会落在 /auth/callback，那一页再把人送回来。
-          if (!opened) {
-            window.location.href = result.data.authorizeUrl
-            return
-          }
-          setWaiting(true)
         }
 
         if (state.phase === 'loading') return null
         if (state.phase === 'authed') return null
 
+        // 连不上服务时不摆登录按钮：授权也没法完成，先修连接。
+        if (state.phase === 'unreachable') {
+          return h('div', { style: AU.overlay, 'data-deepscient-auth': 'gate' },
+            h('div', {
+              style: AU.card, role: 'dialog', 'aria-modal': 'true', 'aria-label': tf('auth.unreachableTitle'),
+            },
+              h('div', { style: AU.brand }, 'DeepScient'),
+              h('div', { style: AU.title }, tf('auth.unreachableTitle')),
+              h('div', { style: AU.intro }, tf('auth.unreachable')),
+              h('button', {
+                type: 'button',
+                className: 'ds-btn ds-btn--primary',
+                style: { width: '100%' },
+                onClick: probe,
+              }, tf('common.retry')),
+            ),
+          )
+        }
+
         const site = authSite.site
         return h('div', { style: AU.overlay, 'data-deepscient-auth': 'gate' },
-          h('div', { style: AU.card },
+          h('div', {
+            style: AU.card, role: 'dialog', 'aria-modal': 'true', 'aria-label': tf('auth.gateTitle'),
+          },
             h('div', { style: AU.brand }, 'DeepScient'),
             h('div', { style: AU.title }, tf('auth.gateTitle')),
             h('div', { style: AU.intro }, tf('auth.gateIntro')),
             h('button', {
               type: 'button',
-              style: busy || waiting ? { ...AU.submit, ...AU.submitOff } : AU.submit,
+              className: 'ds-btn ds-btn--primary',
+              style: busy || waiting ? { width: '100%', ...AU.submitOff } : { width: '100%' },
               disabled: busy || waiting,
               onClick: login,
             }, busy ? tf('auth.opening') : tf('auth.loginWith')),
             waiting ? h('div', { style: AU.hint }, tf('auth.waiting')) : null,
-            error ? h('div', { style: AU.error }, error) : null,
+            error ? h('div', { style: AU.error, role: 'alert' }, error) : null,
             h('div', { style: AU.hint }, tf('auth.gateHint')),
             site?.base
               ? h('a', {
@@ -2122,41 +2475,65 @@ window.__ModuleLoader__.load({
       return function AccountSection() {
         const [state, setState] = useState({ phase: 'loading', data: null })
         const [busy, setBusy] = useState(false)
-        const [note, setNote] = useState('')
+        const [note, setNote] = useState(null)
         useLocaleRevision()
 
-        const load = () => authCall('/state').then(
-          (result) => {
-            const data = result.ok ? result.data : null
-            authSite.site = data?.site ?? authSite.site
-            setState({ phase: 'ready', data })
-          },
-          () => setState({ phase: 'ready', data: null }),
-        )
+        const load = async () => {
+          const result = await authCall('/state')
+          if (result.networkError || !result.ok) {
+            setState({ phase: 'error', data: null, error: tf('auth.unreachable') })
+            return
+          }
+          const data = result.data
+          authSite.site = data?.site ?? authSite.site
+          setState({ phase: 'ready', data })
+        }
 
         useEffect(() => { load() }, [])
 
         const refresh = async () => {
           setBusy(true)
-          setNote('')
-          const result = await authCall('/refresh', { method: 'POST' })
-          setBusy(false)
-          if (result.ok) {
-            setState({ phase: 'ready', data: result.data })
-            authSite.site = result.data?.site ?? authSite.site
-            setNote(tf('auth.refreshed'))
-            return
+          setNote(null)
+          try {
+            const result = await authCall('/refresh', { method: 'POST' })
+            if (result.networkError) {
+              setNote({ text: tf('auth.unreachable'), tone: 'alert' })
+              return
+            }
+            if (result.ok) {
+              setState({ phase: 'ready', data: result.data })
+              authSite.site = result.data?.site ?? authSite.site
+              setNote({ text: tf('auth.refreshed'), tone: 'status' })
+              return
+            }
+            setNote({
+              text: result.data?.error === 'unauthorized' ? tf('auth.expired') : tf('auth.failed'),
+              tone: 'alert',
+            })
+          } catch {
+            setNote({ text: tf('auth.unreachable'), tone: 'alert' })
+          } finally {
+            setBusy(false)
           }
-          setNote(result.data?.error === 'unauthorized' ? tf('auth.expired') : tf('auth.failed'))
         }
 
         const logout = async () => {
-          await authCall('/logout', { method: 'POST' })
+          try {
+            const result = await authCall('/logout', { method: 'POST' })
+            if (result.networkError || !result.ok) {
+              setNote({ text: tf('auth.failed'), tone: 'alert' })
+              return
+            }
+          } catch {
+            setNote({ text: tf('auth.failed'), tone: 'alert' })
+            return
+          }
           // 整页重载最干净：内存里的会话态、课题缓存都不该留着。
           window.location.reload()
         }
 
         if (state.phase === 'loading') return h('div', { style: S.sub }, tf('auth.loading'))
+        if (state.phase === 'error') return h(ErrorBox, { error: state.error, onRetry: load })
         const data = state.data
         if (!data?.loggedIn || !data.user) return h('div', { style: S.sub }, tf('auth.notLoggedIn'))
 
@@ -2166,21 +2543,27 @@ window.__ModuleLoader__.load({
           h('div', { style: S.title }, user.username || user.email || '—'),
           h('div', { style: S.sub }, tf('auth.email') + ': ' + (user.email || '—') + ' · ' + tf('auth.role') + ': ' + (user.role || 'user')),
           h('div', { style: { ...S.row, marginTop: '16px' } },
-            h('div', { style: S.label }, tf('auth.balanceLabel')),
-            h('div', { style: { fontSize: '22px', fontWeight: 650 } }, balanceText(data.balance)),
+            h('div', { className: 'ds-sub' }, tf('auth.balanceLabel')),
+            h('div', { className: 'ds-num', style: { fontSize: '22px', fontWeight: 650 } }, balanceText(data.balance)),
           ),
           data.expiresAt ? h('div', { style: S.sub }, tf('auth.expiresAt') + ' ' + dateText(data.expiresAt)) : null,
           h('div', { style: { display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' } },
-            h('button', { type: 'button', style: S.button, disabled: busy, onClick: refresh }, busy ? tf('auth.refreshing') : tf('auth.refresh')),
+            h('button', { type: 'button', className: 'ds-btn', disabled: busy, onClick: refresh }, busy ? tf('auth.refreshing') : tf('auth.refresh')),
             site?.base
               ? h('button', {
-                  type: 'button', style: S.button,
+                  type: 'button', className: 'ds-btn',
                   onClick: () => window.open(site.base, '_blank', 'noopener,noreferrer'),
                 }, tf('auth.manage'))
               : null,
-            h('button', { type: 'button', style: { ...S.button, borderColor: '#b3261e', color: '#b3261e' }, onClick: logout }, tf('auth.logout')),
+            h('button', { type: 'button', className: 'ds-btn ds-btn--danger', onClick: logout }, tf('auth.logout')),
           ),
-          note ? h('div', { style: { ...S.sub, marginTop: '8px' } }, note) : null,
+          note?.text
+            ? h('div', {
+                className: 'ds-sub',
+                role: note.tone === 'alert' ? 'alert' : 'status',
+                style: { marginTop: '8px' },
+              }, note.text)
+            : null,
           data.fetchedAt
             ? h('div', { style: { ...S.sub, marginTop: '6px' } }, tf('auth.updatedAt') + ' ' + dateTimeText(data.fetchedAt))
             : null,
@@ -2278,6 +2661,9 @@ window.__ModuleLoader__.load({
         const [open, setOpen] = useState(accountMenu.open)
         const [user, setUser] = useState(accountBadge.user)
         const [note, setNote] = useState('')
+        const panelRef = useRef(null)
+        const closeRef = useRef(null)
+        const wasOpen = useRef(false)
         useLocaleRevision()
 
         useEffect(() => {
@@ -2292,9 +2678,30 @@ window.__ModuleLoader__.load({
           }
         }, [])
 
+        // 打开时把焦点交给关闭键，关上时还回侧栏头像：键盘用户不会丢位置。
+        useEffect(() => {
+          if (open) {
+            wasOpen.current = true
+            closeRef.current?.focus?.()
+            return
+          }
+          if (!wasOpen.current) return
+          wasOpen.current = false
+          document.querySelector('[data-deepscient-account="entry"]')?.focus?.()
+        }, [open])
+
         const close = () => { setNote(''); setAccountMenu(false) }
         const logout = async () => {
-          await authCall('/logout', { method: 'POST' })
+          try {
+            const result = await authCall('/logout', { method: 'POST' })
+            if (result.networkError || !result.ok) {
+              setNote(tf('auth.failed'))
+              return
+            }
+          } catch {
+            setNote(tf('auth.failed'))
+            return
+          }
           // 整页重载最干净：内存里的会话态与课题缓存都不该留着。
           window.location.reload()
         }
@@ -2314,32 +2721,38 @@ window.__ModuleLoader__.load({
 
         if (!open || !user) return null
 
+        const actionStyle = { ...AE.action, width: '100%', justifyContent: 'flex-start' }
         return h('div', {
-          style: AE.backdrop, 'data-deepscient-auth': 'menu',
-          onMouseDown: close, onClick: close,
+          style: AE.backdrop, 'data-deepscient-auth': 'menu', onClick: close,
         },
           h('div', {
+            ref: panelRef,
             style: AE.panel,
+            role: 'dialog', 'aria-modal': 'true', 'aria-label': tf('auth.accountMenu'),
             onMouseDown: (event) => event.stopPropagation(),
             onClick: (event) => event.stopPropagation(),
           },
             h('button', {
-              type: 'button', style: AE.close, 'aria-label': tf('auth.close'),
-              onClick: close,
+              type: 'button', ref: closeRef, className: 'ds-iconbtn', style: AE.close,
+              'aria-label': tf('auth.close'), onClick: close,
             }, '×'),
             h('div', { style: AE.panelName }, user.username || user.email || ''),
             h('div', { style: AE.panelSub }, (user.email || '—') + ' · ' + balanceText(accountBadge.balance)),
             h('div', { style: AE.actions },
-              h('button', { type: 'button', style: AE.action, onClick: toSettings }, tf('auth.openSettings')),
+              h('button', {
+                type: 'button', className: 'ds-btn ds-btn--ghost', style: actionStyle, onClick: toSettings,
+              }, tf('auth.openSettings')),
               authSite.site?.base
                 ? h('button', {
-                    type: 'button', style: AE.action,
+                    type: 'button', className: 'ds-btn ds-btn--ghost', style: actionStyle,
                     onClick: () => window.open(authSite.site.base, '_blank', 'noopener,noreferrer'),
                   }, tf('auth.manage'))
                 : null,
-              h('button', { type: 'button', style: { ...AE.action, ...AE.danger }, onClick: logout }, tf('auth.logout')),
+              h('button', {
+                type: 'button', className: 'ds-btn ds-btn--danger', style: actionStyle, onClick: logout,
+              }, tf('auth.logout')),
             ),
-            note ? h('div', { style: AE.note }, note) : null,
+            note ? h('div', { style: AE.note, role: 'alert' }, note) : null,
           ),
         )
       }
@@ -2371,17 +2784,7 @@ window.__ModuleLoader__.load({
       row: { marginBottom: '10px' },
       label: { display: 'block', fontSize: V.textSm, fontWeight: 500, marginBottom: '3px' },
       sub: { fontSize: V.textXs, opacity: 0.6, marginBottom: '4px', lineHeight: 1.45 },
-      input: {
-        width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: V.textSm,
-        borderRadius: '7px', border: `1px solid ${V.border}`,
-        background: 'transparent', color: 'inherit', fontFamily: 'inherit', lineHeight: 1.5,
-      },
       foot: { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' },
-      btn: {
-        padding: '6px 12px', borderRadius: '8px', fontSize: V.textSm, cursor: 'pointer',
-        border: `1px solid ${V.border}`, background: 'transparent', color: 'inherit',
-      },
-      btnPrimary: { borderColor: V.brand, background: V.brand, color: V.onBrand },
       btnOff: { opacity: 0.4, cursor: 'not-allowed' },
     }
 
@@ -2404,6 +2807,9 @@ window.__ModuleLoader__.load({
         useLocaleRevision()
         const [open, setOpen] = useState(false)
         const [form, setForm] = useState({})
+        const [note, setNote] = useState('')
+        const wrapRef = useRef(null)
+        const panelRef = useRef(null)
         const onActiveChange = props?.onActiveChange
         const inputActions = props?.inputActions
 
@@ -2411,6 +2817,31 @@ window.__ModuleLoader__.load({
         useEffect(() => {
           onActiveChange?.(open)
           return () => { if (open) onActiveChange?.(false) }
+        }, [open])
+
+        // 每次开合都清掉上一条提示，免得下次打开还挂着「没有可写入的输入框」。
+        useEffect(() => {
+          setNote('')
+          if (open) panelRef.current?.focus?.()
+        }, [open])
+
+        // Esc 关面板；点到 wrap 外面也关。用 mousedown 而不是 click：
+        // 面板里的按钮一按就被卸载，click 再也冒不到 document 上。
+        useEffect(() => {
+          if (!open) return undefined
+          if (typeof document === 'undefined') return undefined
+          const onKey = (event) => { if (event.key === 'Escape') setOpen(false) }
+          const onDown = (event) => {
+            const wrap = wrapRef.current
+            if (!wrap || typeof wrap.contains !== 'function') return
+            if (!wrap.contains(event.target)) setOpen(false)
+          }
+          document.addEventListener('keydown', onKey)
+          document.addEventListener('mousedown', onDown)
+          return () => {
+            document.removeEventListener('keydown', onKey)
+            document.removeEventListener('mousedown', onDown)
+          }
         }, [open])
 
         const set = (id) => (event) => setForm((prev) => ({ ...prev, [id]: event.target.value }))
@@ -2429,58 +2860,83 @@ window.__ModuleLoader__.load({
 
         const filled = Boolean(String(form.question ?? '').trim())
 
+        // 写不进去时必须说清楚，且不能顺手关面板：内容还在，用户能自己选中复制。
         const writeDraft = () => {
-          inputActions?.setDraft?.(compose())
+          if (typeof inputActions?.setDraft !== 'function') {
+            setNote(tf('wizard.noTarget'))
+            return
+          }
+          inputActions.setDraft(compose())
           setOpen(false)
         }
         const startNow = () => {
-          if (!inputActions?.setDraft) return
+          if (typeof inputActions?.setDraft !== 'function') {
+            setNote(tf('wizard.noTarget'))
+            return
+          }
           inputActions.setDraft(compose())
           inputActions.submit?.()
           setOpen(false)
         }
 
-        return h('div', { style: WZ.wrap },
+        return h('div', { style: WZ.wrap, ref: wrapRef },
           h('button', {
             type: 'button',
             title: tf('wizard.openHint'),
+            'aria-haspopup': 'dialog',
+            'aria-expanded': open,
+            'aria-controls': 'ds-wizard-panel',
             style: open ? { ...WZ.trigger, ...WZ.triggerOn } : WZ.trigger,
             onClick: () => setOpen((v) => !v),
           }, tf('wizard.open')),
           open
-            ? h('div', { style: WZ.panel },
+            ? h('div', {
+                id: 'ds-wizard-panel',
+                ref: panelRef,
+                role: 'dialog',
+                'aria-label': tf('wizard.title'),
+                tabIndex: -1,
+                style: { ...WZ.panel, maxWidth: 'min(560px, calc(100vw - 24px))' },
+              },
                 h('div', { style: WZ.title }, tf('wizard.title')),
                 h('div', { style: WZ.hint }, tf('wizard.hint')),
                 ...WZ_FIELDS.map((field) => h('div', { key: field.id, style: WZ.row },
-                  h('label', { style: WZ.label }, tf('wizard.field.' + field.id)),
+                  h('label', { style: WZ.label, htmlFor: 'wz-' + field.id }, tf('wizard.field.' + field.id)),
                   field.hint ? h('div', { style: WZ.sub }, tf('wizard.hintField.' + field.id)) : null,
                   field.rows
                     ? h('textarea', {
+                        id: 'wz-' + field.id,
                         rows: field.rows,
-                        style: WZ.input,
+                        className: 'ds-textarea',
+                        style: { width: '100%' },
                         placeholder: tf('wizard.ph.' + field.id),
                         value: form[field.id] ?? '',
                         onChange: set(field.id),
                       })
                     : h('input', {
+                        id: 'wz-' + field.id,
                         type: 'text',
-                        style: WZ.input,
+                        className: 'ds-input',
+                        style: { width: '100%' },
                         placeholder: tf('wizard.ph.' + field.id),
                         value: form[field.id] ?? '',
                         onChange: set(field.id),
                       }),
                 )),
+                note ? h('div', { role: 'alert', style: { ...WZ.sub, color: V.err } }, note) : null,
                 h('div', { style: WZ.foot },
-                  h('button', { type: 'button', style: WZ.btn, onClick: () => setOpen(false) }, tf('wizard.cancel')),
+                  h('button', { type: 'button', className: 'ds-btn ds-btn--ghost', onClick: () => setOpen(false) }, tf('wizard.cancel')),
                   h('button', {
                     type: 'button',
-                    style: filled ? WZ.btn : { ...WZ.btn, ...WZ.btnOff },
+                    className: 'ds-btn',
+                    style: filled ? undefined : WZ.btnOff,
                     disabled: !filled,
                     onClick: writeDraft,
                   }, tf('wizard.fill')),
                   h('button', {
                     type: 'button',
-                    style: filled ? { ...WZ.btn, ...WZ.btnPrimary } : { ...WZ.btn, ...WZ.btnOff },
+                    className: 'ds-btn ds-btn--primary',
+                    style: filled ? undefined : WZ.btnOff,
                     disabled: !filled,
                     onClick: startNow,
                   }, tf('wizard.start')),
@@ -2609,7 +3065,7 @@ window.__ModuleLoader__.load({
       ]
     }
 
-    function guideProjectStep(form, setForm, created, createProject) {
+    function guideProjectStep(form, setForm, created, createProject, creating) {
       const nodes = [
         h('p', { key: 'p', style: { margin: '0 0 8px' } }, tf('guide.project.intro')),
         h('div', { key: 'form', style: { display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 460 } },
@@ -2617,7 +3073,8 @@ window.__ModuleLoader__.load({
           h('input', { style: S.input, placeholder: tf('guide.project.domainPh'), value: form.domain, onChange: (e) => setForm({ ...form, domain: e.target.value }) }),
           h('input', { style: S.input, placeholder: tf('guide.project.journalPh'), value: form.journal, onChange: (e) => setForm({ ...form, journal: e.target.value }) })),
         h('div', { key: 'row', style: { ...S.row, marginTop: 10 } },
-          h('button', { style: S.button, onClick: createProject, disabled: !form.title.trim() }, tf('guide.project.create'))),
+          h('button', { style: S.button, onClick: createProject, disabled: creating || !form.title.trim() },
+            creating ? tf('guide.creating') : tf('guide.project.create'))),
       ]
       if (created) {
         nodes.push(h('div', { key: 'done', style: { ...S.card, marginTop: 10 } },
@@ -2683,207 +3140,278 @@ window.__ModuleLoader__.load({
       ]
     }
 
+    /* 引导浮层拆成两段：门外只读 /settings，门里才拉那四份数据。
+       隐藏的引导（onboardingDone 已为 true）不该顺手把 /health、/sources 全打一遍。 */
     function makeOnboarding(ctx) {
-      return function OnboardingOverlay(props) {
+      return function OnboardingGate(props) {
         const settings = useApi('/settings')
-        const health = useApi('/health')
-        const sources = useApi('/sources')
-        const usage = useApi('/usage?range=today')
-        const presets = useApi('/presets')
-        const [step, setStep] = useState(null)
-        const [error, setError] = useState('')
-        const [form, setForm] = useState({ title: '', domain: '', journal: '' })
-        const [created, setCreated] = useState(null)
-        const [copied, setCopied] = useState('')
-        const [sessionState, setSessionState] = useState({ tag: '', status: 'idle', detail: '' })
         useLocaleRevision()
-
-        // shell.overlay 的 standardProps 里有 useWorkspaces；桩测试传空 props，所以要能缺。
-        const useWorkspacesHook = typeof props?.useWorkspaces === 'function' ? props.useWorkspaces : null
-        const snapshot = useWorkspacesHook ? useWorkspacesHook((state) => state) : null
-        const snapshotRef = useRef(snapshot)
-        snapshotRef.current = snapshot
-
-        useEffect(() => {
-          if (step === null && settings.data?.values) setStep(Number(settings.data.values.onboardingStep) || 0)
-        }, [settings.data, step])
-
         if (settings.status !== 'ready' && settings.status !== 'refreshing') return null
         if (!settings.data?.values || settings.data.values.onboardingDone === true) return null
-
-        const current = Math.min(Math.max(step ?? 0, 0), GUIDE_TOTAL - 1)
-
-        const persist = async (patch) => {
-          try {
-            await sendJson('PUT', '/settings', patch)
-            settings.reload()
-          } catch (e) {
-            setError(e.message)
-          }
-        }
-        const go = (next) => {
-          setError('')
-          setStep(next)
-          persist({ onboardingStep: next })
-        }
-        const finish = () => {
-          setError('')
-          persist({ onboardingDone: true, onboardingStep: GUIDE_TOTAL })
-        }
-        const openPanel = (key) => requestPanel(key)
-        const copy = (text, tag) => {
-          try {
-            navigator.clipboard?.writeText(text)
-            setCopied(tag)
-          } catch {
-            setCopied('')
-          }
-        }
-        const createProject = async () => {
-          setError('')
-          try {
-            const payload = await sendJson('POST', '/projects', form)
-            if (!payload.ok) throw new Error(payload.message || payload.error || tf('guide.session.errorCreate'))
-            setCreated(payload.project)
-            openPanel('workbench')
-          } catch (e) {
-            setError(e.message)
-          }
-        }
-        /** 当前工作区：优先刚建课题的目录，其次最近一个。 */
-        const workspaceIdFor = (snap) => {
-          const items = Array.isArray(snap?.items) ? snap.items : []
-          if (items.length === 0) return null
-          const wanted = created?.dir
-          const match = wanted ? items.find((w) => w?.path === wanted) : null
-          return (match ?? items[items.length - 1])?.workspaceId ?? null
-        }
-        const sessionCountOf = (snap, workspaceId) => {
-          const items = Array.isArray(snap?.items) ? snap.items : []
-          if (workspaceId) return items.find((w) => w?.workspaceId === workspaceId)?.sessionIds?.length ?? 0
-          return items.reduce((sum, w) => sum + (w?.sessionIds?.length ?? 0), 0)
-        }
-        /** 等一个新会话出现：startSession 不返回 id 也不抛错，只能用「多了一个」当证据。 */
-        const waitForSession = (workspaceId, before, timeoutMs = 2500) =>
-          new Promise((resolve) => {
-            const started = Date.now()
-            const tick = () => {
-              const now = sessionCountOf(snapshotRef.current, workspaceId)
-              if (now > before) return resolve({ ok: true, total: now })
-              if (Date.now() - started >= timeoutMs) return resolve({ ok: false, total: now })
-              setTimeout(tick, 120)
-            }
-            tick()
-          })
-
-        /**
-         * 开一个会话并把模板放进输入框。
-         *
-         * 失败必须说得出原因：预设坏了说预设、key 没配说 key、工作区拿不到说工作区。
-         * 这三句都能落到卡上，用户才知道下一步该点哪儿。
-         */
-        const startWithTemplate = async (text, tag) => {
-          setError('')
-          setSessionState({ tag, status: 'starting', detail: '' })
-          try {
-            const preset = presets.data?.items?.[0] ?? null
-            if (preset?.broken) throw new Error(tf('guide.session.presetFailed', { name: preset.name ?? preset.id, reason: preset.broken }))
-            const presetId = preset?.id ?? null
-
-            const ui = ctx.get?.('uiWorkspace')
-            if (!ui?.startSession) throw new Error(tf('guide.session.errorNoUi'))
-
-            let workspaceId = workspaceIdFor(snapshotRef.current)
-            if (!workspaceId) {
-              const service = ctx.get?.('workspaces')
-              const path = created?.dir ?? health.data?.dataRoot
-              if (!service?.create || !path) throw new Error(tf('guide.session.errorNoPath'))
-              const view = await service.create({ path })
-              workspaceId = view?.workspaceId ?? null
-              if (!workspaceId) throw new Error(tf('guide.session.errorNoWorkspaceId', { path }))
-            }
-
-            const before = sessionCountOf(snapshotRef.current, workspaceId)
-            ui.startSession(workspaceId, {
-              ...(presetId ? { agentPreset: presetId } : {}),
-              prompt: text,
-              clearPreviousDraft: true,
-            })
-            const outcome = await waitForSession(workspaceId, before)
-            if (!outcome.ok) {
-              const keyMissing = health.data?.model?.keyPresent === false
-              throw new Error(
-                keyMissing
-                  ? tf('guide.session.errorKeyMissing')
-                  : tf('guide.session.errorGeneric'),
-              )
-            }
-            setSessionState({ tag, status: 'started', detail: tf('guide.session.startedDetail') })
-            try {
-              ctx.get?.('layout')?.selectPanel?.(null)
-            } catch {
-              /* 没有布局服务就不切页 */
-            }
-            persist({ onboardingDone: true, onboardingStep: GUIDE_TOTAL })
-          } catch (e) {
-            setSessionState({ tag, status: 'failed', detail: e?.message ?? String(e) })
-            setError(e?.message ?? String(e))
-          }
-        }
-
-        let body
-        if (current === 0) body = guideCheckStep(health)
-        else if (current === 1) body = guideModelStep(usage, openPanel)
-        else if (current === 2) body = guideSourceStep(sources, openPanel)
-        else if (current === 3) body = guideProjectStep(form, setForm, created, createProject)
-        else if (current === 4) {
-          body = guideSessionStep({
-            templates: PROMPT_TEMPLATES,
-            preset: presets.data?.items?.[0] ?? null,
-            sessionState,
-            copy,
-            copied,
-            start: startWithTemplate,
-          })
-        } else body = guideRulesStep()
-
-        const progress = Array.from({ length: GUIDE_TOTAL }).map((_, i) => h('div', {
-          key: i,
-          style: { height: 3, flex: 1, borderRadius: 999, background: i <= current ? '#1f6f5c' : 'rgba(127,127,127,0.28)' },
-        }))
-
-        const card = h('div', {
-          role: 'dialog',
-          'aria-label': tf('guide.aria'),
-          style: {
-            width: 'min(620px, 100%)', maxHeight: '86vh', overflow: 'auto', borderRadius: 14, padding: '20px 22px',
-            background: 'Canvas', color: 'CanvasText', border: '1px solid rgba(127,127,127,0.35)',
-            boxShadow: '0 18px 48px rgba(0,0,0,0.35)',
-          },
-        },
-        h('div', { style: S.row },
-          h('div', { style: { fontSize: 15, fontWeight: 600 } }, tf('guide.title')),
-          h('div', { style: S.spacer }),
-          h('div', { style: S.sub }, tf('guide.stepProgress', { current: current + 1, total: GUIDE_TOTAL }))),
-        h('div', { style: { display: 'flex', gap: 6, margin: '12px 0 16px' } }, progress),
-        h('div', { style: { fontSize: 13, lineHeight: 1.75, minHeight: 150 } }, body),
-        error ? h(ErrorBox, { error }) : null,
-        h('div', { style: { ...S.row, marginTop: 16 } },
-          current > 0 ? h('button', { style: S.button, onClick: () => go(current - 1) }, tf('guide.prev')) : null,
-          h('div', { style: S.spacer }),
-          h('button', { style: { ...S.button, border: 'none', background: 'none', opacity: 0.6 }, onClick: finish }, tf('guide.skip')),
-          current < GUIDE_TOTAL - 1
-            ? h('button', { style: { ...S.button, borderColor: 'rgba(31,111,92,0.7)' }, onClick: () => go(current + 1) }, tf('guide.next'))
-            : h('button', { style: { ...S.button, borderColor: 'rgba(31,111,92,0.7)' }, onClick: finish }, tf('guide.start'))))
-
-        return h('div', {
-          // shell.overlay 这一层本身是 click-through，入场者要点回指针事件，否则点不动。
-          style: {
-            position: 'fixed', inset: 0, zIndex: 9000, display: 'grid', placeItems: 'center',
-            background: 'rgba(0,0,0,0.42)', padding: 20, pointerEvents: 'auto',
-          },
-        }, card)
+        return h(OnboardingDialog, { ctx, props, settings })
       }
+    }
+
+    function OnboardingDialog({ ctx, props, settings }) {
+      const health = useApi('/health')
+      const sources = useApi('/sources')
+      const usage = useApi('/usage?range=today')
+      const presets = useApi('/presets')
+      const [step, setStep] = useState(null)
+      const [error, setError] = useState('')
+      const [form, setForm] = useState({ title: '', domain: '', journal: '' })
+      const [created, setCreated] = useState(null)
+      const [copied, setCopied] = useState('')
+      const [sessionState, setSessionState] = useState({ tag: '', status: 'idle', detail: '' })
+      const [saving, setSaving] = useState(false)
+      const [creating, setCreating] = useState(false)
+      const pending = useRef(0)
+      const queue = useRef(Promise.resolve())
+      const copyTimer = useRef(null)
+      const cardRef = useRef(null)
+      useLocaleRevision()
+
+      // shell.overlay 的 standardProps 里有 useWorkspaces；桩测试传空 props，所以要能缺。
+      const useWorkspacesHook = typeof props?.useWorkspaces === 'function' ? props.useWorkspaces : null
+      const snapshot = useWorkspacesHook ? useWorkspacesHook((state) => state) : null
+      const snapshotRef = useRef(snapshot)
+      snapshotRef.current = snapshot
+
+      useEffect(() => {
+        if (step === null && settings.data?.values) setStep(Number(settings.data.values.onboardingStep) || 0)
+      }, [settings.data, step])
+
+      useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current) }, [])
+
+      const current = Math.min(Math.max(step ?? 0, 0), GUIDE_TOTAL - 1)
+
+      /** 进度写盘串行化：连点「下一步」时 PUT 必须按点下去的顺序落地，否则 step 会回跳。 */
+      const persist = (patch) => {
+        pending.current += 1
+        setSaving(true)
+        queue.current = queue.current
+          .then(() => sendJson('PUT', '/settings', patch))
+          .then(() => settings.reload())
+          .catch((e) => setError(e?.message ?? String(e)))
+          .finally(() => {
+            pending.current -= 1
+            if (pending.current === 0) setSaving(false)
+          })
+        return queue.current
+      }
+      const go = (next) => {
+        if (saving) return
+        setError('')
+        setStep(next)
+        persist({ onboardingStep: next })
+      }
+      const finish = () => {
+        if (saving) return
+        setError('')
+        setStep(GUIDE_TOTAL)
+        persist({ onboardingDone: true, onboardingStep: GUIDE_TOTAL })
+      }
+
+      // 打开时把焦点收进卡片，否则 Tab 会从背后的界面开始走。
+      useEffect(() => {
+        const card = cardRef.current
+        if (!card?.querySelectorAll) return
+        const first = Array.from(card.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+          .find((el) => !el.disabled)
+        first?.focus?.()
+      }, [])
+
+      // 浮层是全屏的：Tab 不许跑出去，Esc 问一句再退出。
+      useEffect(() => {
+        if (typeof document === 'undefined') return undefined
+        const focusables = () => {
+          const card = cardRef.current
+          if (!card?.querySelectorAll) return []
+          return Array.from(card.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+            .filter((el) => !el.disabled)
+        }
+        const onKey = (event) => {
+          if (event.key === 'Escape') {
+            const ok = typeof window === 'undefined' ? true : window.confirm(tf('guide.skipConfirm'))
+            if (ok) finish()
+            return
+          }
+          if (event.key !== 'Tab') return
+          const items = focusables()
+          if (items.length === 0) return
+          const first = items[0]
+          const last = items[items.length - 1]
+          const active = document.activeElement
+          const inside = cardRef.current?.contains?.(active)
+          if (event.shiftKey) {
+            if (active === first || !inside) { event.preventDefault(); last.focus?.() }
+          } else if (active === last || !inside) {
+            event.preventDefault(); first.focus?.()
+          }
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+      }, [saving, creating, step])
+
+      const openPanel = (key) => requestPanel(key)
+      const copy = async (text, tag) => {
+        try {
+          await navigator.clipboard?.writeText(text)
+          setCopied(tag)
+          clearTimeout(copyTimer.current)
+          copyTimer.current = setTimeout(() => setCopied(''), 2000)
+        } catch {
+          setCopied('')
+          setError(tf('guide.copyFailed'))
+        }
+      }
+      const createProject = async () => {
+        if (creating) return
+        setCreating(true)
+        setError('')
+        try {
+          const payload = await sendJson('POST', '/projects', form)
+          if (!payload.ok) throw new Error(payload.message || payload.error || tf('guide.session.errorCreate'))
+          setCreated(payload.project)
+          openPanel('workbench')
+        } catch (e) {
+          setError(e?.message ?? String(e))
+        } finally {
+          setCreating(false)
+        }
+      }
+      /** 当前工作区：优先刚建课题的目录，其次最近一个。 */
+      const workspaceIdFor = (snap) => {
+        const items = Array.isArray(snap?.items) ? snap.items : []
+        if (items.length === 0) return null
+        const wanted = created?.dir
+        const match = wanted ? items.find((w) => w?.path === wanted) : null
+        return (match ?? items[items.length - 1])?.workspaceId ?? null
+      }
+      const sessionCountOf = (snap, workspaceId) => {
+        const items = Array.isArray(snap?.items) ? snap.items : []
+        if (workspaceId) return items.find((w) => w?.workspaceId === workspaceId)?.sessionIds?.length ?? 0
+        return items.reduce((sum, w) => sum + (w?.sessionIds?.length ?? 0), 0)
+      }
+      /** 等一个新会话出现：startSession 不返回 id 也不抛错，只能用「多了一个」当证据。 */
+      const waitForSession = (workspaceId, before, timeoutMs = 2500) =>
+        new Promise((resolve) => {
+          const started = Date.now()
+          const tick = () => {
+            const now = sessionCountOf(snapshotRef.current, workspaceId)
+            if (now > before) return resolve({ ok: true, total: now })
+            if (Date.now() - started >= timeoutMs) return resolve({ ok: false, total: now })
+            setTimeout(tick, 120)
+          }
+          tick()
+        })
+
+      /**
+       * 开一个会话并把模板放进输入框。
+       *
+       * 失败必须说得出原因：预设坏了说预设、key 没配说 key、工作区拿不到说工作区。
+       * 这三句都能落到卡上，用户才知道下一步该点哪儿。
+       */
+      const startWithTemplate = async (text, tag) => {
+        setError('')
+        setSessionState({ tag, status: 'starting', detail: '' })
+        try {
+          const preset = presets.data?.items?.find((p) => p.isDefault) ?? presets.data?.items?.[0] ?? null
+          if (preset?.broken) throw new Error(tf('guide.session.presetFailed', { name: preset.name ?? preset.id, reason: preset.broken }))
+          const presetId = preset?.id ?? null
+
+          const ui = ctx.get?.('uiWorkspace')
+          if (!ui?.startSession) throw new Error(tf('guide.session.errorNoUi'))
+
+          let workspaceId = workspaceIdFor(snapshotRef.current)
+          if (!workspaceId) {
+            const service = ctx.get?.('workspaces')
+            const path = created?.dir ?? health.data?.dataRoot
+            if (!service?.create || !path) throw new Error(tf('guide.session.errorNoPath'))
+            const view = await service.create({ path })
+            workspaceId = view?.workspaceId ?? null
+            if (!workspaceId) throw new Error(tf('guide.session.errorNoWorkspaceId', { path }))
+          }
+
+          const before = sessionCountOf(snapshotRef.current, workspaceId)
+          // 等它的返回值：拒绝的 promise 要走同一个 catch，否则界面上只会看到「多了一个会话」的错觉。
+          await ui.startSession(workspaceId, {
+            ...(presetId ? { agentPreset: presetId } : {}),
+            prompt: text,
+            clearPreviousDraft: true,
+          })
+          const outcome = await waitForSession(workspaceId, before)
+          if (!outcome.ok) {
+            const keyMissing = health.data?.model?.keyPresent === false
+            throw new Error(
+              keyMissing
+                ? tf('guide.session.errorKeyMissing')
+                : tf('guide.session.errorGeneric'),
+            )
+          }
+          setSessionState({ tag, status: 'started', detail: tf('guide.session.startedDetail') })
+          try {
+            ctx.get?.('layout')?.selectPanel?.(null)
+          } catch {
+            /* 没有布局服务就不切页 */
+          }
+          await persist({ onboardingDone: true, onboardingStep: GUIDE_TOTAL })
+        } catch (e) {
+          setSessionState({ tag, status: 'failed', detail: e?.message ?? String(e) })
+          setError(e?.message ?? String(e))
+        }
+      }
+
+      let body
+      if (current === 0) body = guideCheckStep(health)
+      else if (current === 1) body = guideModelStep(usage, openPanel)
+      else if (current === 2) body = guideSourceStep(sources, openPanel)
+      else if (current === 3) body = guideProjectStep(form, setForm, created, createProject, creating)
+      else if (current === 4) {
+        body = guideSessionStep({
+          templates: PROMPT_TEMPLATES,
+          preset: presets.data?.items?.find((p) => p.isDefault) ?? presets.data?.items?.[0] ?? null,
+          sessionState,
+          copy,
+          copied,
+          start: startWithTemplate,
+        })
+      } else body = guideRulesStep()
+
+      const progress = Array.from({ length: GUIDE_TOTAL }).map((_, i) => h('div', {
+        key: i,
+        style: { height: 3, flex: 1, borderRadius: 999, background: i <= current ? V.brand : V.surface3 },
+      }))
+
+      const card = h('div', {
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-label': tf('guide.aria'),
+        ref: cardRef,
+        className: 'ds-dialog',
+        style: { width: 'min(620px, 100%)', padding: '20px 22px' },
+      },
+      h('div', { style: S.row },
+        h('div', { style: { fontSize: 15, fontWeight: 600 } }, tf('guide.title')),
+        h('div', { style: S.spacer }),
+        h('div', { style: S.sub }, tf('guide.stepProgress', { current: current + 1, total: GUIDE_TOTAL }))),
+      h('div', { style: { display: 'flex', gap: 6, margin: '12px 0 16px' } }, progress),
+      h('div', { style: { fontSize: 13, lineHeight: 1.75, minHeight: 150 } }, body),
+      // 错误与保存状态都要被读屏念出来，否则失败只剩视觉上的一个红框。
+      h('div', { 'aria-live': 'polite' }, error ? h(ErrorBox, { error }) : null),
+      h('div', { style: { ...S.row, marginTop: 16 } },
+        current > 0 ? h('button', { className: 'ds-btn ds-btn--ghost', disabled: saving, onClick: () => go(current - 1) }, tf('guide.prev')) : null,
+        h('div', { style: S.spacer }),
+        h('button', { className: 'ds-btn ds-btn--ghost', disabled: saving, onClick: finish }, tf('guide.skip')),
+        current < GUIDE_TOTAL - 1
+          ? h('button', { className: 'ds-btn ds-btn--primary', disabled: saving, onClick: () => go(current + 1) }, saving ? tf('guide.saving') : tf('guide.next'))
+          : h('button', { className: 'ds-btn ds-btn--primary', disabled: saving, onClick: finish }, tf('guide.start'))))
+
+      return h('div', {
+        // shell.overlay 这一层本身是 click-through，入场者要点回指针事件，否则点不动。
+        className: 'ds-backdrop',
+        style: { pointerEvents: 'auto' },
+      }, card)
     }
 
 
