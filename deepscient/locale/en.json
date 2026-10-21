@@ -3,6 +3,11 @@
     "title": "DeepScient research workbench",
     "description": "A gated path from question to submission — search, power, cleaning, statistics, figures, writing, internal review — plus a live project panel in the sidebar."
   },
+  "app": {
+    "title": "DeepScient Research Workbench",
+    "project": "Project {id}",
+    "localData": "Data from the local research store"
+  },
   "panel": {
     "root": "Research",
     "workbench": "Workbench",
@@ -11,6 +16,57 @@
     "billing": "Billing",
     "sources": "Sources",
     "docs": "Docs"
+  },
+  "page": {
+    "workbench": "Workbench · the stage verdict and the assistant read the same gates",
+    "stages": "Stages · twelve stages, and why each gate passes",
+    "tools": "Tools · backend capabilities and third-party skills per stage",
+    "billing": "Billing · token counts are real, money is an estimate",
+    "sources": "Sources · literature and search credentials live in one file",
+    "docs": "Docs · how this system works, and where its limits are"
+  },
+  "common": {
+    "loading": "Loading…",
+    "loadFailed": "Could not load data",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "done": "Done",
+    "empty": "Nothing here yet",
+    "copy": "Copy",
+    "copied": "Copied",
+    "save": "Save",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "reason": {
+    "blocking": "Blocking",
+    "warning": "Warning",
+    "unrecorded": "Unrecorded",
+    "selfCheck": "Self-check",
+    "todo": "To do",
+    "blockingWith": "{n} blocking",
+    "warningWith": "{n} warning",
+    "unrecordedWith": "{n} unrecorded"
+  },
+  "overview": {
+    "progress": "{done}/{total} stages done ({percent}%)",
+    "current": "Current stage",
+    "next": "Next",
+    "artifacts": "Artifacts",
+    "present": "Produced",
+    "missing": "Pending",
+    "noProject": "No project yet",
+    "counts": "{papers} papers · {analyses} analyses · {figures} figures",
+    "jump": "Open stages"
+  },
+  "workbench": {
+    "prereg": "Preregistration {ref}",
+    "noPrereg": "No preregistration id"
+  },
+  "sources": {
+    "configured": "Configured",
+    "notConfigured": "Not configured"
   },
   "settings": "Research"
 }

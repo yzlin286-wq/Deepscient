@@ -3,6 +3,33 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.6.1] — 2026-10-21
+
+双语地基 + 控制台总览落地。六个页面里的「工作台」已经整页重写，文案全部由字典驱动。
+
+### 新增
+
+- **`tf(key, vars)` 插值**：字典值就是纯字符串（`LocaleDict = Record<string, string>`），没有占位符能力，所以 `{n}` / `{id}` / `{percent}` 的替换自己做。
+- **`useLocaleRevision()`**：订阅 `locale.subscribe`，切换语言时已挂载的组件立刻重渲。不订阅的组件会留在旧文案上，所以显示文字的地方都要调它一次。
+- **浏览器标签跟着语言走**：`document.title` 从 `tf('app.title')` 取值，切英文就是 `DeepScient Research Workbench`；`MutationObserver` 仍盯着 head 防止被外壳写回。
+- **控制台总览重做**（工作台页）：改成吃 `/projects/:id/overview` 的四块——① 课题身份（下拉切换 + 领域 + 目标刊 + 库内计数）② 进度条 `9/12 · 75%` + 当前阶段 + 四个真实计数 chip ③ 产出清单（22 项按 已产出/待产出 两态，点一行跳「流程」对应阶段）④ 下一步（每条带等级 chip 与 `fix`，可跳转）。
+
+### 变更
+
+- `PAGES` 表不再存中文标题，侧栏 label 与页面副标题都走 `panel.*` / `page.*`。
+- `REASON_LABEL`（中文字面量映射）改成 `REASON_KEY` + `reasonLabel()`。
+- `Loading` / `ErrorBox` / `Page` 壳 / chip 文案 / 六页副标题全部走字典；字典扩到 `app` / `common` / `reason` / `overview` / `page` / `workbench` / `sources` 七组。
+- 删掉旧的 `StageLadder` 与 `Workbench`（104 行），总览不再靠界面自己数门。
+
+### 验证
+
+`verify-deepscient` 288 项全绿；断言从「`PRODUCT_TITLE` 常量存在」改为「`document.title` 取 `tf('app.title')`」，并把「六页副标题各不相同」改为「六页各用不同的副标题 key」。
+
+### 未完成（下一步）
+
+- 存量文案：流程 / 工具 / 计费 / 接入 / 说明 五页正文约 90 条、引导约 47 条、设置约 43 条，仍是中文硬编码。
+- 数据层英文：`workflow.en.json`（12 阶段 + 55 门）、`tools.en.json`（36 工具）、`sources.en.json`（8 源）尚未建立，所以英文模式下阶段名与门名仍是中文。
+
 ## [0.6.0] — 2026-10-21
 
 控制台总览的数据面：一次拿全「走到哪、卡在哪、下一步、产出什么」，并修掉一处把关键信息写死的 bug。

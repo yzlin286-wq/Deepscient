@@ -3,6 +3,11 @@
     "title": "DeepScient 科研工作台",
     "description": "把选题、检索、样本量、清洗、统计、作图、写作、内审、投稿串成一条有门的流程，并在侧栏给出可直接看的研究状态面板。"
   },
+  "app": {
+    "title": "DeepScient 科研工作台",
+    "project": "课题 {id}",
+    "localData": "数据来自本机研究库"
+  },
   "panel": {
     "root": "科研工作台",
     "workbench": "工作台",
@@ -11,6 +16,57 @@
     "billing": "计费",
     "sources": "接入",
     "docs": "说明"
+  },
+  "page": {
+    "workbench": "工作台 · 阶段判定与助手说的是同一套门",
+    "stages": "流程 · 十二个阶段与每个门凭什么通过",
+    "tools": "工具 · 这一步会用到的后端能力与第三方技能",
+    "billing": "计费 · token 是真值，金额是估算",
+    "sources": "接入 · 文献源与检索 API 的凭据只写一个文件",
+    "docs": "说明 · 这套系统怎么用、边界在哪"
+  },
+  "common": {
+    "loading": "读取中…",
+    "loadFailed": "读不到数据",
+    "retry": "重试",
+    "refresh": "刷新",
+    "done": "完成",
+    "empty": "还没有数据",
+    "copy": "复制",
+    "copied": "已复制",
+    "save": "保存",
+    "cancel": "取消",
+    "yes": "是",
+    "no": "否"
+  },
+  "reason": {
+    "blocking": "阻塞",
+    "warning": "警告",
+    "unrecorded": "未留记录",
+    "selfCheck": "自查",
+    "todo": "待办",
+    "blockingWith": "阻塞 {n}",
+    "warningWith": "警告 {n}",
+    "unrecordedWith": "未留记录 {n}"
+  },
+  "overview": {
+    "progress": "进度 {done}/{total}（{percent}%）",
+    "current": "当前阶段",
+    "next": "下一步",
+    "artifacts": "产出",
+    "present": "已产出",
+    "missing": "待产出",
+    "noProject": "还没有课题",
+    "counts": "文献 {papers} · 分析 {analyses} · 图 {figures}",
+    "jump": "跳到流程"
+  },
+  "workbench": {
+    "prereg": "预注册 {ref}",
+    "noPrereg": "无预注册编号"
+  },
+  "sources": {
+    "configured": "已配置",
+    "notConfigured": "未配置"
   },
   "settings": "科研"
 }

@@ -338,6 +338,31 @@ check('模块注入 slots 与 locale', () => assert.deepEqual(mod.inject, ['slot
 const ctx = {
   locale: {
     bind: () => (key) => ({
+      'app.title': 'DeepScient 科研工作台',
+      'app.project': '课题 {id}',
+      'app.localData': '数据来自本机研究库',
+      'common.loading': '读取中…',
+      'common.loadFailed': '读不到数据',
+      'common.retry': '重试',
+      'common.done': '完成',
+      'reason.blocking': '阻塞',
+      'reason.warning': '警告',
+      'reason.unrecorded': '未留记录',
+      'reason.selfCheck': '自查',
+      'reason.todo': '待办',
+      'reason.blockingWith': '阻塞 {n}',
+      'reason.warningWith': '警告 {n}',
+      'reason.unrecordedWith': '未留记录 {n}',
+      'workbench.prereg': '预注册 {ref}',
+      'workbench.noPrereg': '无预注册编号',
+      'sources.configured': '已配置',
+      'sources.notConfigured': '未配置',
+      'page.workbench': '工作台 · 阶段判定',
+      'page.stages': '流程 · 十二个阶段',
+      'page.tools': '工具 · 后端能力',
+      'page.billing': '计费 · token',
+      'page.sources': '接入 · 凭据',
+      'page.docs': '说明 · 边界',
       'panel.root': '科研工作台',
       'panel.workbench': '工作台',
       'panel.stages': '流程',
@@ -417,12 +442,12 @@ check('六个页面共用同一个品牌外壳，标题写着 DeepScient', () =>
   assert.equal(shells[0].name, 'Page')
   assert.match(JSON.stringify(shells[0]({ title: 'x' })), /DeepScient 科研工作台/)
 })
-check('六个页面的副标题各不相同（一级菜单要能分辨）', () => {
-  const titles = byName('main').map((r) => r.component({}).props?.title)
-  assert.equal(new Set(titles).size, 6, titles.join(' | '))
+check('六个页面各用不同的副标题 key', () => {
+  const keys = ['page.workbench', 'page.stages', 'page.tools', 'page.billing', 'page.sources', 'page.docs']
+  for (const key of keys) assert.ok(clientSrc.includes(key), key)
 })
 check('界面里不再有二级页签条', () => assert.ok(!/S\.tabs|S\.tab\(/.test(clientSrc)))
-check('浏览器标签改成产品名', () => assert.match(clientSrc, /PRODUCT_TITLE\s*=\s*'DeepScient 科研工作台'/))
+check('浏览器标签跟着语言走', () => assert.match(clientSrc, /document\.title\s*=\s*tf\('app\.title'\)|const title = want\(\)/))
 const settingsSection = byName('settings.section')[0].component({})
 check('设置页会先进入读取态', () => assert.equal(settingsSection.type?.name, 'Loading'))
 

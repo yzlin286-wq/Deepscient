@@ -27,6 +27,29 @@ window.__ModuleLoader__.load({
       return body
     }
 
+    /* ── 文案（中英双语）──────────────────────────────────────────────────────
+       字典值就是纯字符串，没有占位符能力，所以插值在这里自己做：{n} {id} {status}。
+       语言切换由 locale 服务的 subscribe 通知，组件用 useLocaleRevision() 重渲；
+       不订阅的组件在切语言后会留在旧文案上，所以凡是显示文字的地方都要调它一次。 */
+
+    const i18n = { t: (key) => key, ctx: null }
+
+    function tf(key, vars) {
+      const raw = String(i18n.t(key) ?? key)
+      if (!vars) return raw
+      return raw.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole))
+    }
+
+    /** 订阅语言快照；切语言或字典补注册都会 bump revision，这里跟着重渲。 */
+    function useLocaleRevision() {
+      const [, bump] = useState(0)
+      useEffect(() => {
+        const locale = i18n.ctx?.get?.('locale')
+        const off = locale?.subscribe?.(() => bump((n) => n + 1))
+        return typeof off === 'function' ? off : undefined
+      }, [])
+    }
+
     function useApi(path, deps = []) {
       const [state, setState] = useState({ status: 'loading', data: null, error: null })
       const [tick, setTick] = useState(0)
@@ -75,12 +98,12 @@ window.__ModuleLoader__.load({
        就是主栏要渲染的 key。这张表同时驱动两处注册，不可能对不上。            */
 
     const PAGES = [
-      { key: 'workbench', title: '工作台', order: 20, Icon: WorkbenchIcon, Component: WorkbenchPage },
-      { key: 'stages', title: '流程', order: 21, Icon: StagesIcon, Component: StagesPage },
-      { key: 'tools', title: '工具', order: 22, Icon: ToolsIcon, Component: ToolsPage },
-      { key: 'billing', title: '计费', order: 23, Icon: BillingIcon, Component: BillingPage },
-      { key: 'sources', title: '接入', order: 24, Icon: SourcesIcon, Component: SourcesPage },
-      { key: 'docs', title: '说明', order: 25, Icon: DocsIcon, Component: DocsPage },
+      { key: 'workbench', order: 20, Icon: WorkbenchIcon, Component: WorkbenchPage },
+      { key: 'stages', order: 21, Icon: StagesIcon, Component: StagesPage },
+      { key: 'tools', order: 22, Icon: ToolsIcon, Component: ToolsPage },
+      { key: 'billing', order: 23, Icon: BillingIcon, Component: BillingPage },
+      { key: 'sources', order: 24, Icon: SourcesIcon, Component: SourcesPage },
+      { key: 'docs', order: 25, Icon: DocsIcon, Component: DocsPage },
     ]
 
     const panelId = (key) => `science-${key}`
@@ -189,8 +212,14 @@ window.__ModuleLoader__.load({
     }
 
     const TONE = { pass: 'pass', fail: 'fail', skip: 'skip', manual: 'manual' }
-    const REASON_LABEL = { blocking: '阻塞', warning: '警告', unrecorded: '未留记录', 'self-check': '自查' }
+    const REASON_KEY = {
+      blocking: 'reason.blocking',
+      warning: 'reason.warning',
+      unrecorded: 'reason.unrecorded',
+      'self-check': 'reason.selfCheck',
+    }
     const REASON_TONE = { blocking: 'fail', warning: 'manual', unrecorded: 'skip', 'self-check': 'manual' }
+    const reasonLabel = (reason) => tf(REASON_KEY[reason] ?? 'reason.todo')
 
     function Chip({ status, children }) {
       return h('span', { style: S.chip(TONE[status] ?? 'skip') }, children ?? status)
@@ -201,17 +230,19 @@ window.__ModuleLoader__.load({
     }
 
     function ErrorBox({ error, onRetry }) {
+      useLocaleRevision()
       return h(
         'div',
         { style: { ...S.card, borderColor: 'rgba(190,70,60,0.5)' } },
-        h('div', { style: { fontSize: 13, marginBottom: 6 } }, '读不到数据'),
+        h('div', { style: { fontSize: 13, marginBottom: 6 } }, tf('common.loadFailed')),
         h('div', { style: { ...S.mono, opacity: 0.8 } }, String(error)),
-        onRetry ? h('button', { style: { ...S.button, marginTop: 10 }, onClick: onRetry }, '重试') : null,
+        onRetry ? h('button', { style: { ...S.button, marginTop: 10 }, onClick: onRetry }, tf('common.retry')) : null,
       )
     }
 
     function Loading() {
-      return h('div', { style: { ...S.notice, padding: 8 } }, '读取中…')
+      useLocaleRevision()
+      return h('div', { style: { ...S.notice, padding: 8 } }, tf('common.loading'))
     }
 
     /* ── 品牌 ───────────────────────────────────────────────────────────── */
@@ -297,152 +328,135 @@ window.__ModuleLoader__.load({
 
     /* ── 工作台 ─────────────────────────────────────────────────────────── */
 
-    function StageLadder({ stages, selected, onSelect }) {
-      return h(
-        'div',
-        { style: S.ladder },
-        stages.map((s) => {
-          const state = s.complete ? 'pass' : s.blocking > 0 ? 'fail' : 'manual'
-          return h(
-            'button',
-            {
-              key: s.id,
-              style: { ...S.step(state), color: 'inherit', outline: selected === s.id ? '2px solid rgba(31,111,92,0.5)' : 'none' },
-              onClick: () => onSelect(s.id),
-              title: s.goal,
-            },
-            h('strong', { style: { fontWeight: 600 } }, s.id),
-            h('span', { style: { opacity: 0.85 } }, s.label),
-            s.complete ? h('span', { style: { opacity: 0.7 } }, '✓') : s.blocking > 0 ? h('span', { style: { opacity: 0.7 } }, `✗${s.blocking}`) : null,
-          )
-        }),
-      )
+    /* ── 总览 ────────────────────────────────────────────────────────────────
+       一块屏回答四件事：这是什么课题、走到第几步、产出什么、下一步做什么。
+       数据全来自 /projects/:id/overview 一次请求，不再自己拼四个接口——
+       以前「当前阶段阻塞几个门」是界面自己数的，现在由服务端回真实值。 */
+
+    const OS = {
+      bar: {
+        height: 6, borderRadius: 999, overflow: 'hidden', marginTop: 8,
+        background: 'rgba(127,127,127,0.22)',
+      },
+      barFill: (percent) => ({
+        height: '100%', width: `${Math.max(0, Math.min(100, Number(percent) || 0))}%`,
+        background: '#1f6f5c', borderRadius: 999, transition: 'width 240ms ease',
+      }),
+      grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 },
+      art: (present) => ({
+        display: 'flex', gap: 8, alignItems: 'baseline', padding: '6px 9px', borderRadius: 8,
+        cursor: 'pointer', fontSize: 12,
+        border: `1px solid ${present ? 'rgba(31,111,92,0.45)' : 'rgba(127,127,127,0.3)'}`,
+        background: present ? 'rgba(31,111,92,0.10)' : 'transparent',
+        opacity: present ? 1 : 0.72,
+      }),
+      artStage: { fontFamily: 'ui-monospace, monospace', fontSize: 11, opacity: 0.65, flex: '0 0 auto' },
+      action: { padding: '9px 0', borderTop: '1px solid rgba(127,127,127,0.14)' },
+      select: { padding: '5px 8px', fontSize: 12, borderRadius: 7, maxWidth: 320,
+        border: '1px solid rgba(127,127,127,0.35)', background: 'transparent', color: 'inherit' },
     }
 
-    function GateTable({ gates }) {
-      if (!gates || !gates.length) return h(Notice, null, '这个阶段没有门。')
-      return h(
-        'table',
-        { style: S.table },
-        h('thead', null, h('tr', null, h('th', { style: S.th }, '门'), h('th', { style: S.th }, '等级'), h('th', { style: S.th }, '状态'), h('th', { style: S.th }, '详情'), h('th', { style: S.th }, '怎么过'))),
-        h(
-          'tbody',
-          null,
-          gates.map((g) =>
-            h(
-              'tr',
-              { key: g.id },
-              h('td', { style: S.td }, g.label),
-              h('td', { style: S.td }, h(Chip, { status: g.severity === 'blocking' ? 'fail' : g.severity === 'warning' ? 'manual' : 'skip' }, g.severity === 'blocking' ? '阻塞' : g.severity === 'warning' ? '警告' : '自查')),
-              h('td', { style: S.td }, h(Chip, { status: g.status })),
-              h('td', { style: { ...S.td, opacity: 0.8 } }, g.detail ?? '—'),
-              h('td', { style: { ...S.td, opacity: 0.8 } }, g.fix ?? '—'),
-            ),
-          ),
-        ),
-      )
-    }
+    function Overview({ overview, projects, projectId, onProject, onJump }) {
+      useLocaleRevision()
+      if (overview.status === 'loading') return h(Loading)
+      if (overview.error) return h(ErrorBox, { error: overview.error, onRetry: overview.reload })
+      const data = overview.data
+      if (!data || !data.project) return h(Notice, null, tf('overview.noProject'))
 
-    function Workbench({ projects, projectId, onProject, stages, next, onJump }) {
-      if (projects.status === 'error') return h(ErrorBox, { error: projects.error, onRetry: projects.reload })
-      if (projects.status === 'loading') return h(Loading)
-
+      const progress = data.progress ?? {}
+      const current = progress.current ?? null
       const list = projects.data?.items ?? []
-      if (!projects.data?.available && projects.data) {
-        return h(
-          'div',
-          { style: S.card },
-          h('div', { style: { fontSize: 13, marginBottom: 6 } }, '科研库未就绪'),
-          h(Notice, null, projects.data.reason ?? '没找到 dsh-science 的数据根。'),
-        )
-      }
-      if (!list.length) {
-        return h(
-          'div',
-          { style: S.card },
-          h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 8 } }, '还没有课题'),
-          h(
-            Notice,
-            null,
-            h('div', null, '三步开始：'),
-            h('ol', { style: { margin: '6px 0 0 18px' } },
-              h('li', null, '建课题：让助手调 science_project_open（带 domain / question / ethics）'),
-              h('li', null, '定样本量：science_exp_plan 给 effect 算 n，或给 n 算 MDE'),
-              h('li', null, '写数据、跑清洗：science_exp_run，然后 science_stats'),
-            ),
-          ),
-        )
-      }
+      const counters = [
+        ['fail', 'reason.blocking', current?.blocking],
+        ['manual', 'reason.warning', current?.warnings],
+        ['skip', 'reason.unrecorded', current?.skipped],
+        ['manual', 'reason.selfCheck', current?.manual],
+      ].filter((item) => Number(item[2]) > 0)
 
-      const current = list.find((p) => p.id === projectId) ?? list[0]
-      const stage = stages.data?.stages ?? []
-      // advise() 只给 id/label/goal；计数要回到 stages 那一份上取，别在这里编。
-      const currentRow = stage.find((s) => s.id === (next.data?.stage?.id ?? '')) ?? null
+      const artifacts = data.artifacts ?? []
+      const produced = artifacts.filter((a) => a.present).length
+      const actions = data.next?.actions ?? []
 
-      return h(
-        'div',
-        null,
-        h(
-          'div',
-          { style: S.card },
-          h(
-            'div',
-            { style: S.row },
+      return h('div', null,
+        /* 1. 课题身份 */
+        h('div', { style: S.card },
+          h('div', { style: { ...S.row, marginBottom: 6 } },
             h('select', {
-              style: S.select,
-              value: current.id,
+              style: OS.select,
+              value: projectId,
               onChange: (e) => onProject(e.target.value),
-            }, list.map((p) => h('option', { key: p.id, value: p.id }, `${p.title}（${p.progress.done}/${p.progress.total}）`))),
-            h('div', { style: S.sub }, current.domain ?? '未标学科'),
-            current.targetJournal ? h(Chip, { status: 'pass' }, current.targetJournal) : null,
-            current.preregRef ? h(Chip, { status: 'pass' }, `预注册 ${current.preregRef}`) : h(Chip, { status: 'skip' }, '无预注册编号'),
+            }, list.map((p) => h('option', { key: p.id, value: p.id }, p.title || p.id))),
+            data.project.domain ? h(Chip, { status: 'pass' }, data.project.domain) : null,
+            data.project.targetJournal ? h(Chip, { status: 'pass' }, data.project.targetJournal) : null,
             h('div', { style: S.spacer }),
-            stages.status === 'refreshing' ? h('span', { style: S.sub }, '刷新中…') : null,
-            h('button', { style: S.button, onClick: () => { stages.reload(); projects.reload(); next.reload() } }, '刷新'),
+            h('button', { style: S.button, onClick: overview.reload }, tf('common.refresh')),
           ),
-          h('div', { style: { ...S.sub, marginTop: 8 } }, current.question ?? '（方案里还没写研究问题）'),
+          data.project.question ? h('div', { style: S.sub }, data.project.question) : null,
+          h('div', { style: { ...S.sub, marginTop: 4 } },
+            tf('overview.counts', {
+              papers: data.counts?.papers ?? 0,
+              analyses: data.counts?.analyses ?? 0,
+              figures: data.counts?.figures ?? 0,
+            })),
         ),
-        stages.status === 'error' ? h(ErrorBox, { error: stages.error, onRetry: stages.reload }) : null,
-        stages.status === 'loading' ? h(Loading) : null,
-        stage.length
-          ? h(StageLadder, { stages: stage, selected: next.data?.stage?.id ?? '', onSelect: onJump })
-          : null,
-        next.status === 'error' ? h(ErrorBox, { error: next.error, onRetry: next.reload }) : null,
-        next.data?.done
-          ? h('div', { style: S.card }, h('div', { style: { fontSize: 13, fontWeight: 600 } }, '十二个阶段都过了'), h(Notice, null, '这说明机器能查的都齐了。剩下的自查项（伦理、作者贡献、cover letter）仍然要你自己过一遍。'))
-          : next.data?.stage
-            ? h(
-                'div',
-                { style: S.card },
-                h('div', { style: S.row },
-                  h('div', { style: { fontSize: 13, fontWeight: 600 } }, `${next.data.stage.id} ${next.data.stage.label}`),
-                  currentRow && currentRow.blocking > 0 ? h(Chip, { status: 'fail' }, `阻塞 ${currentRow.blocking}`) : null,
-                  currentRow && currentRow.warnings > 0 ? h(Chip, { status: 'manual' }, `警告 ${currentRow.warnings}`) : null,
-                  currentRow && currentRow.skipped > 0 ? h(Chip, { status: 'skip' }, `未留记录 ${currentRow.skipped}`) : null,
+
+        /* 2. 进度 + 当前阶段 */
+        h('div', { style: S.card },
+          h('div', { style: { fontSize: 13, fontWeight: 600 } },
+            tf('overview.progress', {
+              done: progress.done ?? 0,
+              total: progress.total ?? 0,
+              percent: progress.percent ?? 0,
+            })),
+          h('div', { style: OS.bar }, h('div', { style: OS.barFill(progress.percent ?? 0) })),
+          current
+            ? h('div', { style: { marginTop: 10 } },
+                h('div', { style: { ...S.row, marginBottom: 4 } },
+                  h('div', { style: { fontSize: 13 } }, `${current.id} ${current.label}`),
+                  counters.map(([tone, key, n]) => h(Chip, { key, status: tone }, tf(key, { n }))),
+                  h('div', { style: S.spacer }),
+                  h('button', { style: S.button, onClick: () => onJump(current.id) }, tf('overview.jump')),
                 ),
-                h('div', { style: { ...S.sub, margin: '6px 0 10px' } }, next.data.stage.goal),
-                (next.data.nextActions ?? []).length
-                  ? h('ul', { style: { margin: '0 0 0 18px' } },
-                      next.data.nextActions.map((a, i) =>
-                        h('li', { key: `${a.gate ?? i}-${i}`, style: { marginBottom: 6 } },
-                          h(Chip, { status: REASON_TONE[a.reason] ?? 'skip' }, REASON_LABEL[a.reason] ?? '待办'),
-                          ' ',
-                          h('span', { style: { fontWeight: 600 } }, a.label ?? a.gate),
-                          a.detail ? h('span', { style: { opacity: 0.8 } }, ` — ${a.detail}`) : null,
-                          a.fix ? h('div', { style: { ...S.mono, opacity: 0.75, marginTop: 2 } }, a.fix) : null,
-                        ),
-                      ))
-                  : h(Notice, null, '这一步没有可执行动作：剩下的都是自查项，去「流程」看清单。'),
-                (next.data.failureModes ?? []).length
-                  ? h('div', { style: { ...S.sub, marginTop: 10 } },
-                      h('div', { style: { fontWeight: 600, marginBottom: 4 } }, '这一步最常见的翻车方式'),
-                      h('ul', { style: { margin: '0 0 0 18px' } },
-                        next.data.failureModes.map((m, i) => h('li', { key: i }, m))))
-                  : null,
-                h('div', { style: { ...S.sub, marginTop: 10 } },
-                  `阶段进度：${(stage.filter((s) => s.complete).length)}/${stage.length}；下一步取法：${next.data.reason ?? '—'}`),
+                current.goal ? h('div', { style: S.sub }, current.goal) : null,
               )
-            : null,
+            : h('div', { style: { ...S.sub, marginTop: 8 } }, tf('common.done')),
+        ),
+
+        /* 3. 产出清单 */
+        h('div', { style: S.card },
+          h('div', { style: { ...S.row, marginBottom: 8 } },
+            h('div', { style: { fontSize: 13, fontWeight: 600 } }, tf('overview.artifacts')),
+            h(Chip, { status: 'pass' }, `${tf('overview.present')} ${produced}`),
+            h(Chip, { status: 'skip' }, `${tf('overview.missing')} ${artifacts.length - produced}`),
+          ),
+          artifacts.length === 0
+            ? h('div', { style: S.sub }, tf('common.empty'))
+            : h('div', { style: OS.grid },
+                artifacts.map((a) => h('div', {
+                  key: `${a.stageId}:${a.name}`,
+                  style: OS.art(a.present),
+                  onClick: () => onJump(a.stageId),
+                },
+                  h('span', { style: OS.artStage }, a.stageId),
+                  h('span', null, a.name),
+                ))),
+        ),
+
+        /* 4. 下一步 */
+        h('div', { style: S.card },
+          h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 4 } }, tf('overview.next')),
+          actions.length === 0
+            ? h('div', { style: S.sub }, tf('common.empty'))
+            : actions.map((a, i) => h('div', { key: a.gate ?? i, style: OS.action },
+                h('div', { style: S.row },
+                  h(Chip, { status: REASON_TONE[a.reason] ?? 'skip' }, reasonLabel(a.reason)),
+                  h('div', { style: { fontSize: 13 } }, a.label ?? a.gate ?? ''),
+                  h('div', { style: S.spacer }),
+                  a.gate ? h('button', { style: S.button, onClick: () => onJump(a.gate) }, tf('overview.jump')) : null,
+                ),
+                a.fix ? h('div', { style: { ...S.sub, marginTop: 3 } }, a.fix) : null,
+              )),
+        ),
       )
     }
 
@@ -472,7 +486,7 @@ window.__ModuleLoader__.load({
               h('span', { style: { ...S.mono, opacity: 0.65, width: 26 } }, s.id),
               h('span', { style: { fontWeight: 600, fontSize: 13 } }, s.label),
               h('div', { style: S.spacer }),
-              s.complete ? h(Chip, { status: 'pass' }, '完成') : h(Chip, { status: s.blocking ? 'fail' : 'skip' }, s.blocking ? `${s.blocking} 阻塞` : '未完成'),
+              s.complete ? h(Chip, { status: 'pass' }, tf('common.done')) : h(Chip, { status: s.blocking ? 'fail' : 'skip' }, s.blocking ? `${s.blocking} 阻塞` : '未完成'),
               h('span', { style: { opacity: 0.5 } }, open === s.id ? '▾' : '▸'),
             ),
             open === s.id
@@ -795,7 +809,7 @@ window.__ModuleLoader__.load({
 
     function sourceStatusCell(item) {
       const nodes = [
-        h(Chip, { key: 'state', status: item.configured ? 'pass' : 'skip' }, item.configured ? '已配置' : '未配置'),
+        h(Chip, { key: 'state', status: item.configured ? 'pass' : 'skip' }, item.configured ? tf('sources.configured') : tf('sources.notConfigured')),
         h('div', { key: 'wired', style: { fontSize: 11, opacity: 0.6, marginTop: 4 } }, WIRED_LABEL[item.wired] ?? item.wired),
       ]
       if (item.from === 'env') nodes.push(h('div', { key: 'env', style: { fontSize: 11, opacity: 0.6 } }, '来自环境变量 ' + item.envName))
@@ -971,7 +985,7 @@ window.__ModuleLoader__.load({
       const science = health.data?.science
       const preset = health.data?.preset
       const model = health.data?.model
-      const keyText = model?.keyPresent === true ? '已配置' : model?.keyPresent === false ? '未配置（设置 → 模型）' : '未读到'
+      const keyText = model?.keyPresent === true ? tf('sources.configured') : model?.keyPresent === false ? '未配置（设置 → 模型）' : '未读到'
       return [
         h('p', { key: 'p', style: { margin: '0 0 8px' } }, '先确认这套东西真的起来了。下面五项都对，就可以往下走。'),
         h('ul', { key: 'ul', style: { margin: '0 0 8px 18px', lineHeight: 1.8 } },
@@ -1293,14 +1307,15 @@ window.__ModuleLoader__.load({
        页面之间不共享取数结果，只共享「选中了哪个课题」这一件事。             */
 
     function Page({ title, projectId, children }) {
+      useLocaleRevision()
       return h(
         'div',
         { style: S.panel },
         h('div', { style: S.header },
-          h('div', { style: S.title }, 'DeepScient 科研工作台'),
+          h('div', { style: S.title }, tf('app.title')),
           h('div', { style: S.sub }, title),
           h('div', { style: S.spacer }),
-          h('div', { style: S.sub }, projectId ? `课题 ${projectId}` : '数据来自本机研究库'),
+          h('div', { style: S.sub }, projectId ? tf('app.project', { id: projectId }) : tf('app.localData')),
         ),
         h('div', { style: S.body }, children),
       )
@@ -1309,13 +1324,12 @@ window.__ModuleLoader__.load({
     function WorkbenchPage() {
       const projects = useApi('/projects')
       const [projectId, onProject] = useSelectedProject(projects)
-      const stages = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/stages` : null, [projectId])
-      const next = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/next` : null, [projectId])
+      const overview = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/overview` : null, [projectId])
       const jump = (id) => { stageJump.id = id; requestPanel('stages') }
       return h(
         Page,
-        { title: '工作台 · 阶段判定与助手说的是同一套门', projectId },
-        h(Workbench, { projects, projectId, onProject, stages, next, onJump: jump }),
+        { title: tf('page.workbench'), projectId },
+        h(Overview, { overview, projects, projectId, onProject, onJump: jump }),
       )
     }
 
@@ -1326,33 +1340,33 @@ window.__ModuleLoader__.load({
       // 从工作台跳过来时要展开同一级；读过一次就清掉，免得下次进来又自动展开
       const initial = useRef(stageJump.id)
       useEffect(() => { stageJump.id = '' }, [])
-      return h(Page, { title: '流程 · 十二个阶段与每个门凭什么通过', projectId },
+      return h(Page, { title: tf('page.stages'), projectId },
         h(StageList, { stages, initial: initial.current }))
     }
 
     function ToolsPage() {
       const tools = useApi('/tools')
       const skills = useApi('/skills')
-      return h(Page, { title: '工具 · 这一步会用到的后端能力与第三方技能' },
+      return h(Page, { title: tf('page.tools') },
         h(ToolList, { tools, skills }))
     }
 
     function BillingPage() {
       const [range, setRange] = useState('today')
       const usage = useApi(`/usage?range=${range}`, [range])
-      return h(Page, { title: '计费 · token 是真值，金额是估算' },
+      return h(Page, { title: tf('page.billing') },
         h(BillingPanel, { usage, range, onRange: setRange, onRefresh: usage.reload }))
     }
 
     function SourcesPage() {
       const sources = useApi('/sources')
-      return h(Page, { title: '接入 · 文献源与检索 API 的凭据只写一个文件' },
+      return h(Page, { title: tf('page.sources') },
         h(SourcesPanel, { sources }))
     }
 
     function DocsPage() {
       const docs = useApi('/docs')
-      return h(Page, { title: '说明 · 这套系统怎么用、边界在哪' },
+      return h(Page, { title: tf('page.docs') },
         h(Docs, { docs }))
     }
 
@@ -1595,18 +1609,23 @@ window.__ModuleLoader__.load({
        外壳的静态 index.html 写着自家名字，这里改成产品名；路由切换时外壳可能
        把 title 写回去，所以盯着 head 变化重设。只在值不同时写，避免自触发。   */
 
-    const PRODUCT_TITLE = 'DeepScient 科研工作台'
-
     function applyDocumentTitle(ctx) {
       if (typeof document === 'undefined' || !document.head) return
+      // 标签跟着语言走：切到英文时浏览器标签也要是英文
+      const want = () => tf('app.title')
       const set = () => {
-        if (document.title !== PRODUCT_TITLE) document.title = PRODUCT_TITLE
+        const title = want()
+        if (document.title !== title) document.title = title
       }
       set()
       if (typeof MutationObserver === 'undefined') return
       const observer = new MutationObserver(set)
       observer.observe(document.head, { childList: true, subtree: true, characterData: true })
-      const stop = () => observer.disconnect()
+      const offLocale = ctx.locale?.subscribe?.(set)
+      const stop = () => {
+        observer.disconnect()
+        if (typeof offLocale === 'function') offLocale()
+      }
       if (typeof ctx.effect === 'function') ctx.effect(() => stop)
       else if (typeof ctx.on === 'function') ctx.on('dispose', stop)
     }
@@ -1615,6 +1634,9 @@ window.__ModuleLoader__.load({
       const t = ctx.locale.bind(NS)
       // 胶囊、引导、设置页要换一级面板，先把 ctx 交出去给 requestPanel
       panelHost.ctx = ctx
+      // 文案与语言切换：tf() 读 i18n.t，useLocaleRevision() 从 i18n.ctx 拿订阅口
+      i18n.t = t
+      i18n.ctx = ctx
 
       const SettingsSection = makeSettingsSection(ctx)
       const UsageDockPill = makeUsagePill(ctx)
