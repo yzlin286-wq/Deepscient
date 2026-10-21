@@ -59,6 +59,11 @@
                 - **问就教，不问就干**：用户是第一次做研究时（问"怎么做""从哪开始""这个能不能做"），用 `science_workflow_stages` 讲清这一步要什么、为什么，再动手。别把教学塞进每一次执行汇报。
 
                 ## 写作与产出
+                - **三道独立关卡，各自跑，不要合成一句话**：
+                  - `science_similarity_check` —— 查重：稿内段落重复、与库内文献的自我重复、同项目拆篇（salami）风险。它只比本机库，不是查重数据库，汇报时要说清这个边界。
+                  - `science_proofread` —— 校对：数字与单位空格、缩写首次未定义、图表与引用编号不连续、括号不配对、中英混排。纯规则，报行号。
+                  - `science_journal_readiness` —— 顶刊达标：八维加权（证据 / 效应量 / 图 / 稿件 / 审计 / 溯源 / 预注册 / 报告规范），给 below / near / ready 与逐项缺口；它不预测录用。
+                  三者都**只判定、不改稿**，报出来的 `blocking` 修完再 `science_manuscript_build`。
                 - 稿件是**一份 `paper.md`**（YAML 头 + Markdown 正文），四个产物从它出来。顺序固定：
                   `science_manuscript_new`（没有稿子时）→ 改 `paper.md` → `science_manuscript_lint`（查要件）→ `science_manuscript_build`（出件）。
                 - 换刊**只改 front matter 的 `journal`**，不要复制第二份稿子，也不要在正文里手写任何格式。
@@ -252,6 +257,9 @@
           # 发表层：期刊匹配 / 投稿前门禁 / 加速路径 / 审稿回应
           - id: science-method
             name: '@local/dsh-science/method-tools'
+          # 独立核查层：查重 / 校对 / 顶刊达标评估（只判定，不改稿）
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
           # 转化层：前沿扫描（GitHub/arXiv）→ claim 提炼 → 缺口 → 贡献设计 → 论文骨架
           - id: science-frontier
             name: '@local/dsh-science/frontier-tools'

@@ -3,6 +3,51 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.7.0] — 2026-10-21
+
+三步科研流程的能力审计 + 补齐三处缺口。工具从 35 增到 38。
+
+### 审计结论（对照「发现空白 → 实验与独立核查 → 选刊投稿」）
+
+| 用户步骤 | 已有能力 | 本轮处理 |
+|---|---|---|
+| 第一步 · 预印本与 idea | `science_search` / `science_lit_query` / `science_frontier_scan` / `science_gap_matrix` / `science_novelty` / `science_contribution_design` / `science_knowledge_distill` / `science_paper_plan` | 预印本源只有 arXiv，缺 bioRxiv / medRxiv —— **未做，列入下一轮** |
+| 第二步 · 实验 | `science_exp_plan` / `science_exp_run` / `science_exp_query` / `science_stats` / `science_figure` | 已齐 |
+| 第二步 · 独立评审 | `science_paper_audit` + `science-provenance` | 已齐 |
+| 第二步 · **独立查重** | 无 | **新增 `science_similarity_check`** |
+| 第二步 · **独立校对** | `science_manuscript_lint` 只查要件，不查机械错误 | **新增 `science_proofread`** |
+| 第二步 · **顶刊达标评估** | `science_journal_fit` 是匹配、`paper_audit` 是维度打分，没有合成判定 | **新增 `science_journal_readiness`** |
+| 第三步 · 选刊分析 | `science_journal_fit` / `science_journal_intel` / `science_journal_refresh` | 已齐 |
+| 第三步 · 投稿信 | `science_cover_letter` / `science_submission_route` / `science_rebuttal` | 已齐 |
+
+技能侧 17 本已齐（literature-search / source-matrix / fulltext-hunting / frontier-to-paper / statistics-choice / stats-report / reproducibility / top-journal-writing / journal-selection / journal-intel / manuscript-formatting / reporting-standards / figure-for-journal / rebuttal-playbook / experiment-runbook / discipline-methods / study-coach-flow）。
+
+### 新增（`dsh-science/lib/gate-tools.js`）
+
+三个工具都**只判定、不改稿**，纯本地、确定性、可进 CI：
+
+- **`science_similarity_check`** —— 查重：稿内段落两两 5-gram Jaccard（≥0.6 判重复）、与库内文献的自我重复、同项目多稿的拆篇（salami）风险。边界写在工具描述里：只比本机库，不是查重数据库。
+- **`science_proofread`** —— 校对：数字与单位缺空格、连续空格、标点前空格、缩写首现未定义、图表序号跳号、引用编号跳号、括号不配对、中英混排粘连。每条带行号与改法。
+- **`science_journal_readiness`** —— 顶刊达标：八个加权维度（证据 / 效应量 / 图 / 稿件 / 审计 / 溯源 / 预注册 / 报告规范），给 `below` / `near` / `ready` 与逐项缺口。读不到的维度标 `skipped`，不算通过。明确写「不预测录用」。
+
+### 修复
+
+- **workflow 把技能名当工具名**：`science_statistics_choice`（S3/S7）、`science_reproducibility`（S6/S10）、`science_top_journal_writing`（S9）本就是技能，却被列进阶段的 `tools` 数组，界面会显示成「这一步要调的工具」。现在拆成 `skills` 字段，`tools` 只留真实工具。
+- **工具定义缺 `output` 段**：这个版本的 `defineTool` 要求 `output: { schema, render }`，`render` 缺失会让整套预设 `broken`（报 `Cannot read properties of undefined (reading 'render')`）。三个新工具都补了 `output.schema` 与 `output.render`。
+
+### 提示词
+
+科研模式的 persona 增加「三道独立关卡」段落，点名三个工具各自的职责边界与「报出的 blocking 修完再出件」的纪律。
+
+### 校验
+
+`verify-deepscient` 293 项全绿（插件数断言 9 → 10）；`/deepscient/api/tools` 报 38 个工具，三个新工具分别挂在 S9（proofread）与 S10（similarity / readiness）。
+
+### 未完成
+
+- **预印本源只有 arXiv**：`data/sources` 与检索层需要补 bioRxiv / medRxiv，否则「研究预印本」这一步在生命科学方向上覆盖不足。
+- 引导（47 条）与设置（43 条）界面文案仍是中文硬编码；`tools.en.json` / `sources.en.json` 未建。
+
 ## [0.6.3] — 2026-10-21
 
 数据层双语打通：英文模式下阶段名、门名、下一步动作都是英文，判定结果不变。
