@@ -153,5 +153,45 @@
     "emptyRange": "No usage recorded in this range.",
     "skipped": "Skipped while aggregating",
     "indexLine": "Index: {files} logs, parsed {parsed} this run, reused {reused}; generated at {at}."
+  },
+  "wizard": {
+    "open": "Research brief",
+    "openHint": "Spend two minutes saying what you want to study, before any work starts",
+    "title": "State the research need",
+    "hint": {
+      "question": "One sentence: in which population, what compared with what, affecting what, over how long."
+    },
+    "cancel": "Cancel",
+    "fill": "Write into the input",
+    "start": "Start now",
+    "needQuestion": "The research question is the one field required to build a mandate.",
+    "field": {
+      "question": "Research question",
+      "domain": "Field",
+      "data": "Existing data",
+      "subjects": "Sample you can reach",
+      "equipment": "Equipment and platforms",
+      "deadline": "Deadline",
+      "people": "People",
+      "deliverables": "Target output",
+      "ethics": "Ethics approval",
+      "license": "Data licence"
+    },
+    "ph": {
+      "question": "e.g. In community adults over 60, tai chi three times weekly versus usual care, on falls over six months",
+      "domain": "Biomedical / neuroscience / psychology / economics / computer science",
+      "data": "Dataset name, source, licence; write \"none\" if you have none",
+      "subjects": "Population, where from, roughly how many",
+      "equipment": "Instruments, compute, software; write \"ordinary workstation\" if nothing special",
+      "deadline": "e.g. submit by 2027-03, or \"within six months\"",
+      "people": "e.g. just me, with help on statistics",
+      "deliverables": "Conference abstract / journal paper / preregistration / internal report",
+      "ethics": "Approval id if you have one; otherwise the committee you plan to use",
+      "license": "Data use agreement or authorisation; name the licence for public data"
+    },
+    "mandate": {
+      "intro": "I am opening a new project. Here is the need, stated up front:",
+      "ask": "Start with action draft of science_requirement_brief to structure this into a requirement brief and show me the gaps; I will fill them and then commit to open the project."
+    }
   }
 }

@@ -422,7 +422,7 @@ const ctx = {
 mod.apply(ctx)
 const byName = (name) => registrations.filter((r) => r.name === name)
 
-check('一共注册 18 个槽', () => assert.equal(registrations.length, 18, registrations.map((r) => r.name).join(',')))
+check('一共注册 19 个槽', () => assert.equal(registrations.length, 19, registrations.map((r) => r.name).join(',')))
 check('品牌图标槽', () => assert.equal(byName('sidebar.brand.mark').length, 1))
 check('品牌名槽', () => assert.equal(byName('sidebar.brand.name').length, 1))
 check('欢迎页品牌槽（第一屏不露外壳标记）', () =>
@@ -793,7 +793,24 @@ check('科研模式占着 standard 这个 id', () => {
   const row = presetsApi.body.items.find((p) => p.id === 'standard')
   assert.equal(row.name, '科研模式')
 })
-check('军团八个预设：主预设 + 七个角色', () => assert.equal(presetsApi.body.items.length, 8, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
+check('新建会话挂上了科研需求向导', () => {
+    const src = readFileSync('deepscient/client/index.js', 'utf8')
+    assert.ok(src.includes("ctx.slots.inject('conversation.input.activity'"), '没有注册到 composer 工具栏槽')
+    assert.ok(src.includes('makeRequirementWizard'), '缺向导组件')
+    assert.ok(src.includes('inputActions?.setDraft'), '向导没有写草稿的路径')
+    assert.ok(src.includes("tf('wizard.mandate.intro')"), '任务书没有开场句')
+  })
+  check('向导文案中英双向对齐', () => {
+    const zh = JSON.parse(readFileSync('deepscient/locale/zh.json', 'utf8'))
+    const en = JSON.parse(readFileSync('deepscient/locale/en.json', 'utf8'))
+    const flat = (o, p = '') => Object.keys(o).flatMap((k) => (o[k] && typeof o[k] === 'object' ? flat(o[k], p + k + '.') : [p + k]))
+    const zk = flat(zh.wizard).sort()
+    const ek = flat(en.wizard).sort()
+    assert.equal(zk.length, ek.length, `中英 key 数不同：${zk.length} vs ${ek.length}`)
+    assert.deepEqual(zk, ek)
+    assert.ok(zk.length >= 30, `向导 key 偏少：${zk.length}`)
+  })
+  check('军团八个预设：主预设 + 七个角色', () => assert.equal(presetsApi.body.items.length, 8, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
   check('七个角色都在名册里', () => {
     const ids = presetsApi.body.items.map((p) => p.id)
     for (const role of ['science-survey', 'science-strategist', 'science-experimenter', 'science-analyst', 'science-writer', 'science-critic', 'science-rebuttal']) {

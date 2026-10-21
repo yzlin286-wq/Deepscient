@@ -3,6 +3,43 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.9.0] — 2026-10-21
+
+新建对话从空白输入框变成一次需求梳理。0.8.0 交付的两层底座（缺口怎么算、面板怎么读）现在接上了界面。
+
+### 新增：科研需求向导
+
+挂在 `conversation.input.activity` —— composer 工具栏里模型选择器之后的位置。选它有两个理由，都来自实测而不是猜：`Slots.listSubTree` 报这个 single 槽 `occupants: []`（空着），且它是唯一同时提供 `inputActions` 与 `onActiveChange` 的位置。
+
+- **`inputActions`** 是从 `dsh-client-ui-conversation` 的 `ComposerActions` 暴露的完整动作面：`captureInsertion` / `insertText` / `setDraft` / `persistDraft` / `addAttachments` / `removeAttachment` / `pruneAttachments` / `submit`。向导用 `setDraft` 而不是 `insertText`：产出是整段任务书，覆盖草稿语义更对，也不用处理 `draftRev` 竞态。
+- **`onActiveChange`** 是 ownerProps：展开时占满工具栏宽度，卸载时必须释放。向导的 `useEffect` 在收起与卸载时都调 `false`，不释放会把别的附件控件挤没。
+
+十组字段：研究问题、领域、已有数据、可招到的样本、设备与平台、截止时间、人力、目标产出、伦理备案、数据许可。研究问题带一句改写提示（在什么对象里、什么相比什么、影响什么、观察多久）。只有「研究问题」是必填——没它按钮就禁用。
+
+两个出口：**写进输入框**（`setDraft`，用户自己改完再发）、**直接开始**（`setDraft` + `submit`）。
+
+三处刻意的取舍：
+
+1. **向导不算缺口。** 缺口判定在 `science_requirement_brief` 工具里，服务端算 why 与 unlocks；前端再算一遍必然与服务端漂移，那是两份真源。
+2. **向导不写数据。** 它只组装一段文字进草稿箱。真正的写发生在模型调 `science_requirement_brief` 时。按 user-actions 的规矩，纯视图交互不需要工具，也不需要 Host 服务方法。
+3. **不做「是否科研模式」的开关。** 本实例默认预设就是科研模式，多一个开关就多一处会漂的状态。
+
+任务书显式点名下一步：先用 `draft` 结构化、把缺口摆出来，补齐后再 `commit` 建课题。主 agent 接得住，用户也知道会发生什么。
+
+### 文案
+
+`wizard.*` 组进 `deepscient/locale/zh.json` 与 `en.json`，键路径分三组（`wizard.field.*` / `wizard.hint.*` / `wizard.ph.*`）避免与标签同名撞嵌套。`verify` 断言中英 key 数相等且逐一对应、英文值无中日韩字符。字典顶层组从 14 增到 15。
+
+### 校验
+
+`verify-deepscient` 298 项全绿。新增断言：向导已注册到 composer 工具栏槽、组件与 `setDraft` 路径存在、任务书开场句存在、向导文案中英双向对齐且不少于 30 个键。槽注册数从 18 增到 19。
+
+### 验证边界
+
+**向导的实际视觉与交互没有自动化验证**。浏览器控制不可用，且本次会话的 GUI 指向 3080（另一个 profile，不加载 deepscient），`Slots.listSubTree` 的 client 查询只对已连接的页面生效——它连不到 3081 这一页。当前能确认的是：客户端文件语法通过、注册调用与同文件里 18 处既有注册同形、host 侧启动无 broken、298 项断言全绿。
+
+需要人确认三件事：向导按钮在输入框上方是否出现在预期位置、面板展开会不会被 composer 容器裁掉（用的是绝对定位 + `maxHeight: 70vh` + 滚动）、点「直接开始」后任务书是否如期进入输入框并发出。
+
 ## [0.8.0] — 2026-10-21
 
 科研模式从「一个万能 agent」变成「一支有分工的军团」，新建会话从空白输入框变成需求梳理。

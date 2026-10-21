@@ -153,5 +153,45 @@
     "emptyRange": "这个区间还没有用量记录。",
     "skipped": "统计时跳过的部分",
     "indexLine": "索引：{files} 份日志，本次解析 {parsed}，复用 {reused}；生成于 {at}。"
+  },
+  "wizard": {
+    "open": "科研需求",
+    "openHint": "先花两分钟说清要研究什么，再开工",
+    "title": "把研究需求说清楚",
+    "hint": {
+      "question": "一句话写清：在什么对象里，什么相比什么，影响什么，观察多久。"
+    },
+    "cancel": "取消",
+    "fill": "写进输入框",
+    "start": "直接开始",
+    "needQuestion": "至少填「研究问题」才能生成任务书。",
+    "field": {
+      "question": "研究问题",
+      "domain": "领域",
+      "data": "已有数据",
+      "subjects": "可招到的样本",
+      "equipment": "设备与平台",
+      "deadline": "截止时间",
+      "people": "人力",
+      "deliverables": "目标产出",
+      "ethics": "伦理备案",
+      "license": "数据许可"
+    },
+    "ph": {
+      "question": "例：在 60 岁以上社区人群中，每周三次太极相比常规护理，对 6 个月内跌倒次数的影响",
+      "domain": "生物医学 / 神经科学 / 心理学 / 经济学 / 计算机",
+      "data": "数据集名称、来源、许可；没有就写「无」",
+      "subjects": "人群、从哪里来、大致多少人",
+      "equipment": "仪器、算力、软件；没有特别的就写「普通工作站」",
+      "deadline": "例：2027-03 投稿，或「6 个月内」",
+      "people": "例：我一个人做，统计可以找人帮忙",
+      "deliverables": "会议摘要 / 期刊论文 / 预注册 / 内部报告",
+      "ethics": "有批号填批号；没有就写打算走哪家伦理委员会",
+      "license": "数据使用协议或授权；公开数据写许可证名"
+    },
+    "mandate": {
+      "intro": "我要开一个新课题，先把需求说清楚：",
+      "ask": "请先用 science_requirement_brief 的 draft 把它结构化成需求书，把缺口列给我；我补齐后再 commit 建课题。"
+    }
   }
 }

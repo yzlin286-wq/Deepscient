@@ -938,6 +938,152 @@ window.__ModuleLoader__.load({
        出厂的用量胶囊（总 token · 缓存命中 x%）已被首屏样式摘掉；这里补一个只讲 token 的，
        点了就打开「计费」页。数据来自本机日志的汇总，不额外请求模型。               */
 
+    /* ── 科研需求向导 ─────────────────────────────────────────────────────
+       新建会话时点开，十组字段一次问完；生成的是一条给科研合伙人的任务书，
+       不是替用户做决定。字段留空就不写进任务书——空着比编一个更有用。
+       缺口判定不在这里：那是 science_requirement_brief 的活，前端再算一遍必然漂移。 */
+
+    const WZ = {
+      wrap: { position: 'relative', display: 'inline-flex', alignItems: 'center' },
+      trigger: {
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '5px 10px', borderRadius: '8px', cursor: 'pointer',
+        border: '1px solid var(--dsh-border, #d8d8d8)', background: 'transparent',
+        fontSize: '12px', lineHeight: 1.2, whiteSpace: 'nowrap',
+      },
+      triggerOn: { borderColor: '#1f6f5c', color: '#1f6f5c' },
+      panel: {
+        position: 'absolute', bottom: 'calc(100% + 10px)', left: 0, zIndex: 60,
+        width: 'min(560px, 92vw)', maxHeight: '70vh', overflowY: 'auto',
+        padding: '16px', borderRadius: '12px', background: 'var(--dsh-bg, #fff)',
+        border: '1px solid var(--dsh-border, #d8d8d8)',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.14)', textAlign: 'left',
+      },
+      title: { fontSize: '14px', fontWeight: 600, marginBottom: '4px' },
+      hint: { fontSize: '12px', opacity: 0.65, lineHeight: 1.5, marginBottom: '12px' },
+      row: { marginBottom: '10px' },
+      label: { display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '3px' },
+      sub: { fontSize: '11px', opacity: 0.6, marginBottom: '4px', lineHeight: 1.45 },
+      input: {
+        width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px',
+        borderRadius: '7px', border: '1px solid var(--dsh-border, #d8d8d8)',
+        background: 'transparent', color: 'inherit', fontFamily: 'inherit', lineHeight: 1.5,
+      },
+      foot: { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' },
+      btn: {
+        padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer',
+        border: '1px solid var(--dsh-border, #d8d8d8)', background: 'transparent', color: 'inherit',
+      },
+      btnPrimary: { borderColor: '#1f6f5c', background: '#1f6f5c', color: '#fff' },
+      btnOff: { opacity: 0.4, cursor: 'not-allowed' },
+    }
+
+    // id 拼字典 key；hint 是给人看的一句解释，回答「为什么问这个」；rows 走多行输入。
+    const WZ_FIELDS = [
+      { id: 'question', rows: 2, hint: true },
+      { id: 'domain' },
+      { id: 'data', rows: 2 },
+      { id: 'subjects' },
+      { id: 'equipment' },
+      { id: 'deadline' },
+      { id: 'people' },
+      { id: 'deliverables' },
+      { id: 'ethics' },
+      { id: 'license' },
+    ]
+
+    function makeRequirementWizard() {
+      return function RequirementWizard(props) {
+        const [open, setOpen] = useState(false)
+        const [form, setForm] = useState({})
+        const onActiveChange = props?.onActiveChange
+        const inputActions = props?.inputActions
+
+        // 展开时占满工具栏宽度：不在展开状态释放，别的附件控件会被挤没。
+        useEffect(() => {
+          onActiveChange?.(open)
+          return () => { if (open) onActiveChange?.(false) }
+        }, [open])
+
+        const set = (id) => (event) => setForm((prev) => ({ ...prev, [id]: event.target.value }))
+
+        // 任务书：只写填了的字段，并显式点名下一步该调哪个工具。
+        const compose = () => {
+          const lines = [tf('wizard.mandate.intro'), '']
+          for (const field of WZ_FIELDS) {
+            const value = String(form[field.id] ?? '').trim()
+            if (!value) continue
+            lines.push('- ' + tf('wizard.field.' + field.id) + '：' + value)
+          }
+          lines.push('', tf('wizard.mandate.ask'))
+          return lines.join('\n')
+        }
+
+        const filled = Boolean(String(form.question ?? '').trim())
+
+        const writeDraft = () => {
+          inputActions?.setDraft?.(compose())
+          setOpen(false)
+        }
+        const startNow = () => {
+          if (!inputActions?.setDraft) return
+          inputActions.setDraft(compose())
+          inputActions.submit?.()
+          setOpen(false)
+        }
+
+        return h('div', { style: WZ.wrap },
+          h('button', {
+            type: 'button',
+            title: tf('wizard.openHint'),
+            style: open ? { ...WZ.trigger, ...WZ.triggerOn } : WZ.trigger,
+            onClick: () => setOpen((v) => !v),
+          }, tf('wizard.open')),
+          open
+            ? h('div', { style: WZ.panel },
+                h('div', { style: WZ.title }, tf('wizard.title')),
+                h('div', { style: WZ.hint }, tf('wizard.hint')),
+                ...WZ_FIELDS.map((field) => h('div', { key: field.id, style: WZ.row },
+                  h('label', { style: WZ.label }, tf('wizard.' + field.id)),
+                  field.hint ? h('div', { style: WZ.sub }, tf('wizard.hint.' + field.id)) : null,
+                  field.rows
+                    ? h('textarea', {
+                        rows: field.rows,
+                        style: WZ.input,
+                        placeholder: tf('wizard.ph.' + field.id),
+                        value: form[field.id] ?? '',
+                        onChange: set(field.id),
+                      })
+                    : h('input', {
+                        type: 'text',
+                        style: WZ.input,
+                        placeholder: tf('wizard.ph.' + field.id),
+                        value: form[field.id] ?? '',
+                        onChange: set(field.id),
+                      }),
+                )),
+                h('div', { style: WZ.foot },
+                  h('button', { type: 'button', style: WZ.btn, onClick: () => setOpen(false) }, tf('wizard.cancel')),
+                  h('button', {
+                    type: 'button',
+                    style: filled ? WZ.btn : { ...WZ.btn, ...WZ.btnOff },
+                    disabled: !filled,
+                    onClick: writeDraft,
+                  }, tf('wizard.fill')),
+                  h('button', {
+                    type: 'button',
+                    style: filled ? { ...WZ.btn, ...WZ.btnPrimary } : { ...WZ.btn, ...WZ.btnOff },
+                    disabled: !filled,
+                    onClick: startNow,
+                  }, tf('wizard.start')),
+                ),
+                filled ? null : h('div', { style: { ...WZ.sub, marginTop: '8px' } }, tf('wizard.needQuestion')),
+              )
+            : null,
+        )
+      }
+    }
+
     function makeUsagePill(ctx) {
       return function UsageDockPill() {
         const [state, setState] = useState({ status: 'loading', data: null })
@@ -1686,6 +1832,13 @@ window.__ModuleLoader__.load({
       // 底部：只报 token 消耗。出厂那颗（含缓存命中率）已被首屏样式摘掉，这里补一颗只讲 token 的。
       ctx.slots.inject('conversation.composer.dock', () =>
         ctx.slots.register({ name: 'conversation.composer.dock', id: 'deepscient-usage', order: 1, locale: NS }, UsageDockPill))
+
+        // 科研需求向导：挂在 composer 工具栏（模型选择器之后）。single 槽，实测空着，
+        // 且它是唯一同时提供 inputActions（写草稿/提交）与 onActiveChange（展开时让出宽度）的位置。
+        // 本实例（DeepScient）的预设就是科研模式，不额外做开关——多一个开关就多一处会漂的状态。
+        const RequirementWizard = makeRequirementWizard()
+        ctx.slots.inject('conversation.input.activity', () =>
+          ctx.slots.register({ name: 'conversation.input.activity', locale: NS }, RequirementWizard))
 
       // 首次打开的分步引导：只在 onboardingDone 不为 true 时渲染。
       ctx.slots.inject('shell.overlay', () =>
