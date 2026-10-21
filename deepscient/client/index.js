@@ -467,12 +467,12 @@ window.__ModuleLoader__.load({
       if (stages.status === 'error') return h(ErrorBox, { error: stages.error, onRetry: stages.reload })
       if (stages.data && stages.data.available === false) return h(Notice, null, stages.data.reason)
       const list = stages.data?.stages ?? []
-      if (!list.length) return h(Notice, null, '还没有课题，先在工作台建一个。')
+      if (!list.length) return h(Notice, null, tf('stages.noProject'))
       return h(
         'div',
         null,
         h('div', { style: { ...S.sub, marginBottom: 10 } },
-          `阻塞 ${stages.data.summary.blocking} · 警告 ${stages.data.summary.warnings} · 未留记录 ${stages.data.summary.skipped} · 自查 ${stages.data.summary.manual}`),
+          tf('stages.summary', { blocking: stages.data.summary.blocking, warnings: stages.data.summary.warnings, skipped: stages.data.summary.skipped, manual: stages.data.summary.manual })),
         list.map((s) =>
           h(
             'div',
@@ -486,7 +486,7 @@ window.__ModuleLoader__.load({
               h('span', { style: { ...S.mono, opacity: 0.65, width: 26 } }, s.id),
               h('span', { style: { fontWeight: 600, fontSize: 13 } }, s.label),
               h('div', { style: S.spacer }),
-              s.complete ? h(Chip, { status: 'pass' }, tf('common.done')) : h(Chip, { status: s.blocking ? 'fail' : 'skip' }, s.blocking ? `${s.blocking} 阻塞` : '未完成'),
+              s.complete ? h(Chip, { status: 'pass' }, tf('common.done')) : h(Chip, { status: s.blocking ? 'fail' : 'skip' }, s.blocking ? tf('stages.blockingCount', { n: s.blocking }) : '未完成'),
               h('span', { style: { opacity: 0.5 } }, open === s.id ? '▾' : '▸'),
             ),
             open === s.id
@@ -511,20 +511,20 @@ window.__ModuleLoader__.load({
         'div',
         null,
         h('div', { style: { ...S.row, marginBottom: 12 } },
-          h('input', { style: S.input, placeholder: '按工具名或阶段过滤', value: query, onChange: (e) => setQuery(e.target.value) }),
-          h('div', { style: S.sub }, `${filtered.length}/${items.length} 个工具`),
+          h('input', { style: S.input, placeholder: tf('tools.filter'), value: query, onChange: (e) => setQuery(e.target.value) }),
+          h('div', { style: S.sub }, tf('tools.count', { shown: filtered.length, total: items.length })),
         ),
         h('table', { style: S.table },
           h('thead', null, h('tr', null,
-            h('th', { style: S.th }, '工具'), h('th', { style: S.th }, '阶段'), h('th', { style: S.th }, '这一步的产物'))),
+            h('th', { style: S.th }, tf('tools.colTool')), h('th', { style: S.th }, tf('tools.colStage')), h('th', { style: S.th }, tf('tools.colArtifact')))),
           h('tbody', null, filtered.map((t) => h('tr', { key: t.name },
             h('td', { style: { ...S.td, ...S.mono } }, t.name),
             h('td', { style: S.td }, `${t.stageId} ${t.stageLabel}`),
             h('td', { style: { ...S.td, opacity: 0.75 } }, (t.artifacts ?? []).join('、') || '—'),
           )))),
-        h('div', { style: { ...S.sub, marginTop: 12 } }, '工具只在「科研模式」预设的会话里可调；这里列的是它们各自属于哪一步。'),
+        h('div', { style: { ...S.sub, marginTop: 12 } }, tf('tools.note')),
 
-        h('div', { style: { fontSize: 13, fontWeight: 600, margin: '22px 0 8px' } }, `随包技能（${skillItems.length}）`),
+        h('div', { style: { fontSize: 13, fontWeight: 600, margin: '22px 0 8px' } }, tf('tools.skillsHeading', { n: skillItems.length })),
         skillItems.length
           ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
               skillItems.map((s) => h('span', {
@@ -532,8 +532,8 @@ window.__ModuleLoader__.load({
                 title: s.name,
                 style: { ...S.chip('skip'), borderStyle: 'solid', padding: '3px 9px', fontSize: 11.5 },
               }, s.title)))
-          : h(Notice, null, skills.status === 'error' ? skills.error : '没读到技能目录。'),
-        h('div', { style: { ...S.sub, marginTop: 8 } }, '技能是「怎么干活」的方法笔记，助手在做对应任务时会自己读；你点不开它们，但可以据此要求它按哪本手册做。'),
+          : h(Notice, null, skills.status === 'error' ? skills.error : tf('tools.skillsEmpty')),
+        h('div', { style: { ...S.sub, marginTop: 8 } }, tf('tools.skillsNote')),
       )
     }
 
@@ -640,7 +640,7 @@ window.__ModuleLoader__.load({
       if (docs.status === 'loading') return h(Loading)
       if (docs.status === 'error') return h(ErrorBox, { error: docs.error, onRetry: docs.reload })
       const items = docs.data?.items ?? []
-      if (!items.length) return h(Notice, null, '说明文档还没打包进来（deepscient/docs/*.md）。')
+      if (!items.length) return h(Notice, null, tf('docs.notPacked'))
       return h(
         'div',
         { style: { display: 'flex', gap: 18, alignItems: 'flex-start' } },
@@ -663,7 +663,7 @@ window.__ModuleLoader__.load({
        数字全部来自 /deepscient/api/usage：它把会话日志里 provider 给的 usage 汇总起来。
        钱是按「价目 × token」算的预估——真值在中转站账单上，页面上必须写清楚。      */
 
-    const RANGE_LABEL = { today: '今天', '7d': '7 天', '30d': '30 天', all: '全部' }
+    const rangeLabel = (range) => tf(`billing.range.${range}`)
 
     function Stat({ label, value, hint }) {
       return h('div', { style: { minWidth: 120, padding: '10px 12px', borderRadius: 10, background: 'rgba(127,127,127,0.07)' } },
@@ -675,10 +675,10 @@ window.__ModuleLoader__.load({
     /** 扣费主体表：每把 key 一行，只有掩码。 */
     function keyTable(keys) {
       const head = h('thead', null, h('tr', null,
-        h('th', { style: S.th }, '来源'),
+        h('th', { style: S.th }, tf('billing.colSource')),
         h('th', { style: S.th }, 'provider'),
-        h('th', { style: S.th }, '掩码'),
-        h('th', { style: S.th }, '说明')))
+        h('th', { style: S.th }, tf('billing.colMask')),
+        h('th', { style: S.th }, tf('billing.colNote'))))
 
       const rows = keys.map((k, i) => h('tr', { key: i },
         h('td', { style: S.td }, k.source ?? '—'),
@@ -687,7 +687,7 @@ window.__ModuleLoader__.load({
         h('td', { style: { ...S.td, opacity: 0.75 } }, k.note ?? '—')))
 
       return h('div', { style: { marginTop: 10 } },
-        h('div', { style: { fontSize: 12.5, opacity: 0.75, marginBottom: 4 } }, '扣费主体（每个 key 各自计费）'),
+        h('div', { style: { fontSize: 12.5, opacity: 0.75, marginBottom: 4 } }, tf('billing.payers')),
         h('table', { style: S.table }, head, h('tbody', null, rows)))
     }
 
@@ -696,12 +696,12 @@ window.__ModuleLoader__.load({
     function modelTable(rows) {
       const head = h('thead', null, h('tr', null,
         h('th', { style: S.th }, 'provider'),
-        h('th', { style: S.th }, '模型'),
-        h('th', { style: S.th }, '输入'),
-        h('th', { style: S.th }, '缓存命中'),
-        h('th', { style: S.th }, '输出'),
-        h('th', { style: S.th }, '合计'),
-        h('th', { style: S.th }, '预估')))
+        h('th', { style: S.th }, tf('billing.colModel')),
+        h('th', { style: S.th }, tf('billing.colInput')),
+        h('th', { style: S.th }, tf('billing.colCache')),
+        h('th', { style: S.th }, tf('billing.colOutput')),
+        h('th', { style: S.th }, tf('billing.colTotal')),
+        h('th', { style: S.th }, tf('billing.colEstimate'))))
 
       const body = rows.map((row, i) => h('tr', { key: i },
         h('td', { style: { ...S.td, ...S.mono } }, row.provider),
@@ -713,18 +713,18 @@ window.__ModuleLoader__.load({
         h('td', { style: S.td }, row.cost === null ? '—' : row.cost.toFixed(4))))
 
       return h('div', { style: S.card },
-        h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 8 } }, '按模型'),
+        h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 8 } }, tf('billing.byModel')),
         h('table', { style: S.table }, head, h('tbody', null, body)))
     }
 
     /** 按会话表（最多 20 行，最近的在前）。 */
     function sessionTable(rows) {
       const head = h('thead', null, h('tr', null,
-        h('th', { style: S.th }, '会话'),
-        h('th', { style: S.th }, '预设'),
-        h('th', { style: S.th }, '合计'),
-        h('th', { style: S.th }, '预估'),
-        h('th', { style: S.th }, '最后写入')))
+        h('th', { style: S.th }, tf('billing.colSession')),
+        h('th', { style: S.th }, tf('billing.colPreset')),
+        h('th', { style: S.th }, tf('billing.colTotal')),
+        h('th', { style: S.th }, tf('billing.colEstimate')),
+        h('th', { style: S.th }, tf('billing.colLastWrite'))))
 
       const body = rows.slice(0, 20).map((row, i) => h('tr', { key: i },
         h('td', { style: { ...S.td, ...S.mono } }, row.title || row.sessionId),
@@ -734,7 +734,7 @@ window.__ModuleLoader__.load({
         h('td', { style: { ...S.td, opacity: 0.7 } }, String(row.updatedAt ?? '').slice(0, 16).replace('T', ' '))))
 
       return h('div', { style: S.card },
-        h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 8 } }, '按会话'),
+        h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 8 } }, tf('billing.bySession')),
         h('table', { style: S.table }, head, h('tbody', null, body)))
     }
 
@@ -749,79 +749,79 @@ window.__ModuleLoader__.load({
 
       return h('div', null,
         h('div', { style: { ...S.row, marginBottom: 12 } },
-          h('div', { style: { fontSize: 13, fontWeight: 600 } }, 'token 计费'),
+          h('div', { style: { fontSize: 13, fontWeight: 600 } }, tf('billing.title')),
           h('div', { style: S.spacer }),
           Object.keys(RANGE_LABEL).map((key) =>
-            h('button', { key, style: { ...S.button, opacity: range === key ? 1 : 0.55, borderColor: range === key ? 'rgba(31,111,92,0.7)' : undefined }, onClick: () => onRange(key) }, RANGE_LABEL[key])),
-          h('button', { style: S.button, onClick: onRefresh }, '刷新'),
+            h('button', { key, style: { ...S.button, opacity: range === key ? 1 : 0.55, borderColor: range === key ? 'rgba(31,111,92,0.7)' : undefined }, onClick: () => onRange(key) }, rangeLabel(key))),
+          h('button', { style: S.button, onClick: onRefresh }, tf('common.refresh')),
         ),
 
         h('div', { style: S.card },
           h('div', { style: S.row },
-            h(Stat, { label: '总消耗', value: formatTokens(totals.totalTokens), hint: `${totals.messages ?? 0} 条模型回复` }),
-            h(Stat, { label: '未命中输入', value: formatTokens(totals.inputTokens) }),
-            h(Stat, { label: '命中缓存输入', value: formatTokens(totals.cacheReadTokens) }),
-            h(Stat, { label: '输出', value: formatTokens(totals.outputTokens) }),
-            h(Stat, { label: `预估费用（${data.currency ?? 'CNY'}）`, value: cost ? cost.amount.toFixed(4) : '—', hint: cost ? '按设置里的价目估算' : '未配置价目' }),
+            h(Stat, { label: tf('billing.statTotal'), value: formatTokens(totals.totalTokens), hint: tf('billing.statTotalHint', { n: totals.messages ?? 0 }) }),
+            h(Stat, { label: tf('billing.statInput'), value: formatTokens(totals.inputTokens) }),
+            h(Stat, { label: tf('billing.statCache'), value: formatTokens(totals.cacheReadTokens) }),
+            h(Stat, { label: tf('billing.statOutput'), value: formatTokens(totals.outputTokens) }),
+            h(Stat, { label: tf('billing.statCost', { currency: data.currency ?? 'CNY' }), value: cost ? cost.amount.toFixed(4) : '—', hint: cost ? tf('billing.statCostHint') : tf('billing.statCostNoTable') }),
           ),
         ),
 
         h('div', { style: S.card },
-          h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, '计费口径'),
+          h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, tf('billing.basis')),
           h(Notice, null,
-            h('div', null, billing.note ?? '计费数据来源于 New API 中转站。'),
+            h('div', null, billing.note ?? tf('billing.noteFallback')),
             h('div', { style: { marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' } },
               configured && billing.consoleUrl
-                ? h('a', { href: billing.consoleUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, '打开 New API 账单页')
+                ? h('a', { href: billing.consoleUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, tf('billing.openBill'))
                 : configured && billing.baseUrl
-                  ? h('a', { href: billing.baseUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, '打开 New API 中转站')
-                  : h('span', { style: { ...S.chip('skip'), padding: '2px 8px' } }, `链接待填：${billing.linkPlaceholder ?? 'https://<中转站地址>'}`),
-              h('span', { style: S.sub }, '在「设置 → 科研工作台」里填中转站地址与账单页，链接就会亮起来。'),
+                  ? h('a', { href: billing.baseUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, tf('billing.openRelay'))
+                  : h('span', { style: { ...S.chip('skip'), padding: '2px 8px' } }, tf('billing.linkPending', { url: billing.linkPlaceholder ?? 'https://<relay>' })),
+              h('span', { style: S.sub }, tf('billing.linkHint')),
             ),
           ),
           (data.keys ?? []).length > 0
             ? keyTable(data.keys)
-            : h('div', { style: { ...S.sub, marginTop: 8 } }, '没读到凭据来源：启动器用环境变量注入 key 时会显示在这里。'),
-          h('div', { style: { ...S.sub, marginTop: 8 } }, '你的实际用量在这把 key 上扣费；本页的 token 是本机日志的同口径汇总，金额是按价目算的预估，账单以中转站为准。'),
+            : h('div', { style: { ...S.sub, marginTop: 8 } }, tf('billing.noKeySource')),
+          h('div', { style: { ...S.sub, marginTop: 8 } }, tf('billing.attribution')),
         ),
 
         (data.byModel ?? []).length > 0
           ? modelTable(data.byModel)
-          : h(Notice, null, data.source === 'unavailable' ? '这台机器的 Node 没有 zstd 解压能力，读不了会话日志。' : '这个区间还没有用量记录。'),
+          : h(Notice, null, data.source === 'unavailable' ? tf('billing.noZstd') : tf('billing.emptyRange')),
 
         (data.bySession ?? []).length > 0 ? sessionTable(data.bySession) : null,
 
         (data.warnings ?? []).length
           ? h('div', { style: { ...S.card, borderColor: 'rgba(190,70,60,0.4)' } },
-              h('div', { style: { fontSize: 12.5, fontWeight: 600, marginBottom: 6 } }, '统计时跳过的部分'),
+              h('div', { style: { fontSize: 12.5, fontWeight: 600, marginBottom: 6 } }, tf('billing.skipped')),
               h('ul', { style: { margin: '0 0 0 18px', fontSize: 12 } }, data.warnings.map((w, i) =>
                 h('li', { key: i }, h('code', { style: S.mono }, w.file || '—'), ` ${w.reason}`))))
           : null,
 
         h('div', { style: { ...S.sub, marginTop: 8 } },
-          `索引：${data.index?.files ?? 0} 份日志，本次解析 ${data.index?.parsed ?? 0}，复用 ${data.index?.reused ?? 0}；生成于 ${String(data.generatedAt ?? '').slice(11, 19)}。`),
+          tf('billing.indexLine', { files: data.index?.files ?? 0, parsed: data.index?.parsed ?? 0, reused: data.index?.reused ?? 0, at: String(data.generatedAt ?? '').slice(11, 19) })),
       )
     }
 
     /* ── 接入 ───────────────────────────────────────────────────────────── */
 
-    const WIRED_LABEL = { runtime: '已接入工具', declared: '已保存·工具侧尚未读取', none: '免凭据' }
+    const wiredLabel = (wired) => tf(`sources.wired.${wired}`)
 
     function sourceStatusCell(item) {
       const nodes = [
         h(Chip, { key: 'state', status: item.configured ? 'pass' : 'skip' }, item.configured ? tf('sources.configured') : tf('sources.notConfigured')),
-        h('div', { key: 'wired', style: { fontSize: 11, opacity: 0.6, marginTop: 4 } }, WIRED_LABEL[item.wired] ?? item.wired),
+        h('div', { key: 'wired', style: { fontSize: 11, opacity: 0.6, marginTop: 4 } }, wiredLabel(item.wired) ?? item.wired),
       ]
-      if (item.from === 'env') nodes.push(h('div', { key: 'env', style: { fontSize: 11, opacity: 0.6 } }, '来自环境变量 ' + item.envName))
+      if (item.from === 'env') nodes.push(h('div', { key: 'env', style: { fontSize: 11, opacity: 0.6 } }, tf('sources.fromEnv') + item.envName))
       return h('div', null, nodes)
     }
 
     function sourceInputCell(item, draft, setDraft) {
-      if (!item.path) return h('span', { style: { opacity: 0.5 } }, '无需凭据')
+      if (!item.path) return h('span', { style: { opacity: 0.5 } }, tf('sources.noCredential'))
       return h('input', {
         style: { ...S.input, minWidth: 150 },
         type: item.kind === 'email' ? 'email' : 'password',
-        placeholder: item.kind === 'email' ? 'pi@lab.example' : '粘贴 key 后保存',
+        placeholder: item.kind === 'email' ? 'pi@lab.example' : tf('sources.pasteKey'),
         value: draft[item.id] ?? '',
         onChange: (e) => setDraft((prev) => ({ ...prev, [item.id]: e.target.value })),
       })
@@ -833,17 +833,17 @@ window.__ModuleLoader__.load({
       const text = result.status === 'ok'
         ? `通 ${result.ms ?? '?'}ms`
         : result.status === 'ready'
-          ? '有凭据'
+          ? tf('sources.hasCredential')
           : result.status === 'no-credential'
-            ? '缺凭据'
-            : '失败'
+            ? tf('sources.missingCredential')
+            : tf('sources.failed')
       return h(Chip, { status: good ? 'pass' : 'fail' }, text)
     }
 
     function sourceActionCell(item, onSave, onTest, result) {
       const nodes = []
-      if (item.path) nodes.push(h('button', { key: 'save', style: S.button, onClick: () => onSave(item.id) }, '保存'))
-      nodes.push(h('button', { key: 'test', style: S.button, onClick: () => onTest(item.id) }, '测试'))
+      if (item.path) nodes.push(h('button', { key: 'save', style: S.button, onClick: () => onSave(item.id) }, tf('common.save')))
+      nodes.push(h('button', { key: 'test', style: S.button, onClick: () => onTest(item.id) }, tf('sources.test')))
       const chip = verifyChip(result)
       if (chip) nodes.push(h('span', { key: 'chip' }, chip))
       if (result && result.hint) nodes.push(h('div', { key: 'hint', style: { fontSize: 11, opacity: 0.65, width: '100%' } }, result.hint))
@@ -855,7 +855,7 @@ window.__ModuleLoader__.load({
         h('td', { style: S.td },
           h('a', { href: item.applyUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, item.name),
           item.hint ? h('div', { style: { fontSize: 11, opacity: 0.6, marginTop: 2 } }, item.hint) : null),
-        h('td', { style: S.td }, item.kind === 'none' ? '免填' : item.kind === 'email' ? '邮箱' : 'Key'),
+        h('td', { style: S.td }, item.kind === 'none' ? tf('sources.kindNone') : item.kind === 'email' ? tf('sources.kindEmail') : 'Key'),
         h('td', { style: S.td }, sourceStatusCell(item)),
         h('td', { style: { ...S.td, ...S.mono, opacity: 0.8 } }, item.masked || '—'),
         h('td', { style: S.td }, sourceInputCell(item, draft, setDraft)),
@@ -880,7 +880,7 @@ window.__ModuleLoader__.load({
           const payload = await sendJson('PUT', '/sources', { items: { [id]: draft[id] ?? '' } })
           if ((payload.rejected ?? []).length) throw new Error(payload.rejected.map((r) => r.reason).join('；'))
           setDraft((prev) => ({ ...prev, [id]: '' }))
-          setSaved('已保存 ' + id + ' ' + new Date().toLocaleTimeString())
+          setSaved(tf('sources.savedAt', { id, at: new Date().toLocaleTimeString() }))
           sources.reload()
         } catch (e) {
           setError(e.message)
@@ -898,18 +898,18 @@ window.__ModuleLoader__.load({
       }
 
       const head = h('thead', null, h('tr', null,
-        h('th', { style: S.th }, '数据源'),
-        h('th', { style: S.th }, '凭据'),
-        h('th', { style: S.th }, '状态'),
-        h('th', { style: S.th }, '当前值'),
-        h('th', { style: S.th }, '填写'),
-        h('th', { style: S.th }, '验证')))
+        h('th', { style: S.th }, tf('sources.colSource')),
+        h('th', { style: S.th }, tf('sources.colCredential')),
+        h('th', { style: S.th }, tf('sources.colStatus')),
+        h('th', { style: S.th }, tf('sources.colValue')),
+        h('th', { style: S.th }, tf('sources.colFill')),
+        h('th', { style: S.th }, tf('sources.colVerify'))))
 
       const rows = items.map((item) => sourceRow(item, draft, setDraft, save, test, result[item.id]))
       const configured = items.filter((item) => item.configured).length
 
       return h('div', null,
-        h('div', { key: 'title', style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, '科研 / 文献 / 检索 API'),
+        h('div', { key: 'title', style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, tf('sources.heading')),
         h(Notice, { key: 'note' },
           h('div', null, data.note ?? '密钥只写入本机 science/config.json。'),
           h('div', { style: { ...S.mono, opacity: 0.7, marginTop: 4 } }, data.path ?? '')),
@@ -1479,7 +1479,7 @@ window.__ModuleLoader__.load({
             rows.length
               ? h('table', { style: S.table },
                   h('thead', null, h('tr', null,
-                    h('th', { style: S.th }, 'provider'), h('th', { style: S.th }, '模型'),
+                    h('th', { style: S.th }, 'provider'), h('th', { style: S.th }, tf('billing.colModel')),
                     h('th', { style: S.th }, '输入/M'), h('th', { style: S.th }, '缓存命中/M'),
                     h('th', { style: S.th }, '输出/M'), h('th', { style: S.th }, ''))),
                   h('tbody', null, rows.map((row, index) =>
@@ -1590,7 +1590,7 @@ window.__ModuleLoader__.load({
               : null),
 
           h('div', { style: { ...S.row, marginTop: 6 } },
-            h('button', { style: S.button, onClick: save }, '保存'),
+            h('button', { style: S.button, onClick: save }, tf('common.save')),
             h('button', { style: S.button, onClick: () => setDraft(state.data?.values ?? draft) }, '还原'),
             saved ? h('span', { style: S.sub }, saved) : null),
           rejected.length

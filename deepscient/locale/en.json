@@ -66,7 +66,92 @@
   },
   "sources": {
     "configured": "Configured",
-    "notConfigured": "Not configured"
+    "notConfigured": "Not configured",
+    "heading": "Research / literature / search APIs",
+    "wired": {
+      "runtime": "Wired to tools",
+      "declared": "Saved; tools have not read it yet",
+      "none": "No credential needed"
+    },
+    "fromEnv": "From environment variable ",
+    "noCredential": "No credential required",
+    "pasteKey": "Paste a key, then save",
+    "hasCredential": "Has credential",
+    "missingCredential": "Missing credential",
+    "failed": "Failed",
+    "test": "Test",
+    "kindNone": "None needed",
+    "kindEmail": "Email",
+    "savedAt": "Saved {id} at {at}",
+    "colSource": "Source",
+    "colCredential": "Credential",
+    "colStatus": "Status",
+    "colValue": "Current value",
+    "colFill": "Set value",
+    "colVerify": "Verify"
   },
-  "settings": "Research"
+  "settings": "Research",
+  "stages": {
+    "noProject": "No project yet — create one in the Workbench.",
+    "summary": "{blocking} blocking · {warnings} warnings · {skipped} unrecorded · {manual} self-check",
+    "blockingCount": "{n} blocking"
+  },
+  "tools": {
+    "filter": "Filter by tool or stage",
+    "count": "{shown}/{total} tools",
+    "colTool": "Tool",
+    "colStage": "Stage",
+    "colArtifact": "Artifact",
+    "note": "Tools are only callable inside a session using the Research preset; this list shows which stage each belongs to.",
+    "skillsHeading": "Bundled skills ({n})",
+    "skillsEmpty": "Could not read the skill catalog.",
+    "skillsNote": "Skills are method notes on how to do the work; the assistant reads them when the task calls for it. You cannot open them here, but you can ask it to follow a specific playbook."
+  },
+  "docs": {
+    "notPacked": "Documentation is not bundled yet (deepscient/docs/*.md)."
+  },
+  "billing": {
+    "title": "Token billing",
+    "range": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "all": "All time"
+    },
+    "colSource": "Source",
+    "colMask": "Masked key",
+    "colNote": "Note",
+    "payers": "Billable accounts (each key bills separately)",
+    "colModel": "Model",
+    "colInput": "Input",
+    "colCache": "Cache hit",
+    "colOutput": "Output",
+    "colTotal": "Total",
+    "colEstimate": "Estimate",
+    "byModel": "By model",
+    "colSession": "Session",
+    "colPreset": "Preset",
+    "colLastWrite": "Last write",
+    "bySession": "By session",
+    "statTotal": "Total tokens",
+    "statTotalHint": "{n} model replies",
+    "statInput": "Input (uncached)",
+    "statCache": "Input (cache hit)",
+    "statOutput": "Output",
+    "statCost": "Estimated cost ({currency})",
+    "statCostHint": "Estimated from the price table in settings",
+    "statCostNoTable": "No price table configured",
+    "basis": "Billing basis",
+    "noteFallback": "Billing data comes from the New API relay.",
+    "openBill": "Open the New API billing page",
+    "openRelay": "Open the New API relay",
+    "linkPending": "Link not set: {url}",
+    "linkHint": "Fill in the relay URL and billing page under Settings → Research and the links will become active.",
+    "noKeySource": "No credential source found; a key injected by the launcher through an environment variable would show here.",
+    "attribution": "Actual usage is billed to this key; the tokens here are aggregated from local logs, the amount is an estimate from the price table, and the relay invoice is authoritative.",
+    "noZstd": "This Node build cannot decompress zstd, so session logs cannot be read.",
+    "emptyRange": "No usage recorded in this range.",
+    "skipped": "Skipped while aggregating",
+    "indexLine": "Index: {files} logs, parsed {parsed} this run, reused {reused}; generated at {at}."
+  }
 }

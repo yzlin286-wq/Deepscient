@@ -113,6 +113,32 @@ check('科研预设排第一', () => assert.match(sciencePatch, /order:\s*1\b/))
 
 const locales = ['zh', 'en'].map((l) => JSON.parse(readFileSync(join(pkgDir, 'locale', `${l}.json`), 'utf8')))
 check('中文 locale 有 meta.title', () => assert.match(locales[0].meta.title, /DeepScient/))
+const pickByPath = (node, path) => path.split('.').reduce((acc, part) => (acc == null ? acc : acc[part]), node)
+const enDictFlat = (key) => pickByPath(locales[1], key)
+const flattenKeys = (node, prefix = '') =>
+  Object.entries(node).flatMap(([key, value]) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? flattenKeys(value, `${prefix}${key}.`)
+      : [`${prefix}${key}`])
+const zhKeys = flattenKeys(locales[0])
+const enKeys = flattenKeys(locales[1])
+
+check('zh/en 字典 key 集合双向相等（漏一条就会在界面上露出 key）', () => {
+  const onlyZh = zhKeys.filter((k) => !enKeys.includes(k))
+  const onlyEn = enKeys.filter((k) => !zhKeys.includes(k))
+  assert.deepEqual({ onlyZh, onlyEn }, { onlyZh: [], onlyEn: [] })
+})
+check('字典规模够覆盖界面（≥ 120 条）', () => assert.ok(zhKeys.length >= 120, `只有 ${zhKeys.length} 条`))
+check('英文值里没有中日韩字符（避免漏翻）', () => {
+  const cjk = /[\u3400-\u9fff]/
+  const leaked = enKeys.filter((k) => cjk.test(String(enDictFlat(k))))
+  assert.deepEqual(leaked, [])
+})
+check('总览页的 key 齐全', () => {
+  for (const key of ['overview.progress', 'overview.current', 'overview.next', 'overview.artifacts', 'overview.present', 'overview.missing']) {
+    assert.ok(zhKeys.includes(key), key)
+  }
+})
 check('两份 locale 都有 panel 键，且六个一级页名齐全', () => {
   const keys = ['root', 'workbench', 'stages', 'tools', 'billing', 'sources', 'docs']
   for (const locale of locales) {
@@ -301,6 +327,15 @@ check('取不存在的文档给 null', () => assert.equal(content.getDoc('../../
 
 section('客户端模块注册')
 const clientSrc = readFileSync(join(pkgDir, 'client', 'index.js'), 'utf8')
+
+/** 收集代码里的中文字面量（跳过注释行） */
+const cjkLiterals = (src) =>
+  src
+    .split('\n')
+    .filter((line) => !/^\s*(\/\/|\/\*|\*)/.test(line))
+    .flatMap((line) => [...line.matchAll(/'([^']*)'/g)].map((m) => m[1]))
+    .filter((s) => /[\u3400-\u9fff]{2,}/.test(s))
+
 check('客户端用 ModuleLoader 协议', () => assert.match(clientSrc, /window\.__ModuleLoader__\.load\(/))
 check('模块 id 与包名一致', () => assert.match(clientSrc, /id:\s*'@local\/deepscient'/))
 check('不 require 基线之外的模块', () => {
@@ -442,6 +477,17 @@ check('六个页面共用同一个品牌外壳，标题写着 DeepScient', () =>
   assert.equal(shells[0].name, 'Page')
   assert.match(JSON.stringify(shells[0]({ title: 'x' })), /DeepScient 科研工作台/)
 })
+check('总览与页面壳里没有成句的中文（这两块已迁字典）', () => {
+  const scope = clientSrc.slice(
+    clientSrc.indexOf('function Page('),
+    clientSrc.indexOf('function StagesPage('),
+  ) + clientSrc.slice(
+    clientSrc.indexOf('const OS = {'),
+    clientSrc.indexOf('function StageList('),
+  )
+  assert.deepEqual(cjkLiterals(scope), [])
+})
+
 check('六个页面各用不同的副标题 key', () => {
   const keys = ['page.workbench', 'page.stages', 'page.tools', 'page.billing', 'page.sources', 'page.docs']
   for (const key of keys) assert.ok(clientSrc.includes(key), key)

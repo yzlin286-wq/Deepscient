@@ -3,6 +3,31 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.6.2] — 2026-10-21
+
+流程 / 工具 / 计费 / 接入 / 说明五页文案迁进字典，字典到 125 key，中英逐 key 对齐。
+
+### 变更
+
+- 五页正文全部改走 `tf(...)`：表头、空态、说明句、占位符、按钮（刷新 / 保存 / 测试）都不再有中文字面量。
+- `RANGE_LABEL` / `WIRED_LABEL` 两个中文常量表改成 `rangeLabel()` / `wiredLabel()`。
+- 字典新增 `stages` / `tools` / `docs` / `billing` / `sources` 五组，共 97 条新 key；插值键 `{blocking}` `{shown}/{total}` `{currency}` `{files}` 按调用点逐个对上。
+
+### 校验
+
+`verify-deepscient` 从 288 项增至 293 项：
+
+- zh/en 字典 **key 集合双向差集为空**（漏一条就会在界面上露出 key 本身）
+- 字典规模 ≥ 120 条
+- 英文值里不含中日韩字符（防漏翻）
+- 总览页六个 key 齐全
+- 总览与页面壳范围内无成句中文字面量（注释除外）
+
+### 未完成
+
+- 引导（47 条）与设置（43 条）仍是中文硬编码。
+- `workflow.en.json` / `tools.en.json` / `sources.en.json` 未建，英文模式下阶段名与门名仍中文。
+
 ## [0.6.1] — 2026-10-21
 
 双语地基 + 控制台总览落地。六个页面里的「工作台」已经整页重写，文案全部由字典驱动。

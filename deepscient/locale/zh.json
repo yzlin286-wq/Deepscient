@@ -66,7 +66,92 @@
   },
   "sources": {
     "configured": "已配置",
-    "notConfigured": "未配置"
+    "notConfigured": "未配置",
+    "heading": "科研 / 文献 / 检索 API",
+    "wired": {
+      "runtime": "已接入工具",
+      "declared": "已保存·工具侧尚未读取",
+      "none": "免凭据"
+    },
+    "fromEnv": "来自环境变量 ",
+    "noCredential": "无需凭据",
+    "pasteKey": "粘贴 key 后保存",
+    "hasCredential": "有凭据",
+    "missingCredential": "缺凭据",
+    "failed": "失败",
+    "test": "测试",
+    "kindNone": "免填",
+    "kindEmail": "邮箱",
+    "savedAt": "已保存 {id} {at}",
+    "colSource": "数据源",
+    "colCredential": "凭据",
+    "colStatus": "状态",
+    "colValue": "当前值",
+    "colFill": "填写",
+    "colVerify": "验证"
   },
-  "settings": "科研"
+  "settings": "科研",
+  "stages": {
+    "noProject": "还没有课题，先在工作台建一个。",
+    "summary": "阻塞 {blocking} · 警告 {warnings} · 未留记录 {skipped} · 自查 {manual}",
+    "blockingCount": "{n} 阻塞"
+  },
+  "tools": {
+    "filter": "按工具名或阶段过滤",
+    "count": "{shown}/{total} 个工具",
+    "colTool": "工具",
+    "colStage": "阶段",
+    "colArtifact": "这一步的产物",
+    "note": "工具只在「科研模式」预设的会话里可调；这里列的是它们各自属于哪一步。",
+    "skillsHeading": "随包技能（{n}）",
+    "skillsEmpty": "没读到技能目录。",
+    "skillsNote": "技能是「怎么干活」的方法笔记，助手在做对应任务时会自己读；你点不开它们，但可以据此要求它按哪本手册做。"
+  },
+  "docs": {
+    "notPacked": "说明文档还没打包进来（deepscient/docs/*.md）。"
+  },
+  "billing": {
+    "title": "token 计费",
+    "range": {
+      "today": "今天",
+      "7d": "7 天",
+      "30d": "30 天",
+      "all": "全部"
+    },
+    "colSource": "来源",
+    "colMask": "掩码",
+    "colNote": "说明",
+    "payers": "扣费主体（每个 key 各自计费）",
+    "colModel": "模型",
+    "colInput": "输入",
+    "colCache": "缓存命中",
+    "colOutput": "输出",
+    "colTotal": "合计",
+    "colEstimate": "预估",
+    "byModel": "按模型",
+    "colSession": "会话",
+    "colPreset": "预设",
+    "colLastWrite": "最后写入",
+    "bySession": "按会话",
+    "statTotal": "总消耗",
+    "statTotalHint": "{n} 条模型回复",
+    "statInput": "未命中输入",
+    "statCache": "命中缓存输入",
+    "statOutput": "输出",
+    "statCost": "预估费用（{currency}）",
+    "statCostHint": "按设置里的价目估算",
+    "statCostNoTable": "未配置价目",
+    "basis": "计费口径",
+    "noteFallback": "计费数据来源于 New API 中转站。",
+    "openBill": "打开 New API 账单页",
+    "openRelay": "打开 New API 中转站",
+    "linkPending": "链接待填：{url}",
+    "linkHint": "在「设置 → 科研工作台」里填中转站地址与账单页，链接就会亮起来。",
+    "noKeySource": "没读到凭据来源：启动器用环境变量注入 key 时会显示在这里。",
+    "attribution": "你的实际用量在这把 key 上扣费；本页的 token 是本机日志的同口径汇总，金额是按价目算的预估，账单以中转站为准。",
+    "noZstd": "这台机器的 Node 没有 zstd 解压能力，读不了会话日志。",
+    "emptyRange": "这个区间还没有用量记录。",
+    "skipped": "统计时跳过的部分",
+    "indexLine": "索引：{files} 份日志，本次解析 {parsed}，复用 {reused}；生成于 {at}。"
+  }
 }
