@@ -46,12 +46,14 @@ deepscient/
 │  ├─ settings.js      偏好落在数据根的 ui-settings.json（含计费与引导状态）
 │  ├─ content.js       说明文档按 Markdown 读
 │  ├─ usage.js         token 用量：扫会话日志 → 索引 → 区间汇总 → 按价目估算
-│  └─ sources.js       八个文献/检索数据源的凭据台账（掩码、连通性探测）
+│  ├─ sources.js       八个文献/检索数据源的凭据台账（掩码、连通性探测）
+│  └─ relay.js         中转站合作方客户端：签名、绑定/订单加密落盘、Webhook 与回跳
 ├─ client/index.js     品牌、侧栏面板、主区域工作台、设置分区、底部胶囊、使用引导
 ├─ locale/{zh,en}.json 插件市场里显示的标题与描述
-├─ docs/*.md           工作台「说明」页的内容来源（10 篇，含 skills.md / mcp.md / paper.md）
+├─ docs/*.md           工作台「说明」页的内容来源（11 篇，含 skills.md / mcp.md / paper.md）
 └─ scripts/
-   ├─ verify-deepscient.mjs   294 项断言（带 token；不带时 285 项）
+   ├─ verify-deepscient.mjs   355 项断言（带 token；不带时 346 项）
+   ├─ partner-probe.mjs       中转站联调探针：ping / 套餐 / 同步 / 购买 / 额度 / 订单
    ├─ seed-demo.mjs           把演示数据装进本实例
    ├─ e2e-science-run.mjs     真跑一次科研版：真 key、真模型、真落库、技能与 MCP 配置举证
    ├─ install-skills.mjs      按清单把 81 条第三方科研技能装进本实例（可 dry-run / 校验 / 卸载）
@@ -66,7 +68,7 @@ deepscient/
 - **工作台**：课题卡片 + S0–S11 阶段条 + 当前卡点 + 下一步动作（带「阻塞/警告/未留记录/自查」标签与「怎么过」）+ 这一步最常见的翻车方式。
 - **流程**：12 个阶段、55 个门，逐条列等级、状态、详情、怎么过。
 - **工具**：36 个工具（23 个挂在阶段上、13 个跨阶段），可按名字或阶段过滤；下面同时列出 17 个随包技能（标题取自各自的 `SKILL.md`）。
-- **计费**：今天的 token 消耗、四个区间的汇总、按模型 / 按会话明细、预估金额、扣费主体（掩码）、New API 中转站链接位。
+- **计费**：今天的 token 消耗、四个区间的汇总、按模型 / 按会话明细、预估金额、扣费主体（掩码）、New API 中转站链接位，以及「中转站」区块（账号 / 套餐 / 订单）。
 - **接入**：八个文献/检索数据源一行一个，可填 key 或邮箱、保存、点「测试」发一次最小请求；如实标注哪些字段当前版本的工具真的会读。
 - **说明**：`docs/` 下七篇。
 
@@ -90,6 +92,28 @@ token 数是**真值**：逐条读会话日志里 provider 写的 `assistant/mes
 
 两个 URL 是预留字段：`billingBaseUrl`（中转站地址）、`billingConsoleUrl`（账单/余额页），默认空，界面上显示「链接待填」。填了才变成可点的链接。实际扣费发生在你自己的 key 上，计费页列出的「扣费主体」只有掩码。
 
+## 中转站合作方对接（un.ccagent.cn）
+
+计费页多了一块「中转站」：账号、套餐、订单都从这里走，用户不必去中转站注册。五件事：
+
+- **静默建号**：官网授权登录成功后异步调 `users/sync`，中转站按 `external_uid` 建号并回一个 API Key；Key 用 AES-256-GCM 加密落在 `~/.deepscient/science/partner.json`，界面只显示掩码。同步失败不阻塞登录，进计费页点「同步账号」可补。
+- **套餐购买**：套餐表由上游 `plans` 实时拉取（缓存 60 秒，前端不硬编码价格），点「购买」时服务端换一次性 `buy-url` 交给浏览器打开。
+- **我的额度**：`account-url` 换一次性只读页，看余额、生效套餐、到期时间与脱敏 Key。
+- **支付回填**：`POST /deepscient/partner/webhook` 按原始字节验签、`event_id` 幂等；落库失败回 500 让中转站重推，回跳页只作提示。
+- **订单对账**：Webhook 走成死信时，「最近订单 → 查询」会调订单接口把真实状态合并回本地。
+
+配置只有两条：`app_id` 可公开（默认 `app_ccagent_prod`）；`app_secret` 只在服务端——环境变量 `CCAGENT_PARTNER_APP_SECRET`，或 `<DSH_HOME>/science/partner-app-secret`（权限 0600）。secret 不进仓库、不进前端、不进日志。本机数据口只听回环，所以 Webhook 必须经反向代理或隧道映射成 HTTPS 公网地址再去中转站报备。
+
+完整说明（配置、本机端点、签名公式、Webhook 部署与 Nginx 片段、错误码映射、16 条联调用例）见 [docs/relay.md](docs/relay.md)。联调探针与 `host/relay.js` 共用同一份签名实现：
+
+```powershell
+node deepscient\scripts\partner-probe.mjs --ping
+node deepscient\scripts\partner-probe.mjs --plans
+node deepscient\scripts\partner-probe.mjs --sync u_probe_001 --name 联调用户
+node deepscient\scripts\partner-probe.mjs --buy u_probe_001 --plan 1
+node deepscient\scripts\partner-probe.mjs --order <trade_no>
+```
+
 ## 文献 / 检索 API 接入
 
 八个内置源：Semantic Scholar（key）、OpenAlex（邮箱）、CORE（key）、Unpaywall（邮箱）、Crossref（邮箱，与 OpenAlex 共用）、arXiv（免凭据）、Zotero（key）、Exa（key）。凭据只写 `~/.deepscient/science/config.json`，原子 rename，绝不回显明文、不进日志、不进 tarball。
@@ -103,11 +127,12 @@ node deepscient\scripts\verify-deepscient.mjs --token <启动器打印的 token>
 node deepscient\scripts\seed-demo.mjs                      # 想看点东西时先装演示数据
 node deepscient\scripts\sync-model-key.mjs [--apply]       # 把生产实例那本账里的 key 复制过来
 node deepscient\scripts\e2e-science-run.mjs [--run]        # 真跑一次：真 key、真模型、真落库
+node deepscient\scripts\partner-probe.mjs --ping            # 中转站连通自检（需已配 app_secret）
 ```
 
-294 项断言覆盖（本版新增「第三方技能与 MCP」一节 33 项）：包结构与导出、`--check` 语法、patch 是否真的让开了官方品牌、三条 patch（品牌 / 四条预设 disable / 科研预设占用 `standard`）、品牌 tap 两个阶段各自的幂等性、设置白名单（含计费与价目表逐行校验）、引导默认状态、用量解析（合成日志：合计 5800、按模型/按天分桶、坏行与缺 usage 计数）、价目查找四级退化、八个数据源台账与掩码规则、dry 验源四种状态、文档七篇、客户端模块的桩加载与**七个**槽注册（id/key 对齐、胶囊不说缓存、引导默认不渲染）、数据根隔离、HTTP 全部端点（含 usage / presets / presets/inspect / sources / projects 写入与各自 404/405/400）、55 个门字段合法性、合成配置里 9 个科研插件 + 四条原版预设被关掉、技能根三个位置（用户 / 随包 / vendor）与磁盘逐一对上、vendor 清单的 commit pin 与内容哈希、安装器自测 10/10、`--plan` 不写盘、发布包不含第三方正文、MCP 默认关且注释行不算声明、设置写入-读回-复原、manifest 接管、首页标题与启动图、**便携性**（不许有 `{{提示词变量}}`、不许出现 `dsh-purge` / `cwd-variable`、不许写死本机绝对路径）、**引导直连会话**（三个「用这条开会话」按钮、`startSession(workspaceId, {prompt, clearPreviousDraft})`、预设坏了要拦、失败要说清是 key 还是预设）、两个新脚本能在位并 dry-run。
+355 项断言覆盖（本版新增「中转站对接」一节与 7 项 HTTP 断言）：包结构与导出、`--check` 语法、patch 是否真的让开了官方品牌、三条 patch（品牌 / 四条预设 disable / 科研预设占用 `standard`）、品牌 tap 两个阶段各自的幂等性、设置白名单（含计费与价目表逐行校验）、引导默认状态、用量解析（合成日志：合计 5800、按模型/按天分桶、坏行与缺 usage 计数）、价目查找四级退化、八个数据源台账与掩码规则、dry 验源四种状态、文档十一篇、客户端模块的桩加载与**七个**槽注册（id/key 对齐、胶囊不说缓存、引导默认不渲染）、数据根隔离、HTTP 全部端点（含 usage / presets / presets/inspect / sources / projects 写入与各自 404/405/400）、中转站签名（canonical query、原始字节摘要、Webhook / 回跳验签）、`api_key` 加密往返与掩码、支付事件幂等、未登录 401 与伪造 Webhook 400、55 个门字段合法性、合成配置里 9 个科研插件 + 四条原版预设被关掉、技能根三个位置（用户 / 随包 / vendor）与磁盘逐一对上、vendor 清单的 commit pin 与内容哈希、安装器自测 10/10、`--plan` 不写盘、发布包不含第三方正文、MCP 默认关且注释行不算声明、设置写入-读回-复原、manifest 接管、首页标题与启动图、**便携性**（不许有 `{{提示词变量}}`、不许出现 `dsh-purge` / `cwd-variable`、不许写死本机绝对路径）、**引导直连会话**（三个「用这条开会话」按钮、`startSession(workspaceId, {prompt, clearPreviousDraft})`、预设坏了要拦、失败要说清是 key 还是预设）、两个新脚本能在位并 dry-run。
 
-不带 `--token` 时跳过 9 项需要鉴权的首页检查，通过 285 项（带 token 294 项）。
+不带 `--token` 时跳过 9 项需要鉴权的首页检查，通过 346 项（带 token 355 项）。
 
 `e2e-science-run.mjs` 是两条腿：模型那一段走 headless（同一个 `$DSH_HOME`、同一份模型层、退出码即结论），建课题与预设体检打 3081 那个活实例（`POST /deepscient/api/projects` 就是引导里「建课题」按的那条路）。**headless 按设计不组合 agent preset**，所以 `science_*` 那批预设平面的工具在那边必然不存在——脚本把这条边界写在注释和输出里，不用假 PASS 糊过去。
 
@@ -175,7 +200,7 @@ Python 版（arxiv / zotero，需 `uv`）以注释形式写在同一个文件里
 | 新脚本 | `install-skills.mjs`（list / plan / apply / check / diff / lock / lock-refs / remove / self-test） |
 | 新接口 | `GET /deepscient/api/skills`、`POST /deepscient/api/skills/check`；`/health` 增 `skills` 与 `mcp` 两块只读事实 |
 | MCP | `mcp.patch.yml` 两行（papers / pubmed），默认不加载；开启后实测注册 34 个工具，启动器认 `DSH_ENABLE_MCP` 并生成独立 npmrc |
-| 断言 | 285 项全绿（带 token 294） |
+| 断言 | 346 项全绿（带 token 355） |
 
 ## 0.3.0 修了什么（都是真机上复现出来的）
 

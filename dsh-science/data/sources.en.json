@@ -1,0 +1,33 @@
+{
+  "__note": "Keys are written only to the local science/config.json. Fields marked \"saved, not yet read by tools\" do not take effect in this version.",
+  "arxiv": {
+    "hint": "Public API; no credentials required."
+  },
+  "core": {
+    "hint": "Open access full-text aggregation; the key must be requested in the CORE console."
+  },
+  "crossref": {
+    "hint": "Shares the same email field as OpenAlex."
+  },
+  "europepmc": {
+    "hint": "Public REST; no credentials required. Searches with SRC:PPR return only preprints (bioRxiv / medRxiv / PsyArXiv / Research Square)."
+  },
+  "exa": {
+    "hint": "Semantic search aimed at researchers."
+  },
+  "openalex": {
+    "hint": "Just enter an email to join the polite pool; the same email is also used for Crossref."
+  },
+  "pubmed": {
+    "hint": "Without a key, limited to 3 req/s. Two-step retrieval (esearch → esummary); filter preprints by publication type."
+  },
+  "semantic-scholar": {
+    "hint": "The free key quota is not high, but it can significantly raise the rate limit."
+  },
+  "unpaywall": {
+    "hint": "Only requires an email; used to look up legal open access versions."
+  },
+  "zotero": {
+    "hint": "Library sync; read-only permission is enough."
+  }
+}

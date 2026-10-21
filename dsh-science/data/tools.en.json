@@ -1,0 +1,6 @@
+{
+  "allStages": {
+    "label": "All stages",
+    "goal": "Cross-stage: query, judge, verify."
+  }
+}

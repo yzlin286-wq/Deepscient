@@ -10,10 +10,13 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { createHash, createHmac } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const clientSrc = readFileSync(join(dirname(dirname(fileURLToPath(import.meta.url))), 'client', 'index.js'), 'utf8')
 
 const here = dirname(fileURLToPath(import.meta.url))
 const pkgDir = resolve(here, '..')
@@ -85,13 +88,14 @@ check('client 还依赖会话与聊天（底部胶囊要挂在输入区）', () 
   assert.ok(manifest.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-chat'))
 })
 
-for (const rel of ['host/index.js', 'host/api.js', 'host/science.js', 'host/settings.js', 'host/content.js', 'host/usage.js', 'host/sources.js', 'client/index.js']) {
+for (const rel of ['host/index.js', 'host/api.js', 'host/science.js', 'host/settings.js', 'host/content.js', 'host/usage.js', 'host/sources.js', 'host/relay.js', 'client/index.js']) {
   check(`${rel} 语法通过`, () => execFileSync(process.execPath, ['--check', join(pkgDir, rel)], { stdio: 'pipe' }))
 }
 
 check('usage/sources 进了 files 清单（tarball 才带得走）', () => {
   assert.ok(manifest.files.includes('host/usage.js'))
   assert.ok(manifest.files.includes('host/sources.js'))
+  assert.ok(manifest.files.includes('host/relay.js'), '中转站客户端没进 files 清单')
   assert.ok(manifest.files.includes('docs/*.md'), '说明文档的 glob 没在 files 里')
 })
 
@@ -148,6 +152,43 @@ check('两份 locale 都有 panel 键，且六个一级页名齐全', () => {
   }
 })
 check('icon.svg 存在且非空', () => assert.ok(statSync(join(pkgDir, 'icon.svg')).size > 200))
+
+/** 界面用的是内联词典；它必须和 locale/*.json 一模一样，否则改一边忘另一边就会露 key。 */
+function readInlineDict(name) {
+  const text = readFileSync(join(pkgDir, 'client', 'index.js'), 'utf8')
+  const marker = 'const ' + name + ' = {'
+  const start = text.indexOf(marker)
+  assert.ok(start >= 0, '找不到 ' + name)
+  // 右边界用下一个常量：字典值里可能出现以 } 结尾的句子，不能靠缩进猜结尾。
+  const next = text.indexOf(name === 'DICT_ZH' ? 'const DICT_EN = {' : '/* ── 文案', start + marker.length)
+  assert.ok(next > start, '找不到 ' + name + ' 的下一个块')
+  const end = text.lastIndexOf('\n    }\n', next)
+  assert.ok(end > start, '找不到 ' + name + ' 的结尾')
+  const body = text.slice(start + marker.length, end)
+  return Function('return {' + body + '}')()
+}
+
+check('内联词典与 locale/zh.json 逐键一致（改一边忘另一边会在这里炸）', () => {
+  const inline = readInlineDict('DICT_ZH')
+  const flat = (node, prefix = '') =>
+    Object.entries(node).flatMap(([key, value]) =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? flat(value, prefix + key + '.')
+        : [[prefix + key, value]])
+  const expected = Object.fromEntries(flat(locales[0]))
+  assert.deepEqual(inline, expected)
+})
+
+check('内联英文词典与 locale/en.json 逐键一致', () => {
+  const inline = readInlineDict('DICT_EN')
+  const flat = (node, prefix = '') =>
+    Object.entries(node).flatMap(([key, value]) =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? flat(value, prefix + key + '.')
+        : [[prefix + key, value]])
+  const expected = Object.fromEntries(flat(locales[1]))
+  assert.deepEqual(inline, expected)
+})
 
 /* ── 2. 宿主半边 ────────────────────────────────────────────────────────── */
 
@@ -255,6 +296,185 @@ check('用量接口能给出区间结果', () => assert.ok(['local-session-log',
 check('结果里带索引口径', () => assert.ok(withCost.index && typeof withCost.index.files === 'number'))
 check('默认币种是 CNY', () => assert.equal(usage.usageRange({ range: 'today' }).currency, 'CNY'))
 
+/* ── 中转站（合作方接口） ──────────────────────────────────────────────── */
+
+section('中转站对接')
+const relay = await import(pathToFileURL(join(pkgDir, 'host', 'relay.js')).href)
+const relaySrc = readFileSync(join(pkgDir, 'host', 'relay.js'), 'utf8')
+
+check('canonical_query 按 key/value 升序', () => {
+  assert.equal(relay.canonicalQuery('b=2&a=1'), 'a=1&b=2')
+  assert.equal(relay.canonicalQuery('tag=z&tag=a'), 'tag=a&tag=z')
+  assert.equal(relay.canonicalQuery(''), '')
+})
+
+check('GET 签名与文档公式一致', () => {
+  const ts = 1792591714
+  const nonce = '9f2c1a7b3d4e5f60'
+  const headers = relay.signHeaders({
+    method: 'GET',
+    query: 'b=2&a=1',
+    rawBody: '',
+    appId: 'app_test',
+    secret: 'test-secret',
+    ts,
+    nonce,
+  })
+  const expected = createHmac('sha256', 'test-secret')
+    .update(`app_test\n${ts}\n${nonce}\na=1&b=2`, 'utf8')
+    .digest('hex')
+  assert.equal(headers['X-Partner-Signature'], expected)
+  assert.equal(headers['X-Partner-Timestamp'], String(ts))
+  assert.equal(headers['X-Partner-Nonce'], nonce)
+})
+
+check('POST 摘要基于实际发送的字节（空格也参与）', () => {
+  const ts = 1792591714
+  const nonce = 'abcdef0123456789'
+  // 故意留空格：任何「先 parse 再 stringify」的实现都会在这里算出不同摘要。
+  const raw = '{ "external_uid": "u_1", "display_name": "张三" }'
+  const headers = relay.signHeaders({
+    method: 'POST',
+    rawBody: raw,
+    appId: 'app_test',
+    secret: 'test-secret',
+    ts,
+    nonce,
+  })
+  const digest = createHash('sha256').update(Buffer.from(raw, 'utf8')).digest('hex')
+  const expected = createHmac('sha256', 'test-secret')
+    .update(`app_test\n${ts}\n${nonce}\n${digest}`, 'utf8')
+    .digest('hex')
+  assert.equal(headers['X-Partner-Signature'], expected)
+})
+
+/** Webhook 的签名只认原始字节；这里用与实现无关的 crypto 复算一遍。 */
+const hookBody = JSON.stringify({
+  event_id: 'evt_verify_1',
+  event: 'subscription.paid',
+  occurred_at: 1792591780,
+  data: { trade_no: 'T_VERIFY_1', external_uid: 'u_verify_1', status: 'success', api_key: 'sk-verify-key-1234' },
+})
+const hookTs = Math.floor(Date.now() / 1000)
+const hookSignature = createHmac('sha256', 'test-secret')
+  .update(
+    `app_test\n${hookTs}\nevt_verify_1\n${createHash('sha256').update(Buffer.from(hookBody, 'utf8')).digest('hex')}`,
+    'utf8',
+  )
+  .digest('hex')
+const hookHeaders = {
+  'x-partner-event-id': 'evt_verify_1',
+  'x-partner-timestamp': String(hookTs),
+  'x-partner-signature': hookSignature,
+}
+
+check('Webhook 原文验签通过', () =>
+  assert.equal(
+    relay.verifyWebhookSignature(Buffer.from(hookBody, 'utf8'), hookHeaders, { appId: 'app_test', secret: 'test-secret' }).ok,
+    true,
+  ))
+check('Webhook 篡改正文失败', () =>
+  assert.equal(
+    relay.verifyWebhookSignature(Buffer.from(hookBody.replace('T_VERIFY_1', 'T_OTHER')), hookHeaders, {
+      appId: 'app_test',
+      secret: 'test-secret',
+    }).ok,
+    false,
+  ))
+check('Webhook 超时窗失败', () =>
+  assert.equal(
+    relay.verifyWebhookSignature(Buffer.from(hookBody, 'utf8'), hookHeaders, {
+      appId: 'app_test',
+      secret: 'test-secret',
+      now: hookTs + 1000,
+    }).ok,
+    false,
+  ))
+check('Webhook 缺头失败', () =>
+  assert.equal(
+    relay.verifyWebhookSignature(Buffer.from(hookBody, 'utf8'), { 'x-partner-event-id': 'evt_verify_1' }, {
+      appId: 'app_test',
+      secret: 'test-secret',
+    }).ok,
+    false,
+  ))
+
+const returnSignature = createHmac('sha256', 'test-secret').update('return:T_VERIFY_1:success', 'utf8').digest('hex')
+check('回跳签名用 return:<trade_no>:status 且定长比较', () => {
+  assert.equal(relay.verifyReturnSign('T_VERIFY_1', 'success', returnSignature, { secret: 'test-secret' }), true)
+  assert.equal(relay.verifyReturnSign('T_VERIFY_1', 'success', `${returnSignature.slice(0, -1)}0`, { secret: 'test-secret' }), false)
+})
+
+const savedRelayHome = process.env.DSH_HOME
+const savedRelaySecret = process.env.CCAGENT_PARTNER_APP_SECRET
+const relayTempHome = join(tmpdir(), `deepscient-relay-${process.pid}`)
+process.env.DSH_HOME = relayTempHome
+process.env.CCAGENT_PARTNER_APP_SECRET = 'test-secret'
+try {
+  check('绑定库落在本实例数据根', () =>
+    assert.equal(relay.partnerStorePath(), join(relayTempHome, 'science', 'partner.json')))
+
+  const binding = relay.saveBinding({
+    externalUid: 'u_verify_1',
+    userId: 1,
+    username: 'p_u_verify_1',
+    apiKey: 'sk-abcdefgh1234',
+    apiBaseUrl: 'https://api.ccagent.cn',
+  })
+  check('绑定只回掩码，不回明文 Key', () => {
+    assert.equal(binding.apiKeyMasked, 'sk-•••1234')
+    assert.ok(!JSON.stringify(binding).includes('sk-abcdefgh1234'))
+  })
+  check('api_key 以密文落盘，能解回原值', () => {
+    const text = readFileSync(relay.partnerStorePath(), 'utf8')
+    assert.ok(!text.includes('sk-abcdefgh1234'), 'partner.json 里出现了明文 api_key')
+    const row = JSON.parse(text).bindings.u_verify_1
+    assert.ok(row.apiKeyCipher && row.apiKeyCipher.startsWith('v1.'))
+    assert.equal(relay.decryptSecret(row.apiKeyCipher), 'sk-abcdefgh1234')
+  })
+
+  const firstEvent = relay.applyPaidEvent(JSON.parse(hookBody))
+  const secondEvent = relay.applyPaidEvent(JSON.parse(hookBody))
+  check('支付事件按 event_id 幂等', () => {
+    assert.equal(firstEvent.duplicate, false)
+    assert.equal(secondEvent.duplicate, true)
+  })
+  check('订单落库字段完整', () => {
+    const order = relay.getLocalOrder('T_VERIFY_1')
+    assert.equal(order.status, 'success')
+    assert.equal(order.externalUid, 'u_verify_1')
+    assert.equal(order.source, 'webhook')
+  })
+  check('状态接口只回 secretPresent，不回 secret / 明文 Key', () => {
+    const status = relay.partnerStatus('u_verify_1')
+    assert.equal(status.secretPresent, true)
+    assert.ok(!JSON.stringify(status).includes('test-secret'))
+    assert.ok(!JSON.stringify(status).includes('sk-abcdefgh1234'))
+  })
+} finally {
+  if (savedRelayHome === undefined) delete process.env.DSH_HOME
+  else process.env.DSH_HOME = savedRelayHome
+  if (savedRelaySecret === undefined) delete process.env.CCAGENT_PARTNER_APP_SECRET
+  else process.env.CCAGENT_PARTNER_APP_SECRET = savedRelaySecret
+  rmSync(relayTempHome, { recursive: true, force: true })
+}
+
+check('回跳地址只接受 http(s)', () => {
+  const savedPublic = process.env.CCAGENT_PARTNER_PUBLIC_BASE
+  delete process.env.CCAGENT_PARTNER_PUBLIC_BASE
+  try {
+    assert.equal(relay.buildReturnUrl('https://app.example.com'), 'https://app.example.com/deepscient/partner/return')
+    assert.equal(relay.buildReturnUrl('ftp://example.com'), null)
+    assert.equal(relay.buildReturnUrl('http://127.0.0.1:3081'), 'http://127.0.0.1:3081/deepscient/partner/return')
+  } finally {
+    if (savedPublic !== undefined) process.env.CCAGENT_PARTNER_PUBLIC_BASE = savedPublic
+  }
+})
+
+check('secret 没有以 64 位 hex 字面量写进 relay.js', () => assert.ok(!/[0-9a-f]{64}/i.test(relaySrc)))
+check('前端代码里不出现 app_secret 字段', () => assert.ok(!/\bapp_secret\b/i.test(clientSrc)))
+check('前端代码里不出现中转站密钥赋值', () => assert.ok(!/CCAGENT_PARTNER_APP_SECRET\s*=/.test(clientSrc)))
+
 section('文献 / 检索 API 接入')
 const sourcesMod = await import(pathToFileURL(join(pkgDir, 'host', 'sources.js')).href)
 const ledger = sourcesMod.listSources()
@@ -305,7 +525,7 @@ check('$DSH_HOME 显式给出时优先', () => assert.equal(scienceMod.dshHome()
 
 const content = await import(pathToFileURL(join(pkgDir, 'host', 'content.js')).href)
 const docs = content.listDocs()
-check('说明文档有 10 篇（含 skills / mcp / paper）', () => assert.equal(docs.length, 10, docs.map((d) => d.id).join(',')))
+check('说明文档有 11 篇（含 skills / mcp / paper / relay）', () => assert.equal(docs.length, 11, docs.map((d) => d.id).join(',')))
 check('第一页是快速上手', () => assert.equal(docs[0].id, 'quickstart'))
 check('新增的三篇（引导/计费/接入）都在', () => {
   const ids = docs.map((d) => d.id)
@@ -326,8 +546,6 @@ check('取不存在的文档给 null', () => assert.equal(content.getDoc('../../
 /* ── 3. 客户端注册（桩加载） ────────────────────────────────────────────── */
 
 section('客户端模块注册')
-const clientSrc = readFileSync(join(pkgDir, 'client', 'index.js'), 'utf8')
-
 /** 收集代码里的中文字面量（跳过注释行） */
 const cjkLiterals = (src) =>
   src
@@ -422,7 +640,7 @@ const ctx = {
 mod.apply(ctx)
 const byName = (name) => registrations.filter((r) => r.name === name)
 
-check('一共注册 21 个槽', () => assert.equal(registrations.length, 21, registrations.map((r) => r.name).join(',')))
+check('一共注册 23 个槽', () => assert.equal(registrations.length, 23, registrations.map((r) => r.name).join(',')))
 check('品牌图标槽', () => assert.equal(byName('sidebar.brand.mark').length, 1))
 check('品牌名槽', () => assert.equal(byName('sidebar.brand.name').length, 1))
 check('欢迎页品牌槽（第一屏不露外壳标记）', () =>
@@ -432,8 +650,12 @@ check('主区域面板 6 个', () => assert.equal(byName('main').length, 6))
 check('设置分区槽（参数 + 账号）', () => assert.equal(byName('settings.section').length, 2))
 check('输入区底部胶囊槽（token 计费）', () => assert.equal(byName('conversation.composer.dock').length, 1))
 check('胶囊 id 不与出厂那颗撞名', () => assert.equal(byName('conversation.composer.dock')[0].id, 'deepscient-usage'))
-check('浮层槽（登录门 + 使用引导）', () => assert.equal(byName('shell.overlay').length, 2))
+check('浮层槽（登录门 + 使用引导 + 账号菜单）', () => assert.equal(byName('shell.overlay').length, 3))
 check('引导浮层 id', () => assert.equal(byName('shell.overlay')[0].id, 'deepscient-onboarding'))
+check('账号菜单浮层 id', () => assert.equal(byName('shell.overlay')[2].id, 'deepscient-account-menu'))
+check('侧栏底部常驻账号入口（登出不只藏在设置里）', () =>
+  assert.equal(byName('sidebar.footer.action').length, 1))
+check('账号入口 id 不与出厂那颗撞名', () => assert.equal(byName('sidebar.footer.action')[0].id, 'deepscient.account'))
 
 const PAGE_KEYS = ['workbench', 'stages', 'tools', 'billing', 'sources', 'docs']
 check('一级面板 id 是 science-<页名>', () =>
@@ -589,53 +811,53 @@ if (existsSync(dshCli)) {
 section('HTTP 接口')
 
 /* ── 应用账号 ─────────────────────────────────────────────────────────────
-   课题、需求书、概览、设置这些「某个人的」数据要登录。所以这一节先证明门是关着的，
-   再（有凭据时）登录进去验后面的东西。
-   凭据从环境变量来，脚本不自己建账号——本机第一个账号该由人来注册。 */
-const VERIFY_USER = process.env.DEEPSCIENT_VERIFY_USER ?? ''
-const VERIFY_PASS = process.env.DEEPSCIENT_VERIFY_PASSWORD ?? ''
+   账号在官网 deepscient.com。验收脚本不建账号、不存密码：
+   直接给本实例种一份 token 记录，拿到对应会话号验证门；跑完删掉自己种的那份。
+   已经登录过的实例则沿用磁盘上那份会话号，不覆盖真实登录态。 */
+const oauthFile = join(process.env.USERPROFILE ?? homedir(), '.deepscient', 'science', 'oauth', 'token.json')
 let sessionCookie = ''
+let seeded = false
 
-/* 没有凭据时，如果这台机器上还没有任何账号，就临时建一个跑完即焚的。
-   为什么这样安全：注册只对第一个账号开放，验完把 auth 目录删掉，
-   环境回到"还没有账号"，本机第一个账号仍然由人在浏览器里注册。
-   已经有账号又没给凭据时，不碰任何东西，让断言自己报错。 */
-let provisioned = null
-if (!VERIFY_USER) {
-  const probe = await fetch(`${base}/deepscient/auth/state`)
-  const state = await probe.json().catch(() => null)
-  if (state && state.hasUsers === false) {
-    const username = 'verify-temp'
-    const password = `t${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
-    const reg = await fetch(`${base}/deepscient/auth/register`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ username, password, displayName: 'verify-temp' }),
-    })
-    const raw = reg.headers.getSetCookie?.() ?? [reg.headers.get('set-cookie') ?? '']
-    const hit = raw.map((c) => String(c).match(/deepscient_session=[^;]+/)).find(Boolean)
-    if (reg.ok && hit) {
-      sessionCookie = hit[0]
-      provisioned = join(process.env.USERPROFILE ?? homedir(), '.deepscient', 'science', 'auth')
-      process.on('exit', () => {
-        try {
-          rmSync(provisioned, { recursive: true, force: true })
-          console.log('\n  临时验收账号已清除，本机第一个账号仍由你来注册。')
-        } catch {}
-      })
+function adoptExistingLogin() {
+  try {
+    const data = JSON.parse(readFileSync(oauthFile, 'utf8'))
+    if (data?.sessionId) {
+      sessionCookie = 'deepscient_session=' + data.sessionId
+      return true
     }
-  }
+  } catch {}
+  return false
 }
 
-if (VERIFY_USER && VERIFY_PASS) {
-  const res = await fetch(`${base}/deepscient/auth/login`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ username: VERIFY_USER, password: VERIFY_PASS }),
+function seedLogin() {
+  mkdirSync(dirname(oauthFile), { recursive: true })
+  writeFileSync(oauthFile, JSON.stringify({
+    access_token: 'verify-token',
+    sessionId: 'verify-session',
+    expiresAt: Date.now() + 3600_000,
+    fetchedAt: new Date().toISOString(),
+    user: {
+      id: 1,
+      username: 'verify-user',
+      email: 'verify@example.com',
+      role: 'user',
+      balance: 42.5,
+      createdAt: null,
+      disabled: false,
+    },
+  }, null, 2) + '\n', 'utf8')
+  sessionCookie = 'deepscient_session=verify-session'
+  seeded = true
+}
+
+if (!adoptExistingLogin()) seedLogin()
+if (seeded) {
+  process.on('exit', () => {
+    try {
+      rmSync(oauthFile, { force: true })
+      console.log('\n  验收用登录态已清除，本机登录仍由官网授权决定。')
+    } catch {}
   })
-  const raw = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie') ?? '']
-  const hit = raw.map((c) => String(c).match(/deepscient_session=[^;]+/)).find(Boolean)
-  if (res.ok && hit) sessionCookie = hit[0]
 }
 
 async function get(path) {
@@ -652,13 +874,56 @@ async function get(path) {
   return { status: res.status, body, text }
 }
 
-await checkAsync('账号状态端点可用（不泄露任何凭据）', async () => {
+await checkAsync('账号状态端点可用（不泄露 token）', async () => {
   const res = await fetch(`${base}/deepscient/auth/state`)
   const state = await res.json()
   assert.equal(res.status, 200)
-  assert.equal(typeof state.hasUsers, 'boolean')
-  assert.ok(!('hash' in state) && !('salt' in state), JSON.stringify(state))
-  assert.ok(!JSON.stringify(state).includes('"hash"'), JSON.stringify(state))
+  assert.equal(typeof state.loggedIn, 'boolean')
+  assert.ok(!('access_token' in state) && !('token' in state), JSON.stringify(state))
+  assert.ok(!/access_token/.test(JSON.stringify(state)), JSON.stringify(state))
+})
+
+await checkAsync('登录态能读到官网用户与余额', async () => {
+  const res = await fetch(`${base}/deepscient/auth/state`, { headers: { cookie: sessionCookie } })
+  const state = await res.json()
+  assert.equal(state.loggedIn, true, JSON.stringify(state))
+  // 沿用真实登录态时不假定人名：只验形状，避免把「谁登录了」写成断言。
+  assert.ok(state.user && typeof state.user.username === 'string' && state.user.username, JSON.stringify(state))
+  assert.equal(typeof state.balance, 'number')
+  assert.ok(state.expiresAt, '缺 expiresAt')
+})
+
+await checkAsync('本地不再有注册 / 登录 / 恢复码路由', async () => {
+  for (const [route, body] of [['register', {}], ['login', {}], ['recover', {}], ['password', {}]]) {
+    const res = await fetch(`${base}/deepscient/auth/${route}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    assert.equal(res.status, 404, route)
+  }
+})
+
+await checkAsync('授权地址符合 PKCE 契约', async () => {
+  const res = await fetch(`${base}/deepscient/auth/authorize`, { method: 'POST' })
+  const body = await res.json()
+  assert.equal(res.status, 200, JSON.stringify(body))
+  const url = new URL(body.authorizeUrl)
+  assert.equal(url.searchParams.get('client_id'), 'deepscient-desktop')
+  assert.equal(url.searchParams.get('code_challenge_method'), 'S256')
+  assert.match(url.searchParams.get('redirect_uri'), /^http:\/\/127\.0\.0\.1:\d+\/auth\/callback$/)
+  assert.ok((url.searchParams.get('code_challenge') ?? '').length >= 43, 'challenge 太短')
+  assert.ok((url.searchParams.get('state') ?? '').length >= 16, 'state 太短')
+})
+
+await checkAsync('state 不匹配的回调被拒', async () => {
+  const res = await fetch(`${base}/auth/callback?code=x&state=wrong`)
+  assert.equal(res.status, 400)
+})
+
+await checkAsync('用户取消授权的回调被拒', async () => {
+  const res = await fetch(`${base}/auth/callback?error=access_denied&state=x`)
+  assert.equal(res.status, 400)
 })
 
 await checkAsync('没登录读课题接口是 401', async () => {
@@ -684,11 +949,62 @@ await checkAsync('能力清单不需要登录（健康检查与工具表）', as
   }
 })
 
-if (!sessionCookie) {
-  console.log('')
-  console.log('  ! 没有凭据：设置 DEEPSCIENT_VERIFY_USER / DEEPSCIENT_VERIFY_PASSWORD 才能验需要登录的接口。')
-  console.log('  ! 下面这些断言会失败，不是功能坏了。')
-  console.log('')
+await checkAsync('未登录读中转站状态是 401', async () => {
+  const res = await fetch(`${base}/deepscient/api/partner`)
+  assert.equal(res.status, 401)
+})
+
+const partnerApi = await get('/deepscient/api/partner')
+check('中转站状态 200', () => assert.equal(partnerApi.status, 200, partnerApi.text?.slice(0, 200)))
+check('中转站状态报出 app_id 与 secretPresent（不回 secret）', () => {
+  assert.equal(partnerApi.body.appId, 'app_ccagent_prod')
+  assert.equal(typeof partnerApi.body.secretPresent, 'boolean')
+  const text = JSON.stringify(partnerApi.body)
+  assert.ok(!/app_secret/i.test(text), text.slice(0, 300))
+  assert.ok(!/"api_key"\s*:/.test(text), text.slice(0, 300))
+})
+check('中转站状态带套餐或明确的 plansError', () => {
+  assert.ok(Array.isArray(partnerApi.body.plans) || partnerApi.body.plans === null)
+  if (partnerApi.body.plans === null) assert.ok(partnerApi.body.plansError, 'plans 为空时必须给出 plansError')
+})
+
+await checkAsync('partner 端点不收 POST', async () => {
+  const res = await fetch(`${base}/deepscient/api/partner`, { method: 'POST' })
+  assert.equal(res.status, 405)
+})
+
+await checkAsync('伪造 Webhook 签名返回 400', async () => {
+  const res = await fetch(`${base}/deepscient/partner/webhook`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-partner-event-id': 'evt_verify_bad',
+      'x-partner-timestamp': String(Math.floor(Date.now() / 1000)),
+      'x-partner-signature': '0'.repeat(64),
+    },
+    body: JSON.stringify({ event_id: 'evt_verify_bad', event: 'subscription.paid', data: { status: 'success' } }),
+  })
+  assert.equal(res.status, 400)
+})
+
+await checkAsync('回跳页坏签名返回 400', async () => {
+  const res = await fetch(`${base}/deepscient/partner/return?trade_no=T1&status=success&sign=${'0'.repeat(64)}`)
+  assert.equal(res.status, 400)
+})
+
+if (seeded) {
+  // 只有在登录态是本次自己种下时才验登出：真实登录不能因为跑一次验收就被清掉。
+  await checkAsync('登出会清掉本地登录态', async () => {
+    const res = await fetch(`${base}/deepscient/auth/logout`, { method: 'POST', headers: { cookie: sessionCookie } })
+    assert.equal(res.status, 200)
+    const after = await fetch(`${base}/deepscient/auth/state`, { headers: { cookie: sessionCookie } })
+    const body = await after.json()
+    assert.equal(body.loggedIn, false)
+  })
+  // 后面的接口还要用登录态，重新种一份。
+  seedLogin()
+} else {
+  console.log('（跳过登出断言：本机有真实登录态，验收不碰它）')
 }
 
 await checkAsync('未带 token 的首页是 401', async () => {
@@ -717,6 +1033,19 @@ check('health 的 keyPresent 只是布尔（不泄漏值）', () => {
 
 const tools = await get('/deepscient/api/tools')
 check('tools 200', () => assert.equal(tools.status, 200))
+const toolsEn = await get('/deepscient/api/tools?locale=en')
+check('tools 英文覆盖生效（阶段与跨阶段文案都不含中文）', () => {
+  const cjk = /[\u3400-\u9fff]/
+  for (const row of toolsEn.body.items) {
+    assert.ok(!cjk.test(row.stageLabel), row.name + ': ' + row.stageLabel)
+    assert.ok(!cjk.test(row.stageGoal), row.name + ': ' + row.stageGoal)
+  }
+})
+check('tools 的跨阶段文案来自 tools.en.json', () => {
+  const row = toolsEn.body.items.find((t) => t.stageId === null)
+  assert.ok(row, '没有跨阶段工具')
+  assert.equal(row.stageLabel, 'All stages')
+})
 check('工具数 ≥ 30', () => assert.ok(tools.body.total >= 30, String(tools.body.total)))
 check('工具带阶段归属', () => {
   const staged = tools.body.items.filter((t) => t.stageId)
@@ -792,7 +1121,7 @@ const unknown = await get('/deepscient/api/nope')
 check('未知端点 404', () => assert.equal(unknown.status, 404))
 
 const docsApi = await get('/deepscient/api/docs')
-check('docs 200 且 10 篇', () => assert.equal(docsApi.body.items.length, 10))
+check('docs 200 且 11 篇', () => assert.equal(docsApi.body.items.length, 11))
 const docApi = await get('/deepscient/api/docs/quickstart')
 check('单篇文档带 markdown', () => assert.match(docApi.body.markdown, /^# 快速上手/))
 const billingDoc = await get('/deepscient/api/docs/billing')
@@ -803,6 +1132,16 @@ const guideDoc = await get('/deepscient/api/docs/guide')
 check('引导文档能取到', () => assert.match(guideDoc.body.markdown, /六步|第一步|新手上路/))
 const doc404 = await get('/deepscient/api/docs/zzz')
 check('不存在的文档 404', () => assert.equal(doc404.status, 404))
+
+const docsEn = await get('/deepscient/api/docs?locale=en')
+check('英文文档列表也是 11 篇', () => assert.equal(docsEn.body.items.length, 11))
+check('英文文档标题不再是中文', () => {
+  const cjk = /[\u3400-\u9fff]/
+  for (const item of docsEn.body.items) assert.ok(!cjk.test(item.title), item.id + ': ' + item.title)
+})
+const quickstartEn = await get('/deepscient/api/docs/quickstart?locale=en')
+check('英文正文取自 docs/en', () => assert.match(quickstartEn.body.markdown, /^# Quick start/))
+check('英文文档没有回退到中文', () => assert.equal(quickstartEn.body.fallback, false))
 
 const skills = await get('/deepscient/api/skills')
 check('skills 200', () => assert.equal(skills.status, 200))
@@ -824,6 +1163,14 @@ check('技能名与磁盘目录一致', () => {
 })
 check('每个技能都有标题', () => {
   for (const s of skills.body.items) assert.ok(s.title && s.title.length > 2, s.name)
+})
+
+const sourcesEn = await get('/deepscient/api/sources?locale=en')
+check('sources 英文覆盖生效', () => {
+  const row = sourcesEn.body.items.find((s) => s.id === 'openalex')
+  assert.ok(row, '英文结果里缺 openalex')
+  assert.ok(!/[\u3400-\u9fff]/.test(row.hint ?? ''), row.hint)
+  assert.ok(!/[\u3400-\u9fff]/.test(sourcesEn.body.note ?? ''), sourcesEn.body.note)
 })
 
 const settingsBefore = await get('/deepscient/api/settings')
@@ -992,7 +1339,7 @@ check('DeepScient 自己也不引用本机第三方应用', () => {
 
 section('引导直连会话')
 const clientSrcForGuide = readFileSync(join(pkgDir, 'client', 'index.js'), 'utf8')
-check('引导不再让用户复制粘贴', () => assert.match(clientSrcForGuide, /用这条开会话/))
+check('引导不再让用户复制粘贴', () => assert.match(clientSrcForGuide, /tf\('guide\.session\.open'\)/))
 check('引导没有「打开一个新会话」这个只会失败的按钮', () => assert.ok(!/打开一个新会话/.test(clientSrcForGuide)))
 check('startSession 带真实工作区与提示词', () => {
   assert.match(clientSrcForGuide, /startSession\(workspaceId,\s*\{/)
@@ -1003,10 +1350,11 @@ check('不再把 agentPreset 写死成 standard', () => assert.ok(!/agentPreset:
 check('预设 id 从注册表取', () => assert.match(clientSrcForGuide, /useApi\('\/presets'\)/))
 check('预设 broken 时按钮禁用并说原因', () => {
   assert.match(clientSrcForGuide, /presetBroken/)
-  assert.match(clientSrcForGuide, /激活失败/)
+  // 「激活失败」已经抽进词典，这里验它仍然走 guide.session.presetFailed 这条文案。
+  assert.match(clientSrcForGuide, /guide\.session\.presetFailed/)
 })
 check('开会话失败会说清是哪一类原因', () => {
-  assert.match(clientSrcForGuide, /模型 key 未配置/)
+  assert.match(clientSrcForGuide, /tf\('guide\.session\.errorKeyMissing'\)/)
   assert.match(clientSrcForGuide, /presets\/inspect/)
 })
 check('工作区从 useWorkspaces 快照取，缺了才建', () => {
@@ -1014,8 +1362,9 @@ check('工作区从 useWorkspaces 快照取，缺了才建', () => {
   assert.match(clientSrcForGuide, /workspaces'\)/)
 })
 check('自检页有预设与模型两行', () => {
-  assert.match(clientSrcForGuide, /预设：\$\{preset/)
-  assert.match(clientSrcForGuide, /key \$\{keyText\}/)
+  // 文案已抽进词典：这里验的是「这两行仍然由 guide.check.* 渲染」，不再盯中文原文。
+  assert.match(clientSrcForGuide, /tf\('guide\.check\.preset'/)
+  assert.match(clientSrcForGuide, /tf\('guide\.check\.model'/)
 })
 check('设置页有预设体检入口', () => assert.match(clientSrcForGuide, /预设体检/))
 check('端到端脚本在位且能 dry-run', () => {

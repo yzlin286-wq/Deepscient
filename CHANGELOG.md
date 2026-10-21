@@ -3,6 +3,48 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.11.0] — 2026-10-22
+
+账号交给官网：本地不再注册、不再存密码；登录只为读额度与充值入口。**这是一次破坏性变更**。
+
+### 破坏性变更
+
+- 本地账号体系整体移除：注册、登录、改密码、恢复码、`science/auth/users.json`、`science/auth/sessions.json` 全部删除；旧本地会话立即失效。
+- 升级后需要用 deepscient.com 的账号登录一次；本机第一个账号不再由你在这里创建。
+
+### 新增：官网 OAuth（授权码 + PKCE）
+
+- `deepscient/host/oauth.js`：生成 `code_verifier` / `code_challenge(S256)` / `state`，换 token、查 `userinfo`、`revoke`。
+- 回调固定挂在根路径 `/auth/callback`（契约要求），与 `/deepscient` 前缀路由并列；成功后签发 `deepscient_session` cookie。
+- `access_token` 只落 `science/oauth/token.json`（0600），前端任何接口都拿不到明文；30 天有效、无 refresh。
+- 官网任何 401 → 清 token 与登录态，回到登录门；token 文件被删也会立刻失效。
+- 登出先调 `POST /api/oauth/revoke`，再清本地。
+
+### 新增：额度
+
+- 侧栏头像菜单与设置「账号」节展示官网用户名、邮箱、角色、余额与登录有效期；可刷新额度、去官网管理额度、登出。
+- 「账号设置」直接打开设置并定位到「账号」一节；菜单支持 Esc、背景点击、右上角关闭键。
+
+### 移除
+
+- 多用户数据隔离需求取消：身份只用于额度，本机课题库 / 需求书 / 设置继续共用一份。
+
+### 新增：中转站对接（un.ccagent.cn）
+
+- `host/relay.js` + 计费页「我的额度 / 在售套餐 / 最近订单」；Webhook 验签、`event_id` 幂等与订单对账；`scripts/partner-probe.mjs` 联调 CLI。配置与签名细节见 `docs/relay.md` 与 `docs/en/relay.md`。
+
+### i18n
+
+- `docs/en/` 十一篇英文文档；`?locale=en` 返回英文列表与正文，缺文件按 id 回退中文并标注。
+- `tools.en.json` / `sources.en.json` 数据层英文覆盖，未覆盖项登记 `fallbacks`。
+- 设置页、引导流程、接入面板、用量胶囊的硬编码文案改走 `tx(zh, en)`；登录门与账号节新增中英文案。
+- `verify-deepscient.mjs` 增加「内联词典与 `locale/*.json` 逐键一致」断言。
+
+### 验收
+
+- `node deepscient/scripts/verify-deepscient.mjs` → 345 项全部通过（含 OAuth 授权地址契约、回调拒绝分支、登录态与余额、英文文档与数据覆盖）。
+- 3081 端到端：登录门 → 官网授权页（PKCE 参数正确）→ 取消分支 → 登录后工作台 → 头像菜单 → 账号设置直达账号节 → Esc 关闭。
+
 ## [0.10.0] — 2026-10-21
 
 DeepScient 有了自己的账号体系，DeepSeek 那套账号入口整体退役。

@@ -1,5 +1,16 @@
 # 发布说明 · DeepScient 0.4.0
 
+## 本次增量：中转站合作方对接
+
+在不改上游代码的前提下，把「中转站（un.ccagent.cn）」接成一条完整链路：
+
+- **签名客户端与 8 个接口**：`host/relay.js` 实现 canonical query / 原始字节摘要 / 四个签名头，封装 `ping`、`users/sync`、`users/{uid}`、`plans`、`buy-url`、`account-url`、`orders/{trade_no}` 与 Webhook 验签；只对 `429`/`5xx`/网络错误退避（1s/2s/4s），每次重试重新签 nonce。
+- **绑定 / 订单加密存储**：`<DSH_HOME>/science/partner.json`（0600，绑定/订单/事件去重）与 `partner-key`（AES-256-GCM 主密钥，0600）；用户 Key 只以密文落盘，接口与界面只给掩码。
+- **Webhook 与回跳**：公开端点 `POST /deepscient/partner/webhook`（原始字节验签、300 秒时间窗、`event_id` 幂等、头体事件号核对）与 `GET /deepscient/partner/return`（`return:<trade_no>:status` HMAC，回跳只作 UX，最终状态以订单查询为准）。
+- **计费页区块**：计费页新增「中转站」（账号 / 套餐 / 订单）：连通自检、同步账号、我的额度、套餐购买、订单查询；未配置 secret 时退化成「怎么配」提示，不给按钮。
+- **登录后静默同步**：官网授权登录成功后异步调 `users/sync`，失败不阻塞登录也不上抛，只留一条不含 Key 的 warn。
+- **文档与探针**：`docs/relay.md`（配置、本机端点、签名、Webhook 部署、错误码映射、16 条联调用例）与零依赖的 `scripts/partner-probe.mjs`（`--ping/--plans/--sync/--buy/--account/--order`，与 `host/relay.js` 共用同一份签名实现）。
+
 ## 这次发什么
 
 0.3.0 解决的是「界面点下去真的能用」。0.4.0 换了个方向：**把 GitHub 上成熟的科研技能装进来，并让它可复现、可卸载、不拖累发布包**。

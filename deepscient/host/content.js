@@ -11,18 +11,23 @@ import { pkgDir } from './science.js'
 
 const DOCS_DIR = join(pkgDir, 'docs')
 const CACHE_MS = 30_000
-let cache = { at: 0, docs: null }
+let cache = { at: 0, locale: 'zh', docs: null }
 
-const ORDER = ['quickstart', 'guide', 'stages', 'tools', 'billing', 'sources', 'pitfalls', 'panels']
+/** 英文文档放 docs/en/；没有对应文件就按 id 回退中文，并在条目上标 fallback。 */
+function docsDir(locale) {
+  return locale === 'en' ? join(DOCS_DIR, 'en') : DOCS_DIR
+}
+
+const ORDER = ['quickstart', 'guide', 'stages', 'tools', 'billing', 'relay', 'sources', 'pitfalls', 'panels']
 
 function titleOf(markdown, fallback) {
   const line = markdown.split(/\r?\n/).find((l) => /^#\s+/.test(l))
   return line ? line.replace(/^#\s+/, '').trim() : fallback
 }
 
-export function listDocs() {
+export function listDocs(locale = 'zh') {
   const now = Date.now()
-  if (cache.docs && now - cache.at < CACHE_MS) return cache.docs
+  if (cache.docs && cache.locale === locale && now - cache.at < CACHE_MS) return cache.docs
 
   let names = []
   try {
@@ -37,19 +42,22 @@ export function listDocs() {
   names.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
 
   const docs = names.map((id) => {
-    const path = join(DOCS_DIR, `${id}.md`)
+    const localized = join(docsDir(locale), `${id}.md`)
+    const path = existsSync(localized) ? localized : join(DOCS_DIR, `${id}.md`)
     const markdown = readFileSync(path, 'utf8')
     const bytes = statSync(path).size
-    return { id, title: titleOf(markdown, id), bytes, markdown }
+    return { id, title: titleOf(markdown, id), bytes, markdown, fallback: localized !== path }
   })
-  cache = { at: now, docs }
+  cache = { at: now, locale, docs }
   return docs
 }
 
-export function getDoc(id) {
+export function getDoc(id, locale = 'zh') {
   const safe = String(id || '').replace(/[^a-z0-9_-]/gi, '')
-  const path = join(DOCS_DIR, `${safe}.md`)
-  if (!safe || !existsSync(path)) return null
+  if (!safe) return null
+  const localized = join(docsDir(locale), `${safe}.md`)
+  const path = existsSync(localized) ? localized : join(DOCS_DIR, `${safe}.md`)
+  if (!existsSync(path)) return null
   const markdown = readFileSync(path, 'utf8')
-  return { id: safe, title: titleOf(markdown, safe), markdown }
+  return { id: safe, title: titleOf(markdown, safe), markdown, fallback: localized !== path }
 }

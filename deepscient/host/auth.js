@@ -1,221 +1,47 @@
 /**
- * 应用内的账号体系：注册、登录、登出、改密码。
+ * /deepscient/auth/*：登录态与官网 token 的门口。
  *
- * 为什么要它：DSH 自己的浏览器 cookie 是**设备级**的——本机任何浏览器拿到
- * 启动时的 `?token=` 就进去了，没有"这是谁"的概念。DeepScient 要的是**人级**的
- * 身份：同一个实例上可以有几个不同的使用者，各自的课题与需求书不该混在一起看。
+ * 账号由 deepscient.com 管理：这里不存密码、不建用户库、不做恢复码。
+ * 本机只有两样东西：服务端保存的 access_token，以及浏览器手里那枚会话 cookie。
  *
  * 三条纪律：
- *   1. **密码只存 scrypt 派生值**：随机 salt + 64 字节，比较用 timingSafeEqual。
- *      不存明文、不存可逆加密、不自己发明 KDF。
- *   2. **第一个账号是 owner，注册随后关闭**。单人科研工具不需要开放注册；
- *      owner 想把别人加进来是后续功能，这里明确拒绝而不是假装支持。
- *   3. **失败要说清是哪一种**：没登录（401）、密码错（401 + 剩余次数）、
- *      被限流（429）。前端据此显示不同的话，不用猜。
- *
- * 不做什么：不做找回密码邮件（本机没有邮件通道）、不做多因素、不做第三方 OAuth。
- * 这些都需要外部依赖，而这是个跑在本机的科研工具。
+ *   1. **密码不进来**（见 oauth.js）；
+ *   2. **未登录就是未登录**：不设 bootstrap 例外，登录门自己走 /auth/* 这几个公开端点；
+ *   3. **失败要说清是哪一种**：state 失效、用户取消、授权码过期各有各的话。
  */
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { dshHome } from './science.js'
+import { beginLogin, clearAuth, currentUser, finishLogin, logout, refreshUser, status } from './oauth.js'
+import { syncUserQuietly } from './relay.js'
 
 const AUTH = '/deepscient/auth'
 const COOKIE = 'deepscient_session'
-const SESSION_DAYS = 30
-/** 同一个用户名连续失败这么多次就锁一会儿。内存计数器，重启清零——够用。 */
-const MAX_FAILS = 8
-const LOCK_MS = 15 * 60 * 1000
-const SCRYPT_KEYLEN = 64
 
-const fails = new Map()
+/**
+ * 哪些 /deepscient/api 下的路径不需要登录。
+ *
+ * 判定标准是「这条数据是不是"这个人的"」：
+ *   - 能力清单（工具、阶段、流程、源、预设、健康、文档）是这台机器的，不是谁的 → 公开。
+ *   - 课题、需求书、概览、设置是某个人的 → 必须登录。
+ * 公开不等于无所谓：它们本来就不含密钥（源那页的 key 是掩码）。
+ */
+const PUBLIC_API = new Set(['health', 'tools', 'workflow', 'stages', 'presets', 'sources', 'docs'])
 
-function authDir() {
-  return join(dshHome(), 'science', 'auth')
+export function isPublicApi(rest) {
+  const head = String(rest ?? '').split('/')[0]
+  return PUBLIC_API.has(head)
 }
 
-function usersPath() {
-  return join(authDir(), 'users.json')
+/**
+ * WebSocket 升级的人级门。
+ *
+ * 设备级准入只回答「是不是这台机器上的浏览器」，不回答「登录了没有」。
+ * 这层补上后者：cookie 会话有效才放行；程序化客户端带 Authorization 的照旧放行。
+ *
+ * 关掉：DEEPSCIENT_WS_GATE=0。
+ */
+export function gateUpgrade(req) {
+  if (req?.headers?.authorization) return 'token'
+  return currentUser(req) ? 'session' : 'deny'
 }
-
-function sessionsPath() {
-  return join(authDir(), 'sessions.json')
-}
-
-function ensureDir() {
-  const dir = authDir()
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
-}
-
-function readJson(path, fallback) {
-  if (!existsSync(path)) return fallback
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'))
-  } catch {
-    // 文件坏了不该让整个登录不可用：当作空库，让人能重新注册。坏文件留个备份。
-    try {
-      writeFileSync(path + '.broken', readFileSync(path))
-    } catch {}
-    return fallback
-  }
-}
-
-function writeJson(path, value) {
-  ensureDir()
-  writeFileSync(path, JSON.stringify(value, null, 2) + '\n')
-}
-
-/* ── 密码 ──────────────────────────────────────────────────────────────── */
-
-function hashPassword(password, salt = randomBytes(16).toString('hex')) {
-  const derived = scryptSync(password, salt, SCRYPT_KEYLEN)
-  return { salt, hash: derived.toString('hex') }
-}
-
-function verifyPassword(password, salt, hash) {
-  const expected = Buffer.from(hash, 'hex')
-  const actual = scryptSync(password, salt, expected.length)
-  // 长度相等才比较；timingSafeEqual 长度不等会抛，不能吞掉这个差异。
-  if (expected.length !== actual.length) return false
-  return timingSafeEqual(expected, actual)
-}
-
-/* ── 存储 ──────────────────────────────────────────────────────────────── */
-
-function loadUsers() {
-  const data = readJson(usersPath(), { version: 1, users: [] })
-  if (!Array.isArray(data.users)) data.users = []
-  return data
-}
-
-function saveUsers(data) {
-  writeJson(usersPath(), data)
-}
-
-function loadSessions() {
-  const data = readJson(sessionsPath(), { version: 1, sessions: [] })
-  if (!Array.isArray(data.sessions)) data.sessions = []
-  const now = Date.now()
-  data.sessions = data.sessions.filter((s) => s && typeof s.expiresAt === 'number' && s.expiresAt > now)
-  return data
-}
-
-function saveSessions(data) {
-  writeJson(sessionsPath(), data)
-}
-
-/** 磁盘上只放 token 的摘要：文件被拷走也换不回可用的 cookie。 */
-function tokenDigest(token) {
-  return createHash('sha256').update(token).digest('hex')
-}
-
-export function publicUser(user) {
-  if (!user) return null
-  return {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName || user.username,
-    role: user.role || 'member',
-    createdAt: user.createdAt ?? null,
-    lastLoginAt: user.lastLoginAt ?? null,
-  }
-}
-
-/* ── cookie ────────────────────────────────────────────────────────────── */
-
-function parseCookies(req) {
-  const raw = req.headers?.cookie
-  if (!raw) return {}
-  const out = {}
-  for (const part of String(raw).split(';')) {
-    const idx = part.indexOf('=')
-    if (idx < 0) continue
-    out[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim())
-  }
-  return out
-}
-
-function sessionCookie(token, maxAgeSeconds) {
-  // SameSite=Lax 而不是 Strict：登录后从外部链接回到本机首页要能带上 cookie。
-  // HttpOnly 一定要有——前端不需要读它，能读就多一条 XSS 偷走的路。
-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`
-}
-
-function clearCookie() {
-  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
-}
-
-/* ── 会话 ──────────────────────────────────────────────────────────────── */
-
-export function createSession(userId) {
-  const token = randomBytes(32).toString('base64url')
-  const data = loadSessions()
-  const now = Date.now()
-  data.sessions.push({
-    digest: tokenDigest(token),
-    userId,
-    createdAt: now,
-    expiresAt: now + SESSION_DAYS * 24 * 3600 * 1000,
-  })
-  // 每个用户只保留最近 5 个会话，避免文件无限长。
-  const mine = data.sessions.filter((s) => s.userId === userId)
-  if (mine.length > 5) {
-    const drop = new Set(mine.slice(0, mine.length - 5).map((s) => s.digest))
-    data.sessions = data.sessions.filter((s) => !drop.has(s.digest))
-  }
-  saveSessions(data)
-  return token
-}
-
-export function destroySession(token) {
-  if (!token) return
-  const digest = tokenDigest(token)
-  const data = loadSessions()
-  const before = data.sessions.length
-  data.sessions = data.sessions.filter((s) => s.digest !== digest)
-  if (data.sessions.length !== before) saveSessions(data)
-}
-
-/** 从请求里认出人。认证是同步的：文件已在内存里够快，读盘一次也不会卡。 */
-export function currentUser(req) {
-  const token = parseCookies(req)[COOKIE]
-  if (!token) return null
-  const digest = tokenDigest(token)
-  const data = loadSessions()
-  const session = data.sessions.find((s) => s.digest === digest)
-  if (!session) return null
-  const users = loadUsers()
-  const user = users.users.find((u) => u.id === session.userId)
-  return user ?? null
-}
-
-/* ── 限流 ──────────────────────────────────────────────────────────────── */
-
-function lockedFor(username) {
-  const entry = fails.get(username)
-  if (!entry) return 0
-  if (entry.until && entry.until > Date.now()) return Math.ceil((entry.until - Date.now()) / 1000)
-  return 0
-}
-
-function noteFail(username) {
-  const entry = fails.get(username) ?? { count: 0, until: 0 }
-  entry.count += 1
-  if (entry.count >= MAX_FAILS) {
-    entry.until = Date.now() + LOCK_MS
-    entry.count = 0
-  }
-  fails.set(username, entry)
-  return MAX_FAILS - entry.count
-}
-
-function clearFails(username) {
-  fails.delete(username)
-}
-
-/* ── HTTP 小工具 ───────────────────────────────────────────────────────── */
 
 function json(res, status, body, headers = {}) {
   const payload = JSON.stringify(body)
@@ -227,39 +53,76 @@ function json(res, status, body, headers = {}) {
   res.end(payload)
 }
 
-async function readBody(req, limit = 64 * 1024) {
-  const chunks = []
-  let size = 0
-  for await (const chunk of req) {
-    size += chunk.length
-    if (size > limit) throw new Error('请求体过大')
-    chunks.push(chunk)
-  }
-  if (!chunks.length) return {}
+function sessionCookie(value, maxAgeSeconds) {
+  // SameSite=Lax 而不是 Strict：从官网授权页跳回本机时要能带上 cookie。
+  return COOKIE + '=' + value + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + maxAgeSeconds
+}
+
+function clearCookie() {
+  return COOKIE + '=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
+}
+
+/** 回调地址必须是回环：契约只允许 127.0.0.1 / localhost。 */
+const LOOPBACK = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
+
+function originOf(req, ctx) {
+  const host = String(req?.headers?.host ?? '')
+  if (LOOPBACK.test(host)) return 'http://' + host
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
-  } catch {
-    throw new Error('请求体不是合法 JSON')
+    const origin = ctx?.webServer?.origin
+    if (typeof origin === 'string' && origin) return origin
+  } catch {}
+  return 'http://127.0.0.1'
+}
+
+function page(res, code, heading, body, ok) {
+  const color = ok ? '#1f6f5c' : '#b3261e'
+  const html = [
+    '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<title>' + heading + ' · DeepScient</title>',
+    '<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;',
+    'font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#111}',
+    'main{max-width:420px;padding:28px}h1{font-size:18px;margin:0 0 8px;color:' + color + '}',
+    'p{margin:0 0 18px;opacity:.7}a{color:#1f6f5c}</style></head><body><main>',
+    '<h1>' + heading + '</h1><p>' + body + '</p>',
+    '<a href="/">返回工作台 · Back to workbench</a>',
+    '</main></body></html>',
+  ].join('')
+  res.writeHead(code, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+  })
+  res.end(html)
+}
+
+const FAIL_TEXT = {
+  access_denied: '你取消了授权 · Authorization was cancelled',
+  state_mismatch: '这次登录已失效，请重新发起 · This sign-in attempt is no longer valid',
+  invalid_grant: '授权码已过期或已被使用，请重新登录 · The authorization code expired or was already used',
+  invalid_request: '官网没有带回授权码 · The website did not return an authorization code',
+  unreachable: '连不上官网，检查网络后重试 · Could not reach deepscient.com',
+  unauthorized: '官网判定这枚 token 已失效 · The website rejected this token',
+}
+
+/** 官网授权回调。路径由契约固定，挂在站点根上。 */
+export async function handleCallback(req, res, ctx = null) {
+  const url = new URL(req.url ?? '/', 'http://127.0.0.1')
+  const result = await finishLogin(url.searchParams)
+  if (!result.ok) {
+    page(res, 400, '登录没有完成', FAIL_TEXT[result.error] ?? ('官网没有接受这次登录 · ' + result.error), false)
+    return true
   }
+  // 登录成功就顺手在中转站静默建号/补同步；失败不能影响登录本身，所以不 await。
+  void syncUserQuietly(result.user, ctx?.logger ?? null)
+  // 会话号只在这一刻交给浏览器；磁盘上那份 token 仍是服务端独占。
+  res.setHeader('set-cookie', sessionCookie(result.sessionId, 30 * 24 * 3600))
+  page(res, 200, '登录成功', '可以关掉这一页，回到工作台。 · Signed in. Return to the workbench.', true)
+  return true
 }
 
-function checkCredentials(username, password) {
-  const name = String(username ?? '').trim()
-  if (name.length < 2 || name.length > 32) return '用户名要 2–32 个字符'
-  if (!/^[A-Za-z0-9_.-]+$/.test(name)) return '用户名只能用字母、数字、下划线、点和横线'
-  const pwd = String(password ?? '')
-  if (pwd.length < 8) return '密码至少 8 位'
-  if (pwd.length > 200) return '密码太长'
-  return null
-}
-
-/* ── 路由 ──────────────────────────────────────────────────────────────── */
-
-/**
- * 处理 /deepscient/auth/*。返回 true 表示这个请求归它管。
- * 路由表刻意小：状态、注册、登录、登出、改密码、列用户。
- */
-export async function handleAuth(req, res) {
+/** 处理 /deepscient/auth/*。返回 true 表示这个请求归它管。 */
+export async function handleAuth(req, res, ctx) {
   const url = new URL(req.url ?? '/', 'http://127.0.0.1')
   const path = url.pathname
   if (path !== AUTH && !path.startsWith(AUTH + '/')) return false
@@ -269,134 +132,42 @@ export async function handleAuth(req, res) {
 
   try {
     if (rest === 'state' && method === 'GET') {
-      const users = loadUsers()
-      const user = currentUser(req)
-      json(res, 200, {
-        hasUsers: users.users.length > 0,
-        user: publicUser(user),
-        // 前端据此决定显示登录还是"创建第一个账号"
-        registrationOpen: users.users.length === 0,
-        sessionDays: SESSION_DAYS,
-      })
+      json(res, 200, { ok: true, ...status() })
       return true
     }
 
-    if (rest === 'register' && method === 'POST') {
-      const body = await readBody(req)
-      const users = loadUsers()
-      if (users.users.length > 0) {
-        return json(res, 403, { error: 'registration-closed', message: '这个实例已经有账号了。注册只对第一个账号开放。' }), true
-      }
-      const problem = checkCredentials(body.username, body.password)
-      if (problem) return json(res, 400, { error: 'bad-credentials', message: problem }), true
-
-      const username = String(body.username).trim()
-      const { salt, hash } = hashPassword(String(body.password))
-      const user = {
-        id: 'u-' + randomBytes(6).toString('hex'),
-        username,
-        displayName: String(body.displayName ?? '').trim() || username,
-        salt,
-        hash,
-        role: 'owner',
-        createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      }
-      users.users.push(user)
-      saveUsers(users)
-      clearFails(username)
-      const token = createSession(user.id)
-      json(res, 201, { user: publicUser(user) }, { 'set-cookie': sessionCookie(token, SESSION_DAYS * 24 * 3600) })
+    if (rest === 'authorize' && method === 'POST') {
+      const { authorizeUrl } = await beginLogin(originOf(req, ctx))
+      json(res, 200, { ok: true, authorizeUrl })
       return true
     }
 
-    if (rest === 'login' && method === 'POST') {
-      const body = await readBody(req)
-      const username = String(body.username ?? '').trim()
-      const locked = lockedFor(username)
-      if (locked > 0) {
-        json(res, 429, { error: 'rate-limited', retryAfter: locked, message: `失败次数太多，${Math.ceil(locked / 60)} 分钟后再试。` })
+    if (rest === 'refresh' && method === 'POST') {
+      const result = await refreshUser()
+      if (!result.ok && result.error === 'auth-required') {
+        json(res, 401, { ok: false, error: 'auth-required' }, { 'set-cookie': clearCookie() })
         return true
       }
-      const users = loadUsers()
-      const user = users.users.find((u) => u.username === username)
-      // 用户不存在与密码错给同一句话：不告诉外面"这个用户名存在"。
-      const ok = user ? verifyPassword(String(body.password ?? ''), user.salt, user.hash) : false
-      if (!ok) {
-        const left = noteFail(username)
-        json(res, 401, { error: 'bad-login', remaining: Math.max(left, 0), message: '用户名或密码不对。' })
+      if (!result.ok) {
+        json(res, 502, { ok: false, error: result.error }, { 'set-cookie': clearCookie() })
         return true
       }
-      clearFails(username)
-      user.lastLoginAt = new Date().toISOString()
-      saveUsers(users)
-      const token = createSession(user.id)
-      json(res, 200, { user: publicUser(user) }, { 'set-cookie': sessionCookie(token, SESSION_DAYS * 24 * 3600) })
+      json(res, 200, { ok: true, ...status() })
       return true
     }
 
     if (rest === 'logout' && method === 'POST') {
-      const token = parseCookies(req)[COOKIE]
-      destroySession(token)
+      await logout()
       json(res, 200, { ok: true }, { 'set-cookie': clearCookie() })
       return true
     }
 
-    if (rest === 'password' && method === 'POST') {
-      const user = currentUser(req)
-      if (!user) return json(res, 401, { error: 'auth-required' }), true
-      const body = await readBody(req)
-      if (!verifyPassword(String(body.current ?? ''), user.salt, user.hash)) {
-        json(res, 401, { error: 'bad-login', message: '当前密码不对。' })
-        return true
-      }
-      const problem = checkCredentials(user.username, body.next)
-      if (problem) return json(res, 400, { error: 'bad-credentials', message: problem }), true
-
-      const users = loadUsers()
-      const target = users.users.find((u) => u.id === user.id)
-      const { salt, hash } = hashPassword(String(body.next))
-      target.salt = salt
-      target.hash = hash
-      saveUsers(users)
-      // 改密码后把所有会话清掉，再用当前这枚换新——别的设备随即失效。
-      const data = loadSessions()
-      data.sessions = data.sessions.filter((s) => s.userId !== user.id)
-      saveSessions(data)
-      const token = createSession(user.id)
-      json(res, 200, { ok: true }, { 'set-cookie': sessionCookie(token, SESSION_DAYS * 24 * 3600) })
-      return true
-    }
-
-    if (rest === 'users' && method === 'GET') {
-      const user = currentUser(req)
-      if (!user) return json(res, 401, { error: 'auth-required' }), true
-      const users = loadUsers()
-      json(res, 200, { items: users.users.map(publicUser) })
-      return true
-    }
-
-    json(res, 404, { error: 'not-found', path })
+    json(res, 404, { ok: false, error: 'not-found', path })
     return true
   } catch (error) {
-    json(res, 400, { error: 'bad-request', message: error.message })
+    json(res, 500, { ok: false, error: 'oauth-failed', message: error?.message ?? 'unknown' })
     return true
   }
 }
 
-/**
- * 哪些 /deepscient/api 下的路径不需要登录。
- *
- * 判定标准是「这条数据是不是"这个人的"」：
- *   - 能力清单（工具、阶段、流程、源、预设、健康）是这台机器的，不是谁的 → 公开。
- *   - 课题、需求书、概览、设置是某个人的 → 必须登录。
- * 公开不等于无所谓：它们本来就不含密钥（源那页的 key 是掩码）。
- */
-const PUBLIC_API = new Set(['health', 'tools', 'workflow', 'stages', 'presets', 'sources', 'docs'])
-
-export function isPublicApi(rest) {
-  const head = String(rest ?? '').split('/')[0]
-  return PUBLIC_API.has(head)
-}
-
-export { AUTH, COOKIE }
+export { AUTH, COOKIE, clearAuth, currentUser }

@@ -1,6 +1,6 @@
 {
   "name": "@local/deepscient",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
   "description": "DeepScient：科研版 Harness 的品牌、工作台界面、token 计费与文献 API 接入",
@@ -24,6 +24,7 @@
     "host/content.js",
     "host/usage.js",
     "host/sources.js",
+    "host/relay.js",
     "client/index.js",
     "locale/*.json",
     "docs/*.md",

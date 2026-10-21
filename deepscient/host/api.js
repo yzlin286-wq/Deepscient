@@ -16,6 +16,23 @@ import { currentUser, isPublicApi } from './auth.js'
 import { getDoc, listDocs } from './content.js'
 import { readSettings, writeSettings } from './settings.js'
 import { dshHome, pkgDir, science, scienceRoot } from './science.js'
+import {
+  buildReturnUrl,
+  createAccountUrl,
+  createBuyUrl,
+  externalUidOf,
+  getLocalOrder,
+  getOrder,
+  getUser,
+  listOrders,
+  listPlans,
+  partnerStatus,
+  PartnerError,
+  ping,
+  readBinding,
+  saveOrderFromQuery,
+  syncUser,
+} from './relay.js'
 import { checkInstalled, readIndex as readVendorIndex, VENDOR_ROOT, MANIFEST as VENDOR_MANIFEST } from '../scripts/install-skills.mjs'
 import { clearSource, listSources, updateSources, verifySource, mask } from './sources.js'
 import { usageRange } from './usage.js'
@@ -88,6 +105,17 @@ function localizeWorkflow(wf, fallbacks) {
   return { ...wf, stages, globalRules: en.globalRules ?? wf.globalRules }
 }
 
+/** 接入台账的英文覆盖：只翻 hint，名字本身就是产品名。 */
+function localizeSources(data, fallbacks) {
+  const overlay = loadOverlay('sources.en.json') ?? {}
+  const items = (data.items ?? []).map((item) => {
+    const translated = overlay[item.id]
+    if (item.hint && !translated?.hint) fallbacks.push('sources.' + item.id)
+    return { ...item, hint: translated?.hint ?? item.hint }
+  })
+  return { ...data, items, note: overlay.__note ?? data.note, ...(fallbacks.length ? { fallbacks } : {}) }
+}
+
 
 /** 每条路由允许的方法；不在表里的一律 405，明确告诉对方可用方法。 */
 const METHODS = {
@@ -103,6 +131,12 @@ const METHODS = {
   presets: ['GET'],
   sources: ['GET', 'PUT'],
   'sources/verify': ['POST'],
+  partner: ['GET'],
+  'partner/ping': ['POST'],
+  'partner/sync': ['POST'],
+  'partner/buy-url': ['POST'],
+  'partner/account-url': ['POST'],
+  'partner/binding': ['GET'],
 }
 
 function json(res, status, body) {
@@ -200,14 +234,14 @@ function scanToolNames(dir) {
   return names
 }
 
-function toolRows(sci) {
-  const cacheKey = sci.dir ?? ''
+function toolRows(sci, wf, english = false) {
+  const cacheKey = `${sci.dir ?? ''}|${english ? 'en' : 'zh'}`
   if (TOOL_STAGE_CACHE.items && TOOL_STAGE_CACHE.key === cacheKey && Date.now() - TOOL_STAGE_CACHE.at < 60_000) {
     return TOOL_STAGE_CACHE.items
   }
-  const wf = sci.coach.loadWorkflow()
+  const workflow = wf ?? sci.coach.loadWorkflow()
   const seen = new Map()
-  for (const stage of wf.stages) {
+  for (const stage of workflow.stages) {
     for (const name of stage.tools ?? []) {
       if (!seen.has(name)) {
         seen.set(name, {
@@ -220,9 +254,17 @@ function toolRows(sci) {
       }
     }
   }
+  // 跨阶段那句是界面文案，英文版本放在 tools.en.json，别在代码里再抄一份。
+  const copy = english ? loadOverlay('tools.en.json')?.allStages ?? {} : {}
   for (const name of scanToolNames(sci.dir)) {
     if (!seen.has(name)) {
-      seen.set(name, { name, stageId: null, stageLabel: '全程', stageGoal: '跨阶段使用：查、判、校。', artifacts: [] })
+      seen.set(name, {
+        name,
+        stageId: null,
+        stageLabel: copy.label ?? '全程',
+        stageGoal: copy.goal ?? '跨阶段使用：查、判、校。',
+        artifacts: [],
+      })
     }
   }
   const items = [...seen.values()].sort((a, b) => (a.stageId ?? 'ZZ').localeCompare(b.stageId ?? 'ZZ') || a.name.localeCompare(b.name))
@@ -461,10 +503,22 @@ function userSkillRows() {
       const file = join(root, entry.name, 'SKILL.md')
       if (!existsSync(file)) continue
       const text = readFileSync(file, 'utf8')
-      out.push({ name: entry.name, description: frontmatterField(text, 'description'), source: 'user' })
+      const title = text.split(/\r?\n/).find((l) => /^#\s+/.test(l))
+      out.push({
+        name: entry.name,
+        title: title ? title.replace(/^#\s+/, '').trim() : entry.name,
+        description: frontmatterField(text, 'description'),
+        source: 'user',
+      })
     } else if (entry.name.endsWith('.md')) {
       const text = readFileSync(join(root, entry.name), 'utf8')
-      out.push({ name: entry.name.slice(0, -3), description: frontmatterField(text, 'description'), source: 'user' })
+      const title = text.split(/\r?\n/).find((l) => /^#\s+/.test(l))
+      out.push({
+        name: entry.name.slice(0, -3),
+        title: title ? title.replace(/^#\s+/, '').trim() : entry.name.slice(0, -3),
+        description: frontmatterField(text, 'description'),
+        source: 'user',
+      })
     }
   }
   return out
@@ -780,6 +834,7 @@ function routeNext(sci, projectId, url = null) {
       // 取法本身就说明了严重度（blocking > warning > unrecorded > self-check）。
       gate: a.gate ?? null,
       id: a.gate ?? null,
+      stageId: stage?.id ?? null,
       label: localized?.label ?? a.label ?? null,
       detail: a.detail ?? null,
       fix: localized?.fix ?? a.fix ?? null,
@@ -917,6 +972,8 @@ function allowedMethods(rest, parts) {
   if (parts[0] === 'docs' && parts[1]) return ['GET']
   if (parts[0] === 'projects' && parts[1]) return ['GET']
   if (parts[0] === 'sources' && parts[1]) return ['DELETE']
+  // 订单详情按 trade_no 取，路径段是变量，进不了 METHODS 表。
+  if (parts[0] === 'partner' && parts[1] === 'orders' && parts[2]) return ['GET']
   return ['GET']
 }
 
@@ -990,6 +1047,151 @@ export async function handleApi(req, res, ctx = null) {
       return true
     }
 
+    // ── 中转站合作方 ─────────────────────────────────────────────────────────
+    // partner 不在 PUBLIC_API 里：走到这里 req.deepscientUser 一定已经认过人，
+    // 所以下面所有调用都只带「当前这个人」的 uid，不接客户端传来的身份。
+    // 官网账号的 id 可能是数字，统一转成 external_uid 之后再往下走。
+    const uid = externalUidOf(req.deepscientUser)
+
+    if (rest === 'partner') {
+      const status = partnerStatus(uid)
+      // 本地订单库是所有人的；先按 externalUid 过滤，再截 10 条，不能把别人的买课记录带出去。
+      const orders = listOrders(50).filter((order) => order.externalUid === uid).slice(0, 10)
+
+      let plans = null
+      let plansError = null
+      // 没有 secret 时连请求都发不出去，直接给 plans:null，让界面说「未配置」而不是报错。
+      if (status.secretPresent) {
+        try {
+          plans = (await listPlans()).map((p) => ({
+            planId: p.plan_id ?? null,
+            title: p.title ?? '',
+            subtitle: p.subtitle ?? '',
+            price: p.price ?? '',
+            currency: p.currency ?? 'CNY',
+            durationUnit: p.duration_unit ?? '',
+            durationValue: p.duration_value ?? null,
+            quota: p.quota ?? null,
+            quotaValue: p.quota_value ?? null,
+            group: p.group ?? '',
+            maxPurchasePerUser: p.max_purchase_per_user ?? 0,
+          }))
+        } catch (error) {
+          // 套餐拉不到不该让整页 500：绑定与订单还有用，界面单独显示这一块的失败原因。
+          plansError = {
+            // 只报中转站业务码；网络层失败没有 code，用 null 比用 0 更不容易被误读成「业务码 0」。
+            code: error instanceof PartnerError ? error.code ?? null : null,
+            message: error instanceof Error ? error.message : String(error ?? ''),
+          }
+        }
+      }
+
+      json(res, 200, { ok: true, ...status, orders, plans, plansError })
+      return true
+    }
+
+    if (rest === 'partner/ping') {
+      const startedAt = Date.now()
+      try {
+        const data = await ping()
+        // 延迟在服务端量：客户端没有发出请求的时刻，自己算会把网络往返算丢。
+        json(res, 200, {
+          ok: true,
+          appId: data?.app_id ?? null,
+          ts: data?.ts ?? null,
+          latencyMs: Date.now() - startedAt,
+        })
+      } catch (error) {
+        relayFail(res, error)
+      }
+      return true
+    }
+
+    if (rest === 'partner/sync') {
+      const body = await readJsonBody(req)
+      if (body === null) {
+        json(res, 400, { error: 'invalid-json' })
+        return true
+      }
+      const displayName = typeof body.displayName === 'string' ? body.displayName : req.deepscientUser.displayName
+      try {
+        json(res, 200, { ok: true, binding: await syncUser(uid, { displayName }) })
+      } catch (error) {
+        relayFail(res, error)
+      }
+      return true
+    }
+
+    if (rest === 'partner/buy-url') {
+      const body = await readJsonBody(req)
+      if (body === null) {
+        json(res, 400, { error: 'invalid-json' })
+        return true
+      }
+      const raw = body.planId ?? body.plan_id
+      let planId
+      if (raw !== undefined && raw !== null && raw !== '') {
+        const value = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw.trim()) : NaN
+        // 只认正整数：把 NaN / 小数 / 负数发出去，中转站只会回一个看不懂的 40001。
+        if (!Number.isInteger(value) || value <= 0) {
+          json(res, 400, { error: 'bad-plan-id' })
+          return true
+        }
+        planId = value
+      }
+      try {
+        const data = await createBuyUrl({ externalUid: uid, planId, returnUrl: partnerReturnUrl(req) })
+        json(res, 200, { ok: true, url: data?.url ?? null, ticket: data?.ticket ?? null, expiresIn: data?.expires_in ?? null })
+      } catch (error) {
+        relayFail(res, error)
+      }
+      return true
+    }
+
+    if (rest === 'partner/account-url') {
+      try {
+        const data = await createAccountUrl(uid)
+        json(res, 200, { ok: true, url: data?.url ?? null, ticket: data?.ticket ?? null, expiresIn: data?.expires_in ?? null })
+      } catch (error) {
+        relayFail(res, error)
+      }
+      return true
+    }
+
+    if (rest === 'partner/binding') {
+      try {
+        // getUser 对「没同步过」返回 {found:false}，那不是错误，照常 200 给界面。
+        const remote = await getUser(uid)
+        json(res, 200, { ok: true, binding: readBinding(uid), remote })
+      } catch (error) {
+        relayFail(res, error)
+      }
+      return true
+    }
+
+    if (parts[0] === 'partner' && parts[1] === 'orders' && parts[2]) {
+      const tradeNo = decodeURIComponent(parts[2])
+      const local = getLocalOrder(tradeNo)
+      // 别人的订单号不确认存在：本地有但归属不对，直接 404，别泄露「这单存在」。
+      if (local && local.externalUid !== uid) {
+        json(res, 404, { ok: false, error: 'not-found' })
+        return true
+      }
+      let data
+      try {
+        data = await getOrder(tradeNo)
+      } catch (error) {
+        relayFail(res, error)
+        return true
+      }
+      if (data?.external_uid && data.external_uid !== uid) {
+        json(res, 404, { ok: false, error: 'not-found' })
+        return true
+      }
+      json(res, 200, { ok: true, order: saveOrderFromQuery(data), webhook: data?.webhook ?? null })
+      return true
+    }
+
     if (rest === 'usage') {
       const settings = readSettings().values
       const payload = usageRange({
@@ -1038,7 +1240,12 @@ export async function handleApi(req, res, ctx = null) {
         json(res, 200, updateSources(body))
         return true
       }
-      json(res, 200, listSources())
+      const data = listSources()
+      if (!wantEnglish(url)) {
+        json(res, 200, data)
+        return true
+      }
+      json(res, 200, localizeSources(data, []))
       return true
     }
 
@@ -1061,9 +1268,18 @@ export async function handleApi(req, res, ctx = null) {
 
     if (rest === 'workflow') {
       if (!needScience()) return true
-      const wf = sci.coach.loadWorkflow()
+      const raw = sci.coach.loadWorkflow()
+      const english = wantEnglish(url)
+      const wf = english ? localizeWorkflow(raw, []) : raw
+      // listStages() 只读包内的中文 workflow，不接 workflow 参数；
+      // 这里按阶段 id 把 label/goal 换成本地化后的文案，其余字段保持原样。
+      const localizedById = new Map(wf.stages.map((s) => [s.id, s]))
+      const stages = sci.coach.listStages().map((s) => {
+        const loc = localizedById.get(s.id)
+        return loc ? { ...s, label: loc.label, goal: loc.goal } : s
+      })
       json(res, 200, {
-        stages: sci.coach.listStages(),
+        stages,
         severityOrder: wf.severityOrder ?? [],
         globalRules: wf.globalRules ?? [],
       })
@@ -1073,7 +1289,10 @@ export async function handleApi(req, res, ctx = null) {
     if (rest === 'tools') {
       if (!needScience()) return true
       const stage = url.searchParams.get('stage')
-      const items = toolRows(sci)
+      const raw = sci.coach.loadWorkflow()
+      const english = wantEnglish(url)
+      const wf = english ? localizeWorkflow(raw, []) : raw
+      const items = toolRows(sci, wf, english)
       json(res, 200, {
         total: items.length,
         items: stage ? items.filter((t) => t.stageId === stage) : items,
@@ -1094,13 +1313,13 @@ export async function handleApi(req, res, ctx = null) {
 
     if (rest === 'docs') {
       json(res, 200, {
-        items: listDocs().map((d) => ({ id: d.id, title: d.title, bytes: d.bytes })),
+        items: listDocs(wantEnglish(url) ? 'en' : 'zh').map((d) => ({ id: d.id, title: d.title, bytes: d.bytes })),
       })
       return true
     }
 
     if (parts[0] === 'docs' && parts[1]) {
-      const doc = getDoc(parts[1])
+      const doc = getDoc(parts[1], wantEnglish(url) ? 'en' : 'zh')
       if (!doc) {
         json(res, 404, { error: 'doc-not-found', id: parts[1] })
         return true
@@ -1229,7 +1448,7 @@ function createProjectRoute(sci, body) {
       status: 200,
       payload: {
         ok: true,
-        project: row ? projectRow(row) : card ?? null,
+        project: row ? withDir(sci, projectRow(row)) : card ?? null,
         progress: id ? progressOf(sci, id) : null,
       },
     }
@@ -1447,3 +1666,67 @@ function readJsonBody(req) {
 }
 
 export { round }
+
+/**
+ * 把中转站错误翻成界面能懂的 HTTP 状态。
+ *
+ * 只透出 code / message：secret、签名头、api_key 永远不进响应体 —— 这些错误的原文
+ * 里本来也不该有，但这一层是最后一道口子，宁可少说。
+ */
+function relayFail(res, error) {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+
+  if (!(error instanceof PartnerError)) {
+    json(res, 502, { ok: false, error: 'relay-error', message })
+    return
+  }
+
+  const code = error.code
+  if (code === 40401 || code === 40403) {
+    json(res, 404, { ok: false, error: 'not-found', code, message })
+    return
+  }
+  if (code === 40001) {
+    json(res, 400, { ok: false, error: 'relay-bad-request', code, message })
+    return
+  }
+  if (code === 42901 || error.status === 429) {
+    json(res, 429, { ok: false, error: 'relay-rate-limited', code, message })
+    return
+  }
+  // status 0 基本都是本地没配 secret：这是本机的配置问题，不该报成「中转站坏了」。
+  if (error.status === 0) {
+    json(res, 409, { ok: false, error: 'partner-not-configured', message })
+    return
+  }
+  json(res, 502, { ok: false, error: 'relay-error', code, message })
+}
+
+/**
+ * 回跳地址只在「中转站真的能访问到」时才下发。
+ *
+ * 本地跑的时候 origin 是 http://127.0.0.1:xxxx，中转站访问不到，发过去还会因为
+ * 未报备域名直接 40001。所以优先用显式配置的公网基址；否则只在 origin 与 Host
+ * 一致、且不是回环地址时才认。两边都不成立就不带 return_url——少一个返回按钮，
+ * 好过让整次购买失败。
+ */
+function partnerReturnUrl(req) {
+  const configured = buildReturnUrl(process.env.CCAGENT_PARTNER_PUBLIC_BASE)
+  if (configured) return configured
+
+  const origin = req?.headers?.origin
+  if (typeof origin !== 'string' || !origin) return null
+
+  let parsed
+  try {
+    parsed = new URL(origin)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+  // Origin 与 Host 不一致说明是跨站请求，别把这个 origin 当成「我们自己」。
+  if (parsed.host !== req?.headers?.host) return null
+  if (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost' || parsed.hostname === '::1') return null
+
+  return buildReturnUrl(parsed.origin)
+}
