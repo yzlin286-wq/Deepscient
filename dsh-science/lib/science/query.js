@@ -31,6 +31,7 @@ export function buildDsl(input = {}) {
   if (Number.isFinite(input.yearFrom) && !filters.yearFrom) filters.yearFrom = input.yearFrom
   if (Number.isFinite(input.yearTo) && !filters.yearTo) filters.yearTo = input.yearTo
   if (input.oaOnly === true) filters.oaOnly = true
+  if (input.preprintsOnly === true) filters.preprintsOnly = true
   if (input.lang && !filters.lang) filters.lang = input.lang
 
   const limit = Number.isFinite(input.limit) ? Math.max(1, Math.min(200, input.limit)) : 25
@@ -146,6 +147,8 @@ export function translate(dsl, sourceId, { mailto = '', page = 1, limit } = {}) 
     case 'europepmc': {
       const parts = [bools || plain]
       if (f.oaOnly) parts.push('OPEN_ACCESS:y')
+      // SRC:PPR 是 Europe PMC 的预印本来源过滤，bioRxiv / medRxiv 都在里面
+      if (f.preprintsOnly) parts.push('SRC:PPR')
       if (f.yearFrom || f.yearTo) {
         const from = f.yearFrom || 1800
         const to = f.yearTo || new Date().getFullYear()
@@ -164,6 +167,7 @@ export function translate(dsl, sourceId, { mailto = '', page = 1, limit } = {}) 
       const term = [pubmedBlocks(dsl.blocks) || plain]
       if (f.yearFrom || f.yearTo) term.push(`("${f.yearFrom || 1800}"[dp] : "${f.yearTo || 3000}"[dp])`)
       if (f.oaOnly) term.push('"free full text"[sb]')
+      if (f.preprintsOnly) term.push('"preprint"[pt]')
       const params = new URLSearchParams({
         db: 'pubmed', term: term.join(' AND '), retmax: String(n), retmode: 'json', sort: 'relevance',
       })

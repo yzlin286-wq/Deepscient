@@ -3,6 +3,37 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.7.1] — 2026-10-21
+
+把「研究预印本」做成一次检索就能用的一等能力，并更正上一版的一处误判。
+
+### 更正
+
+0.7.0 的说明里写「预印本源只有 arXiv，缺 bioRxiv / medRxiv」——**这句是错的**。当时看的是 `deepscient/host/sources.js`（面板「接入」页的**凭据登记表**），而真正决定能否检索的是 `dsh-science/lib/science/sources/free.js`（**源实现表**），那里本来就有 9 个源：
+
+```
+openalex  crossref  europepmc  pubmed  arxiv  doaj  datacite  zenodo  openaire
+```
+
+`europepmc` 一个接口就覆盖 bioRxiv / medRxiv / PsyArXiv / Research Square / SSRN，`pubmed` 也在。所以预印本**能搜到**，缺的是两样东西：没法「只搜预印本」，界面上也看不到这两个源。
+
+### 新增
+
+- **`preprintsOnly` 检索开关**（`science_search` / `science_lit_query`）：
+  - Europe PMC 追加 `SRC:PPR` —— 实测 `sleep deprivation AND SRC:PPR` 命中 1292 条，头几条就是 `[PPR] bioRxiv`、`[PPR] PsyArXiv`、`[PPR] Research Square`。
+  - PubMed 追加 `"preprint"[pt]`。
+  - arXiv 天然全是预印本，不加过滤。
+  - 用途写在提示词里：判断「这个点有没有人抢先发表」必须走预印本检索，只查已见刊的会漏掉刚挂上去的。
+
+### 修复
+
+- **面板「接入」页看不到预印本源**：凭据表补 `europepmc`（标注含 bioRxiv / medRxiv）与 `pubmed`，两者都是公开 REST、不需要凭据。源数 8 → 10。
+- 科研模式 persona 的 S1 段补上 `preprintsOnly` 的用法与理由。
+
+### 校验
+
+`verify-deepscient` 294 项全绿（源数断言 8 → 10，新增「接入页能看到 europepmc」一条）。`/deepscient/api/sources` 报 10 个源，`europepmc` 与 `pubmed` 均为 `wired: runtime`。
+
 ## [0.7.0] — 2026-10-21
 
 三步科研流程的能力审计 + 补齐三处缺口。工具从 35 增到 38。

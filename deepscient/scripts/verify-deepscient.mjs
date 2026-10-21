@@ -258,7 +258,7 @@ check('默认币种是 CNY', () => assert.equal(usage.usageRange({ range: 'today
 section('文献 / 检索 API 接入')
 const sourcesMod = await import(pathToFileURL(join(pkgDir, 'host', 'sources.js')).href)
 const ledger = sourcesMod.listSources()
-check('八个内置源', () => assert.equal(ledger.items.length, 8))
+check('内置源覆盖十个（含预印本源）', () => assert.equal(ledger.items.length, 10))
 check('内置源 id 齐全', () => {
   const ids = ledger.items.map((i) => i.id)
   for (const id of ['semantic-scholar', 'openalex', 'core', 'unpaywall', 'crossref', 'arxiv', 'zotero', 'exa']) assert.ok(ids.includes(id), id)
@@ -922,7 +922,8 @@ check('两个新脚本都随包发', () => {
 section('接入接口')
 const sourcesApi = await get('/deepscient/api/sources')
 check('sources 200', () => assert.equal(sourcesApi.status, 200))
-check('八个内置源', () => assert.equal(sourcesApi.body.items.length, 8))
+check('接口报出的源也是十个', () => assert.equal(sourcesApi.body.items.length, 10))
+  check('接入页能看到预印本源 europepmc', () => assert.ok(sourcesApi.body.items.some((s) => s.id === 'europepmc')))
 check('接入清单带凭据文件路径', () => assert.match(sourcesApi.body.path, /science[\\/]config\.json$/))
 check('清单里没有明文 key', () => assert.ok(!/sk-[A-Za-z0-9]{10,}/.test(sourcesApi.text)))
 const verifyDry = await fetch(`${base}/deepscient/api/sources/verify`, {

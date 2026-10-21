@@ -76,6 +76,7 @@ export function apply(ctx) {
       yearFrom: { type: 'integer', description: 'Earliest publication year (inclusive).' },
       yearTo: { type: 'integer', description: 'Latest publication year (inclusive).' },
       oaOnly: { type: 'boolean', description: 'Restrict to open-access records where the source supports it.' },
+      preprintsOnly: { type: 'boolean', description: 'Restrict to preprints: Europe PMC uses SRC:PPR (covers bioRxiv and medRxiv), PubMed uses the preprint publication type. arXiv is preprints by definition.' },
       limit: { type: 'integer', description: 'Records requested per source, 1-100. Defaults to 25.' },
       returnLimit: { type: 'integer', description: 'How many ranked records to return, 1-60. Defaults to 25.' },
       sources: {
@@ -174,7 +175,7 @@ export function apply(ctx) {
       const rt = runtimeOf(ctx)
       try {
         const report = await rt.pipeline.search(
-          { query: args.query, blocks: args.blocks, yearFrom: args.yearFrom, yearTo: args.yearTo, oaOnly: args.oaOnly, limit: args.limit },
+          { query: args.query, blocks: args.blocks, yearFrom: args.yearFrom, yearTo: args.yearTo, oaOnly: args.oaOnly, preprintsOnly: args.preprintsOnly, limit: args.limit },
           {
             projectId: args.projectId,
             sources: args.sources,
@@ -212,6 +213,7 @@ export function apply(ctx) {
       projectId: { type: 'string', description: 'Restrict to one project id.' },
       yearFrom: { type: 'integer', description: 'Earliest year (inclusive).' },
       oaOnly: { type: 'boolean', description: 'Only records that have an open-access PDF link.' },
+      preprintsOnly: { type: 'boolean', description: 'Only preprints: Europe PMC SRC:PPR (bioRxiv, medRxiv), PubMed preprint publication type. Use this when scanning what has not been peer reviewed yet.' },
       limit: { type: 'integer', description: 'Max rows, 1-200. Defaults to 30.' },
     },
     output: {

@@ -1,6 +1,6 @@
 {
   "name": "@local/deepscient",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "description": "DeepScient：科研版 Harness 的品牌、工作台界面、token 计费与文献 API 接入",

@@ -42,6 +42,7 @@
                 研究不是"聊天里一步步聊出来的"，是有门的流程。`science_study_coach` 会对着库里的真实状态逐门判定，任何阶段开始时、卡住时、写方法段前都先调它。
                 - **S0 选题**：`science_project_open`（带 `domain` / `question` / `ethics`）→ `science_discipline_profile` 看这个学科怎么做。
                 - **S1 文献**：`science_lit_query` / `science_search` → `science_gap_matrix` 定位缺口。检索式、时间窗、数据库必须留档。
+                  **找预印本**：`science_search` 带 `preprintsOnly: true`。它让 Europe PMC 加 `SRC:PPR`（bioRxiv / medRxiv / PsyArXiv / Research Square / SSRN），PubMed 加 preprint 出版类型；arXiv 本身全是预印本。判断"这个点有没有人抢先发表"必须走这一步——已见刊的检索会漏掉刚挂上去的预印本。
                 - **S2 设计**：`science_discipline_profile` 选设计 → `science_exp_plan` 出方案（含前置条件清单、威胁与对策、审稿人会打的点）。
                 - **S3 样本量与预注册**：`science_exp_plan` 给 `effect` 算 n，或给 `n` 算 MDE；把 `prereg` 草稿提交到 OSF/PROSPERO 并把编号填回课题。
                 - **S4 测量**：测量定义、单位、仪器、校准——`plan.measurements` 里就有，照它落 `protocols/`。

@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-science",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "科研版 harness：以证据链与可复现为一等公民的 dsh 科研工作台",
