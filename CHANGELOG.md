@@ -1,7 +1,36 @@
 # 变更记录
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
-`dsh-science/` 是独立版本线（当前 0.1.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
+`dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
+
+## [0.5.0] — 2026-10-21
+
+这一版的主题是把「能出件」补成「能产出完整论文」：出件层原本就齐，缺的是把数据、统计、图、正文、引文串成一条可重跑的链。
+
+### 新增
+
+- **`science_manuscript_assemble`**：从库里的 `analysis` 与 `figure_spec` 生成结果汇总表、图引用和可直接抄进正文的报数句，只写 `paper.md` 里 `<!-- assemble:results:* -->` 标记块内的内容。连跑两次字节相同；图会自动从课题目录复制进稿件 `figures/`，优先选 PNG（PDF 只有 LaTeX 能读）。
+- **`science_reference_add`**：按 DOI（无 DOI 时按标题+年份）去重写 `references.yml`，自动生成 `authorYEARword` 形式的 cite key，冲突加后缀。把「模型手抄书目」这个高错动作从流程里去掉。
+- **`deepscient/scripts/e2e-paper-run.mjs`**：论文链路端到端 20 项断言（装配幂等、图复制、引文去重、lint 无阻断、四件出稿、`pdfinfo` 页数、`pdftotext` 抽到表注/图注/参考文献）。不调模型，可进 CI。
+- **`deepscient/docs/paper.md`**：五个环节、表格与交叉引用语法、中文出件、六类已知断点的处理办法。
+
+### 修复（都会直接影响论文里的数字或要件）
+
+- **Welch t 的报数句把统计量与自由度写串了**：原本输出 `Welch t(-5.08) = 0.000`，现在按 Satterthwaite 自由度输出 `Welch t(56.21) = -5.08，p < .001，Cohen's d = -1.31`。
+- **配对 t 检验把均值差的区间挂在 `dz` 上**：`effectSize.cohens-dz.ci` 现在按 dz 自身的标准误算，均值差的区间单独放 `meanDiff`。
+- **`mannwhitney` / `wilcoxon` 报了 p 却没有效应量**：补上秩二列相关 `r`，并在报数句里带上。
+- **`anova-oneway` 的 F 缺自由度、`friedman` 写成 `χ²F` 且漏 Kendall's W**：补齐为 `F(df1, df2)` 与 `Friedman χ²(df)`。
+- **建稿生成的 front matter 没指 `referencesFile`**：骨架里写了 `references.yml` 却不去读，正文引用一律被判 `cite-undefined`。现在 `scaffoldSource` 默认写 `referencesFile: references.yml`。
+- **装配出的表格标签不被识别**：表注必须写在表下方并以 `: ` 开头、标签放行末，否则 `{#tab:xxx}` 不会被 markdown 层采集，正文 `\ref{}` 判 `xref-dangling`。
+
+### 加固
+
+- `.gitignore` 补 `**/.credentials*`、`**/*.pem`、`**/*.key`、`**/id_rsa*`、`**/local.patch.yml`。
+- `tools/verify-packaging.mjs` 增加两项：`.gitignore` 必须挡住凭据与机器本地文件；稿件与统计脚本里不得出现密钥形态字面量。打包面校验从 17 项增至 19 项。
+
+### 实测
+
+用随包示例数据跑完整条链，落在一份 PLOS ONE 稿件上：正文 1841 词、2 条成功分析、1 张 600 dpi 图、1 张汇总表、10 条文献全被引、`blocking = 0`；产物 PDF 142 KB / 14 页（Letter、双倍行距、连续行号）· DOCX 82 KB · JATS 22 KB · HTML 19 KB。中文摘要在同一份 PDF 里正确渲染（`xeCJK` + 嵌入 SimSun，带 ToUnicode）。残留 6 处 `Overfull \hbox`，属列宽问题。
 
 ## [0.4.0] — 2026-10-21
 

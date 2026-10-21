@@ -14,6 +14,7 @@
 | [mcp.md](../deepscient/docs/mcp.md) | MCP 工具层：为什么默认关、怎么开、两个真机坑与冷启动时间 |
 | [sources.md](../deepscient/docs/sources.md) | 八个内置文献源与自定义源，凭据只写一个文件 |
 | [billing.md](../deepscient/docs/billing.md) | token 数为什么是真值、金额为什么是估算 |
+| [paper.md](../deepscient/docs/paper.md) | 从数据到投稿级 PDF：五个环节、表格与交叉引用语法、中文出件、已知断点 |
 | [pitfalls.md](../deepscient/docs/pitfalls.md) | 六个真踩过的坑（含排查办法） |
 
 ## 科研后端（`dsh-science/docs/`）

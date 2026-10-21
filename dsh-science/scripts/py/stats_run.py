@@ -161,17 +161,20 @@ def t_ttest_welch(req, options, tails):
     from scipy import stats as st
     a, b = columns(req["data"], "a", "b")
     alt = "two-sided" if tails == 2 else "greater"
-    t, p = st.ttest_ind(a, b, equal_var=False, alternative=alt)
+    res = st.ttest_ind(a, b, equal_var=False, alternative=alt)
+    t, p = float(res.statistic), float(res.pvalue)
+    # Welch 的 df 是 Satterthwaite 近似，不是 n1+n2-2；报告里必须写这个 df
+    dfw = num(getattr(res, "df", None) if getattr(res, "df", None) is not None else len(a) + len(b) - 2)
     d, dci = cohens_d(a, b)
     return {
         "label": "Welch 双样本 t 检验",
         "n": {"a": len(a), "b": len(b)},
         "statistic": num(t),
-        "df": num(st.ttest_ind(a, b, equal_var=False).df if hasattr(st.ttest_ind(a, b, equal_var=False), "df") else len(a) + len(b) - 2),
+        "df": dfw,
         "p": num(p),
         "effectSize": {"kind": "cohens-d", "value": d, "ci": dci},
         "assumptions": [check_normality("a", a), check_normality("b", b)],
-        "reportAs": f"Welch t({num(t):.2f}) = {p:.3f}，Cohen's d = {d if d is None else round(d, 2)}",
+        "reportAs": f"Welch t({dfw:.2f}) = {num(t):.2f}，{pfmt(num(p))}，Cohen's d = {d if d is None else round(d, 2)}",
     }
 
 
@@ -186,14 +189,18 @@ def t_ttest_rel(req, options, tails):
     sd = np.std(diff, ddof=1)
     dz = num(np.mean(diff) / sd) if sd > 0 else None
     se = sd / math.sqrt(len(diff)) if len(diff) > 0 else None
+    # dz 的区间要按 dz 自身的标准误算；均值差的区间是另一个量，不能挂在 effectSize 下
+    dz_se = math.sqrt(1 / len(diff) + (dz * dz) / (2 * len(diff))) if dz is not None and len(diff) > 0 else None
     return {
         "label": "配对 t 检验",
         "n": {"pairs": len(a)},
         "statistic": num(t), "df": len(a) - 1, "p": num(p),
         "effectSize": {"kind": "cohens-dz", "value": dz,
-                       "ci": ci_of(np.mean(diff) - 1.96 * se, np.mean(diff) + 1.96 * se) if se else None},
+                       "ci": ci_of(dz - 1.96 * dz_se, dz + 1.96 * dz_se) if dz_se else None},
+        "meanDiff": {"value": num(np.mean(diff)),
+                     "ci": ci_of(np.mean(diff) - 1.96 * se, np.mean(diff) + 1.96 * se) if se else None},
         "assumptions": [check_normality("差值", diff)],
-        "reportAs": f"配对 t({len(a) - 1}) = {num(t):.2f}，{pfmt(num(p))}，dz = {dz if dz is None else round(dz, 2)}",
+        "reportAs": f"配对 t({len(a) - 1}) = {num(t):.2f}，{pfmt(num(p))}，Cohen's dz = {dz if dz is None else round(dz, 2)}",
     }
 
 
@@ -202,13 +209,14 @@ def t_mannwhitney(req, options, tails):
     a, b = columns(req["data"], "a", "b")
     alt = "two-sided" if tails == 2 else "greater"
     u, p = st.mannwhitneyu(a, b, alternative=alt)
+    rrb = rank_biserial_from_u(u, len(a), len(b))
     return {
         "label": "Mann-Whitney U 检验",
         "n": {"a": len(a), "b": len(b)},
         "statistic": num(u), "df": None, "p": num(p),
-        "effectSize": {"kind": "rank-biserial", "value": rank_biserial_from_u(u, len(a), len(b)), "ci": None},
+        "effectSize": {"kind": "rank-biserial", "value": rrb, "ci": None},
         "assumptions": [{"id": "independence", "label": "两组独立", "ok": None, "detail": "需由设计保证"}],
-        "reportAs": f"U = {num(u):.0f}，{pfmt(num(p))}",
+        "reportAs": f"U = {num(u):.0f}，{pfmt(num(p))}，秩二列相关 r = {rrb if rrb is None else round(rrb, 2)}",
     }
 
 
@@ -220,13 +228,24 @@ def t_wilcoxon(req, options, tails):
         w, p = st.wilcoxon(a, b, alternative=alt)
     except ValueError as exc:
         fail(f"Wilcoxon 失败：{exc}（差值全为 0 时无法检验）")
+    # 效应量：匹配对秩和检验的 r = Z / sqrt(N)，Z 由正态近似给出
+    diff = a - b
+    nz = int(np.count_nonzero(diff))
+    if nz > 0:
+        try:
+            z = float(st.norm.isf(float(p) / 2)) if 0 < float(p) < 1 else 0.0
+        except Exception:
+            z = 0.0
+        r_eff = num(z / math.sqrt(nz))
+    else:
+        r_eff = None
     return {
         "label": "Wilcoxon 符号秩检验",
         "n": {"pairs": len(a)},
         "statistic": num(w), "df": None, "p": num(p),
-        "effectSize": {"kind": "rank-biserial", "value": None, "ci": None},
+        "effectSize": {"kind": "rank-biserial", "value": r_eff, "ci": None},
         "assumptions": [{"id": "symmetry", "label": "差值分布大致对称", "ok": None, "detail": "对称性不成立时改用符号检验"}],
-        "reportAs": f"Wilcoxon W = {num(w):.0f}，{pfmt(num(p))}",
+        "reportAs": f"Wilcoxon W = {num(w):.0f}，{pfmt(num(p))}" + (f"，r = {round(r_eff, 2)}" if r_eff is not None else ""),
     }
 
 
@@ -261,7 +280,7 @@ def t_welch_anova(req, options, tails):
         "statistic": num(res.statistic), "df": num(len(groups) - 1), "p": num(res.pvalue),
         "effectSize": {"kind": "eta-squared", "value": None, "ci": None},
         "assumptions": [{"id": "variance", "label": "不要求方差齐性", "ok": True, "detail": "这正是选 Welch 的理由"}],
-        "reportAs": f"Welch F = {num(res.statistic):.2f}，{pfmt(num(res.pvalue))}",
+        "reportAs": f"Welch 方差分析 F({len(groups) - 1}) = {num(res.statistic):.2f}，{pfmt(num(res.pvalue))}（Alexander-Govern 近似）",
     }
 
 
@@ -299,7 +318,8 @@ def t_friedman(req, options, tails):
         "statistic": num(stat), "df": len(groups) - 1, "p": num(p),
         "effectSize": {"kind": "kendalls-w", "value": num(stat / (len(groups[0]) * (len(groups) - 1))) if len(groups[0]) > 1 else None, "ci": None},
         "assumptions": [{"id": "blocks", "label": "同一区块内条件可比", "ok": True, "detail": "被试内设计"}],
-        "reportAs": f"χ²F({len(groups) - 1}) = {num(stat):.2f}，{pfmt(num(p))}",
+        "reportAs": f"Friedman χ²({len(groups) - 1}) = {num(stat):.2f}，{pfmt(num(p))}"
+                    + (f"，Kendall's W = {round(num(stat / (len(groups[0]) * (len(groups) - 1))), 2)}" if len(groups[0]) > 1 else ""),
     }
 
 
@@ -447,7 +467,7 @@ def t_ols(req, options, tails, robust=False):
             {"id": "epv", "label": "样本量相对变量数充足", "ok": bool(fit.nobs >= 10 * X.shape[1]),
              "detail": f"n={int(fit.nobs)}，变量 {X.shape[1]} 个"},
         ],
-        "reportAs": f"F = {num(fit.fvalue):.2f}，{pfmt(num(fit.f_pvalue))}，调整 R² = {num(fit.rsquared_adj):.3f}",
+        "reportAs": f"F({int(fit.df_model)}, {int(fit.df_resid)}) = {num(fit.fvalue):.2f}，{pfmt(num(fit.f_pvalue))}，调整 R² = {num(fit.rsquared_adj):.3f}",
     }
 
 

@@ -320,6 +320,34 @@ check('CI 工作流声明的脚本都真实存在', () => {
   return `${commands.length} 条命令`
 })
 
+/* 凭据不许进仓库这件事，靠 .gitignore 兜不住所有路径：
+   真正拦得住的是「文件里没有凭据」+「凭据文件名被忽略」两条一起成立。 */
+check('.gitignore 挡住了凭据与机器本地文件', () => {
+  const text = read('.gitignore')
+  const required = [
+    ['凭据文件', /\.credentials/],
+    ['私钥', /\*\.pem|\*\.key/],
+    ['机器本地的供应商层', /local\.patch\.yml/],
+    ['第三方技能正文', /skills-vendor/],
+  ]
+  const missing = required.filter(([, pattern]) => !pattern.test(text)).map(([label]) => label)
+  assert(missing.length === 0, `.gitignore 漏了：${missing.join('、')}`)
+  return `${required.length} 类`
+})
+
+check('稿件与统计脚本里没有硬编码的密钥形态', () => {
+  const files = [
+    'dsh-science/lib/manuscript-tools.js',
+    'dsh-science/scripts/py/stats_run.py',
+    'dsh-science/lib/science/format/source.js',
+    'deepscient/scripts/e2e-paper-run.mjs',
+  ].filter((file) => existsSync(join(root, file)))
+  const pattern = /(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{12,})/
+  const hits = files.filter((file) => pattern.test(read(file)))
+  assert(hits.length === 0, `疑似凭据：${hits.join('、')}`)
+  return `${files.length} 个文件`
+})
+
 // ── 汇总 ───────────────────────────────────────────────────────────────
 let failed = 0
 for (const result of results) {

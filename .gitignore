@@ -1,6 +1,4 @@
-# 白名单式忽略：先排除一切，再逐一放行。
-# 这样即便本机工作目录里同时躺着别的项目，也不会被误提交。
-
+# 白名单式忽略：先排除一切，再逐一放行�?# 这样即便本机工作目录里同时躺着别的项目，也不会被误提交�?
 /*
 
 # ── 放行：仓库自己的东西 ─────────────────────────────────────────────
@@ -19,10 +17,17 @@
 !/deepscient/
 !/dsh-science/
 
-# ── 机器相关 / 可重建 / 不该进仓库 ──────────────────────────────────
-# 供应商层由 tools 里的脚本按本机 profile 生成，含本机路径与中转站地址
+# ── 机器相关 / 可重�?/ 不该进仓�?──────────────────────────────────
+# 凭据：真值只�?<DSH_HOME>/.credentials.yaml 与系统环境变量，任何形态都不许进仓�?**/.credentials*
+**/.credentials.yaml
+**/*.pem
+**/*.key
+**/id_rsa*
+# 供应商层�?tools 里的脚本按本�?profile 生成，含本机路径与中转站地址
+**/.e2e-paper-last.json
+**/local.patch.yml
 /deepscient/local.patch.yml
-# 期刊情报缓存（241 KB）：由 dsh-science/scripts/build-intel.mjs 重建
+# 期刊情报缓存�?41 KB）：�?dsh-science/scripts/build-intel.mjs 重建
 /dsh-science/data/journal-intel-cache.json
 # 第三方技能正文不进仓库，只留清单：若本地跑过 install-skills --apply 会有残留
 /dsh-science/skills-vendor/*/

@@ -297,6 +297,8 @@ export function scaffoldSource({ title, journal, band, design, keywords = [], au
     authors: authors.length > 0 ? authors : [{ name: '（作者姓名）', affiliation: 1, corresponding: true }],
     affiliations: [{ id: 1, name: '（单位名称，城市，国家）' }],
     abstract: abstract || '（摘要：一句背景 → 一句缺口 → 一句做法 → 一句最硬的结果（带数字）→ 一句意义。150–250 词。）',
+    // 建稿时同时落了 references.yml；不在这里指过去，正文引用就会被判成未定义
+    referencesFile: REFERENCES_FILE,
     references: [],
   }
 

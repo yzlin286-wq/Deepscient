@@ -11,7 +11,7 @@
  * 稿件以文件形式存在 $DSH_HOME/science/manuscripts/<id>/，不进数据库——文本资产用文件管，
  * 版本交给 git，比塞进 SQLite 更像研究者的习惯。
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import { resolveDshToolsPackage } from './tools.js'
@@ -24,6 +24,9 @@ import {
   buildManuscript,
   checkToolchain,
   listFamilies,
+  normalizeReference,
+  parseYaml,
+  stringifyYaml,
   SOURCE_FILE,
   REFERENCES_FILE,
 } from './science/format/index.js'
@@ -637,9 +640,576 @@ export function apply(ctx) {
       }
     },
   }))
+
+  /* ── 5. 引文入库 ─────────────────────────────────────────────────────── */
+  ctx.tools.register(defineTool({
+    name: 'science_reference_add',
+    description:
+      'Append references to a manuscript\'s references.yml from structured items or from papers already in the store. '
+      + 'Deduplicates by DOI (falling back to title+year), generates stable cite keys (author+year+first word) and never '
+      + 'rewrites entries it did not add. Use this instead of hand-editing references.yml so cite-undefined and cite-uncited '
+      + 'cannot drift.',
+    parameters: {
+      id: { type: 'string', description: 'Manuscript id under $DSH_HOME/science/manuscripts.' },
+      dir: { type: 'string', description: 'Explicit manuscript directory; overrides id.' },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            key: { type: 'string' },
+            type: { type: 'string' },
+            title: { type: 'string' },
+            authors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                additionalProperties: true,
+                properties: { family: { type: 'string' }, given: { type: 'string' }, name: { type: 'string' } },
+              },
+            },
+            year: { type: 'integer' },
+            journal: { type: 'string' },
+            volume: { type: 'string' },
+            issue: { type: 'string' },
+            pages: { type: 'string' },
+            doi: { type: 'string' },
+            url: { type: 'string' },
+          },
+        },
+        description: 'Reference entries. authors may be [{family, given}] or ["Family GI"] strings.',
+      },
+      paperIds: {
+        type: 'array', items: { type: 'string' },
+        description: 'Pull these paper ids out of the local paper table (filled by science_lit_query / science_search).',
+      },
+      dryRun: { type: 'boolean', description: 'Report what would be added without writing. Defaults to false.' },
+    },
+    output: {
+      schema: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          ok: { type: 'boolean', required: true },
+          path: { type: 'string', required: true },
+          added: { type: 'array', items: { type: 'string' }, required: true },
+          skipped: { type: 'array', items: { type: 'string' }, required: true },
+          total: { type: 'integer', required: true },
+          keys: { type: 'array', items: { type: 'string' }, required: true },
+          dryRun: { type: 'boolean' },
+        },
+      },
+      render: (_args, v) => [{
+        type: 'text',
+        text: [
+          `${v.dryRun ? '（试运行，未写入）' : '已写入'} ${v.path}`,
+          `新增 ${v.added.length} 条${v.added.length ? '：' + v.added.join(', ') : ''}`,
+          v.skipped.length ? `跳过重复 ${v.skipped.length} 条：${v.skipped.join(', ')}` : '',
+          `references.yml 现在共 ${v.total} 条`,
+          v.added.length ? `下一步：正文用 [@${v.added[0]}] 引用；跑 science_manuscript_lint 确认没有 cite-uncited` : '',
+        ].filter(Boolean).join('\n'),
+      }],
+    },
+    async execute(args) {
+      const dir = resolveDir(args.dir || args.id)
+      const referencesPath = join(dir, REFERENCES_FILE)
+      const items = Array.isArray(args.items) ? args.items : []
+
+      /* 从库里取：paper 表是检索结果的落点，直接复用，避免模型手抄书目的漏字段。 */
+      const collected = []
+      const paperIds = Array.isArray(args.paperIds) ? args.paperIds : []
+      if (paperIds.length > 0) {
+        const runtime = ctx.get('scienceRuntime')
+        if (!runtime || !runtime.store) throw new Error('科研运行时未就绪，取不到 paper 表；先跑 science_preflight')
+        for (const id of paperIds) {
+          const row = runtime.store.getPaper(String(id))
+          if (!row) continue
+          collected.push({
+            type: 'article-journal',
+            title: row.title ?? '',
+            authors: safeJson(row.authors_json, []),
+            year: row.year ?? null,
+            journal: row.journal ?? '',
+            doi: row.doi ?? '',
+            url: row.url ?? '',
+          })
+        }
+      }
+      collected.push(...items)
+
+      if (collected.length === 0) throw new Error('没有可写入的条目：给 items 或 paperIds')
+
+      const existing = readReferenceList(referencesPath)
+      const seen = new Set(existing.map(referenceIdentity))
+      const taken = new Set(existing.map((ref) => ref.key))
+
+      const added = []
+      const skipped = []
+      const next = [...existing]
+      for (const raw of collected) {
+        const normalized = normalizeReference(raw, next.length)
+        const identity = referenceIdentity(normalized)
+        if (seen.has(identity)) {
+          skipped.push(normalized.key)
+          continue
+        }
+        let key = String(normalized.key || '').trim()
+        if (!key || key.startsWith('ref') || taken.has(key)) key = makeCiteKey(normalized, taken)
+        normalized.key = key
+        taken.add(key)
+        seen.add(identity)
+        next.push(normalized)
+        added.push(key)
+      }
+
+      if (!args.dryRun) {
+        writeFileSync(referencesPath, renderReferenceFile(next), 'utf8')
+      }
+
+      return {
+        ok: true,
+        path: referencesPath,
+        added,
+        skipped,
+        total: next.length,
+        keys: next.map((ref) => ref.key),
+        dryRun: Boolean(args.dryRun),
+      }
+    },
+  }))
+
+  /* ── 6. 结果装配 ─────────────────────────────────────────────────────── */
+  ctx.tools.register(defineTool({
+    name: 'science_manuscript_assemble',
+    description:
+      'Fill the Results section from what the lab actually produced: reads stats analyses and figure specs from the store for a '
+      + 'project and writes a summary table, figure embeds and ready-to-paste statistic sentences into a marked block in paper.md. '
+      + 'Only the block between <!-- assemble:results:start --> and <!-- assemble:results:end --> is rewritten, so prose you wrote '
+      + 'by hand stays untouched and running it twice gives byte-identical output. Numbers come from the stored analysis, never '
+      + 'from the model\'s memory.',
+    parameters: {
+      id: { type: 'string', description: 'Manuscript id under $DSH_HOME/science/manuscripts.' },
+      dir: { type: 'string', description: 'Explicit manuscript directory; overrides id.' },
+      projectId: { type: 'string', description: 'Lab project to pull analyses and figures from.' },
+      analysisIds: { type: 'array', items: { type: 'string' }, description: 'Specific analysis ids; defaults to every successful stats run of the project, newest last.' },
+      figureIds: { type: 'array', items: { type: 'string' }, description: 'Specific figure ids; defaults to every figure of the project.' },
+      section: { type: 'string', description: 'Target section heading to write into. Defaults to results / 结果.' },
+      locale: { type: 'string', description: 'Table and caption language: zh or en. Defaults to zh if the manuscript has CJK headings.' },
+      dryRun: { type: 'boolean', description: 'Return the block without writing it. Defaults to false.' },
+    },
+    output: {
+      schema: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          ok: { type: 'boolean', required: true },
+          sourcePath: { type: 'string', required: true },
+          section: { type: 'string', required: true },
+          analyses: { type: 'integer', required: true },
+          figures: { type: 'integer', required: true },
+          tables: { type: 'integer', required: true },
+          labels: { type: 'array', items: { type: 'string' }, required: true },
+          block: { type: 'string', required: true },
+          written: { type: 'boolean', required: true },
+          warnings: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      render: (_args, v) => [{
+        type: 'text',
+        text: [
+          `${v.written ? '✓ 已装配' : '（试运行，未写入）'} ${v.sourcePath}`,
+          `节：${v.section} · 分析 ${v.analyses} 条 · 图 ${v.figures} 张 · 表 ${v.tables} 张`,
+          v.labels.length ? `可用引用标签：${v.labels.map((x) => '\\ref{' + x + '}').join(', ')}` : '',
+          v.warnings.length ? `提示：\n${v.warnings.map((w) => '  · ' + w).join('\n')}` : '',
+          '',
+          v.block.split('\n').slice(0, 30).join('\n'),
+        ].filter(Boolean).join('\n'),
+      }],
+    },
+    async execute(args) {
+      const dir = resolveDir(args.dir || args.id)
+      const sourcePath = join(dir, SOURCE_FILE)
+      if (!existsSync(sourcePath)) throw new Error(`${sourcePath} 不存在；先跑 science_manuscript_new`)
+      const source = readFileSync(sourcePath, 'utf8')
+
+      const runtime = ctx.get('scienceRuntime')
+      if (!runtime || !runtime.store) throw new Error('科研运行时未就绪，取不到分析记录；先跑 science_preflight')
+
+      const projectId = String(args.projectId || '').trim()
+      const analyses = readAnalyses(runtime.store, projectId, args.analysisIds)
+      const figures = readFigures(runtime.store, projectId, args.figureIds)
+      if (analyses.length === 0 && figures.length === 0) {
+        throw new Error(projectId
+          ? `课题 ${projectId} 下没有成功的分析或图；先跑 science_stats / science_figure`
+          : '没给 projectId，也没有显式的 analysisIds / figureIds')
+      }
+
+      /* 语言：稿件里出现中文节标题就按中文排版，省得每个参数都填一遍。 */
+      const hasCjk = /^##\s*[\u4e00-\u9fff]/m.test(source)
+      const locale = String(args.locale || (hasCjk ? 'zh' : 'en')).toLowerCase()
+
+      const warnings = []
+      const block = renderAssembleBlock({ dir, analyses, figures, locale, warnings, projectId })
+
+      const target = resolveSectionHeading(source, args.section, locale)
+      const next = spliceBlock(source, target, block)
+      if (!args.dryRun) writeFileSync(sourcePath, next, 'utf8')
+
+      const labels = [
+        ...(analyses.length > 0 ? ['tab:results'] : []),
+        ...figures.map((f) => `fig:${f.id}`),
+      ]
+
+      return {
+        ok: true,
+        sourcePath,
+        section: target.heading,
+        analyses: analyses.length,
+        figures: figures.length,
+        tables: analyses.length > 0 ? 1 : 0,
+        labels,
+        block,
+        written: !args.dryRun,
+        warnings,
+      }
+    },
+  }))
 }
 
 const YAML_ESCAPE = (text) => String(text).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+
+/* ── 引文与装配用的小工具 ──────────────────────────────────────────── */
+
+function safeJson(text, fallback) {
+  if (text === null || text === undefined) return fallback
+  try {
+    return JSON.parse(text)
+  } catch {
+    return fallback
+  }
+}
+
+/** 读 references.yml；文件不存在或全是注释时返回空数组。 */
+function readReferenceList(path) {
+  if (!existsSync(path)) return []
+  const raw = readFileSync(path, 'utf8')
+  let parsed = null
+  try {
+    parsed = parseYaml(raw)
+  } catch {
+    parsed = null
+  }
+  const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.references) ? parsed.references : []
+  return list.map((item, index) => normalizeReference(item, index))
+}
+
+/** 去重身份：有 DOI 用 DOI（唯一性强），否则标题+年份。 */
+function referenceIdentity(ref) {
+  const doi = String(ref.doi ?? '').trim().toLowerCase()
+  if (doi) return `doi:${doi.replace(/^https?:\/\/(dx\.)?doi\.org\//, '')}`
+  const title = String(ref.title ?? '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '')
+  return `tt:${title}:${ref.year ?? ''}`
+}
+
+/** 生成 a11y 的 cite key：第一作者姓 + 年份 + 标题首个实词，重复时加 a/b/c。 */
+function makeCiteKey(ref, taken) {
+  const first = Array.isArray(ref.authors) && ref.authors.length > 0 ? ref.authors[0] : null
+  const family = String(first?.family ?? first?.name ?? first ?? 'anon')
+    .toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '')
+  const year = String(ref.year ?? 'nd').slice(0, 4)
+  const word = (String(ref.title ?? '').toLowerCase().match(/[a-z\u4e00-\u9fff]{3,}/) ?? ['ref'])[0]
+  const base = `${family.slice(0, 12)}${year}${word}`
+  if (!taken.has(base)) return base
+  for (const suffix of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+    if (!taken.has(base + suffix)) return base + suffix
+  }
+  return `${base}${taken.size}`
+}
+
+/** 写回 references.yml：保留顶部说明，条目按 key 排序，空字段不写。 */
+function renderReferenceFile(list) {
+  const cleanAuthors = (authors) => {
+    if (!Array.isArray(authors)) return []
+    return authors.map((author) => {
+      const out = {}
+      if (author?.family) out.family = String(author.family)
+      if (author?.given) out.given = String(author.given)
+      if (!out.family && !out.given && author?.name) out.name = String(author.name)
+      if (Object.keys(out).length === 0 && author?.name) out.name = String(author.name)
+      return out
+    }).filter((author) => Object.keys(author).length > 0)
+  }
+
+  const clean = list.map((ref) => {
+    const out = {}
+    for (const [key, value] of Object.entries(ref)) {
+      if (key === 'authors') {
+        const authors = cleanAuthors(value)
+        if (authors.length > 0) out.authors = authors
+        continue
+      }
+      if (value === null || value === undefined) continue
+      if (typeof value === 'string' && value.trim() === '') continue
+      if (Array.isArray(value) && value.length === 0) continue
+      out[key] = value
+    }
+    return out
+  })
+  const header = [
+    '# 参考文献：正文用 [@key] 引用，build 时按目标刊的引文风格重排。',
+    '# 这份文件由 science_reference_add 维护；手改也行，但 key 不要改，正文里引用的是它。',
+    '',
+  ].join('\n')
+  return `${header}${stringifyYaml(clean)}\n`
+}
+
+function statSymbol(testId, label) {
+  const id = String(testId ?? '')
+  if (id.startsWith('ttest') || id === 'tost') return 't'
+  if (id.includes('anova')) return 'F'
+  if (id === 'mannwhitney') return 'U'
+  if (id === 'wilcoxon' || id === 'sign-test') return 'W'
+  if (id === 'kruskal') return 'H'
+  if (id === 'friedman') return 'χ²'
+  if (id.startsWith('chi2') || id === 'fisher' || id === 'mcnemar') return 'χ²'
+  if (id === 'pearson') return 'r'
+  if (id === 'spearman') return 'ρ'
+  if (id === 'kendall') return 'τ'
+  return String(label ?? id).slice(0, 12) || 'stat'
+}
+
+/** p 值写法：小于 .001 一律写 < .001，其余保留三位小数并去掉前导 0。 */
+function formatP(p) {
+  if (p === null || p === undefined || Number.isNaN(Number(p))) return '—'
+  const value = Number(p)
+  if (value < 0.001) return '< .001'
+  return `= ${value.toFixed(3).replace(/^0/, '')}`
+}
+
+function formatStatistic(result) {
+  const symbol = statSymbol(result.testId, result.label)
+  const stat = Number(result.statistic)
+  if (!Number.isFinite(stat)) return '—'
+  const formatted = Math.abs(stat) >= 100 ? stat.toFixed(0) : stat.toFixed(2)
+  const df = result.df
+  if (df === null || df === undefined) return `${symbol} = ${formatted}`
+  const dfText = Number.isInteger(Number(df)) ? String(df) : Number(df).toFixed(2)
+  return `${symbol}(${dfText}) = ${formatted}`
+}
+
+const EFFECT_LABEL = {
+  'cohens-d': "Cohen's d",
+  'cohens-dz': "Cohen's dz",
+  'cohens-d-av': "Cohen's d_av",
+  'rank-biserial': 'r (rank-biserial)',
+  'eta-squared': 'η²',
+  'epsilon-squared': 'ε²',
+  'r-squared': 'R²',
+  'adjusted-r2': 'adj. R²',
+  'kendalls-w': "Kendall's W",
+  'cramers-v': "Cramér's V",
+  odds: 'OR',
+}
+
+function formatEffect(effect) {
+  if (!effect || effect.value === null || effect.value === undefined) return '—'
+  const value = Number(effect.value)
+  if (!Number.isFinite(value)) return '—'
+  const name = EFFECT_LABEL[String(effect.kind ?? '')] ?? String(effect.kind ?? 'effect')
+  const ci = Array.isArray(effect.ci) && effect.ci.length === 2
+    ? ` [${Number(effect.ci[0]).toFixed(2)}, ${Number(effect.ci[1]).toFixed(2)}]`
+    : ''
+  return `${name} = ${value.toFixed(2)}${ci}`
+}
+
+function formatN(n) {
+  if (!n || typeof n !== 'object') return '—'
+  const parts = Object.entries(n).map(([key, value]) => `${key}=${value}`)
+  return parts.length > 0 ? parts.join(', ') : '—'
+}
+
+/** 从库里取成功的分析：显式给 id 就按 id 取，否则取该项目全部成功的统计，按时间正序。 */
+function readAnalyses(store, projectId, ids) {
+  const explicit = Array.isArray(ids) ? ids.filter(Boolean) : []
+  const rows = []
+  if (explicit.length > 0) {
+    for (const id of explicit) {
+      const row = store.db.prepare('SELECT * FROM analysis WHERE id = ?').get(String(id))
+      if (row) rows.push(row)
+    }
+  } else if (projectId) {
+    rows.push(...store.db.prepare(
+      'SELECT * FROM analysis WHERE project_id = ? AND kind = ? ORDER BY created_at ASC',
+    ).all(projectId, 'stats'))
+  }
+  return rows
+    .map((row) => {
+      const result = safeJson(row.result_json, {}) ?? {}
+      return { id: row.id, testId: row.test_id ?? result.testId, label: result.label, result }
+    })
+    .filter((item) => item.result && item.result.ok === true)
+}
+
+function readFigures(store, projectId, ids) {
+  const explicit = Array.isArray(ids) ? ids.filter(Boolean) : []
+  const rows = []
+  if (explicit.length > 0) {
+    for (const id of explicit) {
+      const row = store.db.prepare('SELECT * FROM figure_spec WHERE id = ?').get(String(id))
+      if (row) rows.push(row)
+    }
+  } else if (projectId) {
+    rows.push(...store.db.prepare(
+      'SELECT * FROM figure_spec WHERE project_id = ? ORDER BY created_at ASC',
+    ).all(projectId))
+  }
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    path: row.path,
+    widthMm: row.width_mm,
+    heightMm: row.height_mm,
+    dpi: row.dpi,
+    spec: safeJson(row.spec_json, {}) ?? {},
+  }))
+}
+
+/** 图落在课题目录里，稿件要自包含：优先把 png 复制进稿件 figures/，找不到再退 pdf。 */
+function figureEmbedPath(dir, figure, warnings, projectId) {
+  const rel = String(figure.path ?? '').replace(/\\/g, '/')
+  if (!rel) return null
+  const name = rel.split('/').pop()
+  const pngName = name.replace(/\.pdf$/i, '.png')
+  const targetDir = join(dir, 'figures')
+  mkdirSync(targetDir, { recursive: true })
+
+  const scienceRoot = resolve(MANUSCRIPT_ROOT(), '..')
+  const projectDir = projectId ? join(scienceRoot, 'projects', projectId) : null
+  const relDir = rel.replace(/[^/]+$/, '')
+
+  for (const candidate of [pngName, name]) {
+    const target = join(targetDir, candidate)
+    if (existsSync(target)) return `figures/${candidate}`
+    if (projectDir) {
+      const source = join(projectDir, relDir, candidate)
+      if (existsSync(source)) {
+        copyFileSync(source, target)
+        return `figures/${candidate}`
+      }
+    }
+  }
+
+  if (/\.pdf$/i.test(rel)) {
+    warnings.push(`${figure.id} 只有 PDF 版（${rel}）：PDF/DOCX 出件正常，HTML 预览里这张图会缺`)
+  } else {
+    warnings.push(`${figure.id} 的图文件既不在稿件 figures/ 也不在课题目录：${rel}`)
+  }
+  return rel
+}
+
+/** 从结构化字段现场拼报告句。库里存过旧版本生成的 reportAs 时也能得到正确句子。 */
+function composeSentence(result) {
+  const stored = String(result.reportAs ?? '').trim()
+  // 旧记录把统计量与 p 写串了（t(stat) = p），识别出来就不信它
+  const looksBroken = /\(\s*-?\d+\.\d{2}\s*\)\s*=\s*0\.\d{3}/.test(stored)
+  if (stored && !looksBroken) return stored
+  const stat = formatStatistic(result)
+  const p = formatP(result.p)
+  const effect = formatEffect(result.effectSize)
+  return `${stat}，p ${p}${effect === '—' ? '' : '，' + effect}`
+}
+
+/** 装配出的整块内容：一张汇总表 + 每张图一段 + 可直接抄的统计句。 */
+function renderAssembleBlock({ dir, analyses, figures, locale, warnings, projectId }) {
+  const zh = locale === 'zh'
+  const lines = []
+  lines.push('<!-- assemble:results:start -->')
+  lines.push('<!-- 这块由 science_manuscript_assemble 生成：改数据就重跑，别手改，手改会被覆盖 -->')
+
+  if (analyses.length > 0) {
+    const head = zh
+      ? ['检验', '样本', '统计量', 'p', '效应量']
+      : ['Test', 'n', 'Statistic', 'p', 'Effect size']
+    lines.push('')
+    lines.push(`| ${head.join(' | ')} |`)
+    lines.push(`| ${head.map(() => '---').join(' | ')} |`)
+    for (const item of analyses) {
+      const label = item.label || item.testId || item.id
+      lines.push(`| ${label} | ${formatN(item.result.n)} | ${formatStatistic(item.result)} | ${formatP(item.result.p)} | ${formatEffect(item.result.effectSize)} |`)
+    }
+    // 表注写在表下方、以 ": " 开头，标签放句末 —— 这是 markdown 层的表格语法
+    lines.push(zh ? ': 表 1：主要分析结果汇总 {#tab:results}' : ': Table 1. Summary of the main analyses {#tab:results}')
+  }
+
+  for (const [index, figure] of figures.entries()) {
+    const embed = figureEmbedPath(dir, figure, warnings, projectId)
+    if (!embed) {
+      warnings.push(`${figure.id} 没有落盘路径，跳过`)
+      continue
+    }
+    const caption = figure.spec?.style?.title || figure.spec?.title || figure.spec?.caption
+      || (zh ? `${figure.kind} 图` : `${figure.kind} figure`)
+    lines.push('')
+    lines.push(`![${zh ? `图 ${index + 1}：` : `Figure ${index + 1}. `}${caption}](${embed}){#fig:${figure.id}}`)
+  }
+
+  if (analyses.length > 0) {
+    lines.push('')
+    lines.push(zh ? '可直接抄进正文的结果句：' : 'Ready-to-paste result sentences:')
+    lines.push('')
+    for (const item of analyses) {
+      const sentence = composeSentence(item.result)
+      if (sentence) lines.push(`- ${sentence}`)
+    }
+  }
+
+  lines.push('<!-- assemble:results:end -->')
+  return lines.join('\n')
+}
+
+/** 找目标节标题；找不到就退到 results / 结果，再找不到就追加到文末。 */
+function resolveSectionHeading(source, requested, locale) {
+  const wanted = String(requested ?? '').trim()
+  const candidates = wanted
+    ? [wanted]
+    : (locale === 'zh' ? ['结果', 'Results', 'result'] : ['Results', '结果', 'result'])
+  const lines = source.split('\n')
+  for (const name of candidates) {
+    const pattern = new RegExp(`^##\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+    const index = lines.findIndex((line) => pattern.test(line))
+    if (index >= 0) return { heading: lines[index].replace(/^##\s+/, '').trim(), index }
+  }
+  const fallbackIndex = lines.findIndex((line) => /^##\s+/.test(line))
+  if (fallbackIndex >= 0) return { heading: lines[fallbackIndex].replace(/^##\s+/, '').trim(), index: fallbackIndex }
+  return { heading: wanted || 'Results', index: lines.length }
+}
+
+/** 只替换标记块；没有标记就在目标节末尾插入。块外内容一个字节都不动。 */
+function spliceBlock(source, target, block) {
+  const START = '<!-- assemble:results:start -->'
+  const END = '<!-- assemble:results:end -->'
+  const startAt = source.indexOf(START)
+  if (startAt >= 0) {
+    const endAt = source.indexOf(END, startAt)
+    if (endAt >= 0) {
+      return source.slice(0, startAt) + block + source.slice(endAt + END.length)
+    }
+  }
+
+  const lines = source.split('\n')
+  const insertAt = target.index >= 0 ? target.index : lines.length
+  // 找到目标节之后的下一个二级标题，插在它前面
+  let boundary = lines.length
+  for (let i = insertAt + 1; i < lines.length; i += 1) {
+    if (/^##\s+/.test(lines[i])) {
+      boundary = i
+      break
+    }
+  }
+  const before = lines.slice(0, boundary)
+  while (before.length > 0 && before[before.length - 1].trim() === '') before.pop()
+  const after = lines.slice(boundary)
+  return [...before, '', block, '', ...after].join('\n')
+}
 
 function renderReferenceStub() {
   return [
