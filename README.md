@@ -1,5 +1,10 @@
 # DeepScient
 
+[![打包面校验](https://github.com/yzlin286-wq/Deepscient/actions/workflows/ci.yml/badge.svg)](https://github.com/yzlin286-wq/Deepscient/actions/workflows/ci.yml)
+[![最新版本](https://img.shields.io/github/v/release/yzlin286-wq/Deepscient?label=release)](https://github.com/yzlin286-wq/Deepscient/releases)
+[![许可](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22.5-brightgreen.svg)](https://nodejs.org)
+
 **让 AI 与人类一起攻克真正的科学难题。**
 
 DeepScient 是一个跑在 [DeepSeek Harness](https://github.com/deepseek-ai)（dsh）运行时上的**科研工作台**：
