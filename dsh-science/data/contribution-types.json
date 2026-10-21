@@ -1,0 +1,254 @@
+{
+  "$meta": {
+    "version": 1,
+    "builtAt": "2026-10-20",
+    "nature": "heuristic",
+    "warning": "这里的门槛是**领域共同的审稿习惯总结**，不是任何期刊的官方标准。band 语义沿用 journals.json（5 最难）。用来判断「还缺什么」，不要当成录用判据。",
+    "bandSource": "data/journals.json 的 band 字段：5 = 最难，1 = 最低"
+  },
+  "types": {
+    "new-theory": {
+      "label": "新理论保证",
+      "oneLiner": "证明某类更新在明确假设下有收敛率（或 regret）保证",
+      "detect": [
+        "[Cc]onverg",
+        "\bbound\b",
+        "regret",
+        "convergence rate",
+        "O\\(1/",
+        "收敛",
+        "保证"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "theorem", "item": "标准假设（L-smooth / 有界方差）下的收敛率", "how": "按算法结构推，假设不比前人强", "weeks": 3 },
+          { "kind": "experiment", "item": "与 2-3 个基线的实验对比", "how": "同协议同预算，报均值与方差", "weeks": 1 },
+          { "kind": "code", "item": "可复现的最小实现", "how": "单文件，能在小规模上跑出图", "weeks": 1 }
+        ],
+        "4": [
+          { "kind": "theorem", "item": "收敛率相对已有结果有实质改进（阶数或常数）", "how": "必须明确对比前人的阶，不能只报自己的", "weeks": 5 },
+          { "kind": "theorem", "item": "改进来自可解释的机制，不是假设加强", "how": "逐条列出与前人假设的差异表", "weeks": 2 },
+          { "kind": "experiment", "item": "≥2 个真实任务上验证理论预言的趋势", "how": "理论说随 T 如何变化，实验就要画那条线", "weeks": 2 },
+          { "kind": "experiment", "item": "消融：去掉机制中的关键一步，优势消失", "how": "这是审稿人第一个会要的", "weeks": 1 }
+        ],
+        "5": [
+          { "kind": "theorem", "item": "上下界匹配（tight），或首次给出该类问题的紧界", "how": "下界要构造出使界成立的实例", "weeks": 8 },
+          { "kind": "theorem", "item": "假设弱于或最少等于已有最好结果", "how": "假设更强就直接被拒", "weeks": 3 },
+          { "kind": "experiment", "item": "理论常数项在真实模型上量级相符", "how": "只对趋势不对常数，等于没验证", "weeks": 3 },
+          { "kind": "experiment", "item": "跨 3 个以上量级、2 个以上模态一致", "how": "小模型结论搬到大规模仍成立", "weeks": 4 },
+          { "kind": "principle", "item": "从分析里抽出一条可用的设计原则", "how": "别人读完能据此改自己的算法", "weeks": 2 }
+        ]
+      },
+      "gate": {
+        "3": "只要假设标准、证明无误、实验对得上，就能进专业顶刊/会议",
+        "4": "必须有相对改进，且改进不来自假设加强——否则审稿人一句「假设不同不可比」就结束",
+        "5": "必须有紧界或普适机制；只分析一个算法的收敛率，再干净也上不去"
+      }
+    },
+    "new-algorithm": {
+      "label": "新算法（带机制解释）",
+      "oneLiner": "提出新的更新规则，并解释它为什么有效",
+      "detect": [
+        "we propose",
+        "we introduce",
+        "new optimizer",
+        "instead of",
+        "提出",
+        "新方法"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "experiment", "item": "在标准 benchmark 上优于此前的强基线", "how": "同预算同超参搜索空间", "weeks": 3 },
+          { "kind": "mechanism", "item": "一句话说明机制，并有至少一个直接测它的实验", "how": "测中间量，不是只测最终 loss", "weeks": 2 },
+          { "kind": "ablation", "item": "组件消融", "how": "去掉每个设计选择的版本都要跑", "weeks": 2 }
+        ],
+        "4": [
+          { "kind": "experiment", "item": "≥3 个量级 / ≥2 个模态上一致占优", "how": "只在一个 benchmark 赢是典型拒稿理由", "weeks": 5 },
+          { "kind": "theorem", "item": "至少一个不依赖强假设的收敛或稳定性说明", "how": "不要求紧界，但要有", "weeks": 4 },
+          { "kind": "experiment", "item": "超参鲁棒性：结论不随学习率/批量敏感", "how": "审稿人必问「是不是调出来的」", "weeks": 2 },
+          { "kind": "experiment", "item": "与理论预言一致的中间量证据", "how": "谱范数 / 条件数 / 梯度噪声的直接测量", "weeks": 2 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "机制可迁移：抽出原则后能推出新的算法变体", "how": "论文里就要给出变体并验证", "weeks": 5 },
+          { "kind": "experiment", "item": "在领域公认的最难设置上打破记录", "how": "不是刷小数据集", "weeks": 6 },
+          { "kind": "theorem", "item": "与经验优势对应的理论解释", "how": "为什么这个机制必然带来这个优势", "weeks": 6 },
+          { "kind": "experiment", "item": "失效边界被明确刻画", "how": "什么情况下不管用，要有实验支撑", "weeks": 3 }
+        ]
+      },
+      "gate": {
+        "3": "赢在标准 benchmark 且有消融即可",
+        "4": "必须跨规模一致；单点胜利会被判「调参」",
+        "5": "必须是普适机制，不是一条 trick；且能抽出可复用的原则"
+      }
+    },
+    "empirical-law": {
+      "label": "经验定律 / 标度关系",
+      "oneLiner": "给出跨设置成立的定量关系（scaling law 一类）",
+      "detect": [
+        "scaling law",
+        "power law",
+        "follows a",
+        "as a function of",
+        "标度",
+        "幂律"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "experiment", "item": "≥3 个数量级的扫描", "how": "幂律要在 log-log 上跨足够范围才站得住", "weeks": 4 },
+          { "kind": "fit", "item": "拟合优度与残差结构", "how": "只报 R² 不够，要看残差是否系统偏", "weeks": 1 }
+        ],
+        "4": [
+          { "kind": "experiment", "item": "定律在 ≥2 个独立设置下成立", "how": "换数据/换架构仍成立", "weeks": 4 },
+          { "kind": "theory", "item": "给出为何是这个指数的解释", "how": "纯拟合的定律会被判 descriptive", "weeks": 5 },
+          { "kind": "prediction", "item": "用定律外推并验证", "how": "预测未见规模，再去测", "weeks": 3 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "定律改变实践决策", "how": "别人据此分配算力/选超参", "weeks": 4 },
+          { "kind": "experiment", "item": "跨领域普适性", "how": "不同模态同一个指数", "weeks": 6 },
+          { "kind": "theory", "item": "从第一性原理导出指数", "how": "不是拟合出来的", "weeks": 8 }
+        ]
+      },
+      "gate": {
+        "3": "扫描范围够、拟合可信即可",
+        "4": "必须有机制解释；纯经验拟合进不了高档次",
+        "5": "必须能外推并改变实践；否则只是「又一个 law」"
+      }
+    },
+    "negative-result": {
+      "label": "反例 / 复现失败",
+      "oneLiner": "证明某个被广泛相信的效果不成立，或不可复现",
+      "detect": [
+        "fail to reproduce",
+        "does not",
+        "no improvement",
+        "reproduc",
+        "无法复现",
+        "不成立"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "experiment", "item": "按原文设置严格复现", "how": "代码、数据、超参全部对齐", "weeks": 3 },
+          { "kind": "experiment", "item": "排除「我们没调好」的解释", "how": "超参扫描的范围要覆盖原文", "weeks": 2 }
+        ],
+        "4": [
+          { "kind": "experiment", "item": "定位失效来源（数据/实现/评估协议）", "how": "指出哪一步导致差异", "weeks": 4 },
+          { "kind": "experiment", "item": "在 ≥3 个独立环境下重复结论", "how": "单点反例不算", "weeks": 4 },
+          { "kind": "theorem", "item": "理论说明为何该效果不该出现", "how": "有理论的反例才有力", "weeks": 4 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "指出领域普遍的方法论缺陷", "how": "不只这一篇错了", "weeks": 6 },
+          { "kind": "experiment", "item": "给出修正后的协议并被他人采用", "how": "影响实践才算", "weeks": 8 }
+        ]
+      },
+      "gate": {
+        "3": "严格复现 + 排除自身失误即可",
+        "4": "必须定位机制；「我们没跑出来」不是结论",
+        "5": "必须上升到方法论层面"
+      }
+    },
+    "benchmark": {
+      "label": "统一评测 / 协议",
+      "oneLiner": "给出可比的评测协议，让互相矛盾的结果可比较",
+      "detect": [
+        "benchmark",
+        "evaluation",
+        "protocol",
+        "suite",
+        "评测",
+        "基准"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "artifact", "item": "可运行的评测代码与数据", "how": "一条命令跑完", "weeks": 3 },
+          { "kind": "experiment", "item": "覆盖 ≥5 个代表性方法", "how": "包含最强与最弱基线", "weeks": 2 }
+        ],
+        "4": [
+          { "kind": "analysis", "item": "揭示已有评测协议的偏差", "how": "同方法在不同协议下结论反转", "weeks": 4 },
+          { "kind": "experiment", "item": "协议稳定（换种子、换硬件结论不变）", "how": "这是评测类工作的生命线", "weeks": 3 },
+          { "kind": "artifact", "item": "被 ≥1 个外部团队实际使用", "how": "有 issue/PR/引用", "weeks": 4 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "协议成为领域事实标准", "how": "这个只能事后看", "weeks": 12 },
+          { "kind": "analysis", "item": "借此推翻一个广泛接受的结论", "how": "评测工作的最高形态", "weeks": 6 }
+        ]
+      },
+      "gate": {
+        "3": "能跑、覆盖够、结论稳",
+        "4": "必须揭示偏差，不能只是「我们又做了一套」",
+        "5": "成为标准或被广泛采用，投稿时通常只能先按 4 写"
+      }
+    },
+    "unification": {
+      "label": "统一框架 / 跨域迁移",
+      "oneLiner": "证明两个看似不同的东西是同一个机制，或把一个域的方法搬到另一个域并给出边界",
+      "detect": [
+        "unif",
+        "equivalent to",
+        "special case of",
+        "generaliz",
+        "transfer",
+        "统一",
+        "等价"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "theorem", "item": "形式化两种方法的关系（特例 / 等价 / 对偶）", "how": "要能互相推出", "weeks": 4 },
+          { "kind": "experiment", "item": "统一框架下的实验对照", "how": "同一实现跑两边的任务", "weeks": 3 }
+        ],
+        "4": [
+          { "kind": "experiment", "item": "跨域迁移成功且给出失效边界", "how": "成功案例 + 失败案例都要有", "weeks": 5 },
+          { "kind": "theorem", "item": "框架预言未被发现的新特例，并被验证", "how": "这是「有用」的证据", "weeks": 5 },
+          { "kind": "analysis", "item": "解释两域差异的来源", "how": "不能只说「都能统一」，要说「为什么之前没统一」", "weeks": 3 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "统一后产生新的可解问题", "how": "别人能接着做", "weeks": 6 },
+          { "kind": "experiment", "item": "两个领域的实践都因此改变", "how": "极难，但这是 Nature 级的要求", "weeks": 10 }
+        ]
+      },
+      "gate": {
+        "3": "关系形式化正确、实验对得上",
+        "4": "必须预言新东西并验证，否则只是「换个说法」",
+        "5": "必须产生新问题或改变两域实践"
+      }
+    },
+    "systems": {
+      "label": "系统 / 效率实现",
+      "oneLiner": "同样的方法在真实硬件上快一个量级，且不牺牲正确性",
+      "detect": [
+        "speedup",
+        "throughput",
+        "memory",
+        "kernel",
+        "faster than",
+        "加速",
+        "显存"
+      ],
+      "evidence": {
+        "3": [
+          { "kind": "experiment", "item": "端到端加速比（不是单 kernel）", "how": "含数据加载与通信", "weeks": 3 },
+          { "kind": "experiment", "item": "正确性对齐（与参考实现数值一致）", "how": "误差在浮点容差内", "weeks": 1 },
+          { "kind": "artifact", "item": "开源实现", "how": "能被别人装上跑", "weeks": 2 }
+        ],
+        "4": [
+          { "kind": "experiment", "item": "在 ≥2 种硬件/规模上都不退化", "how": "小规模快、大规模慢是常见坑", "weeks": 4 },
+          { "kind": "analysis", "item": "瓶颈分析：为什么快，快在哪一层", "how": "roofline 或 profiler 证据", "weeks": 3 },
+          { "kind": "experiment", "item": "训练收敛不受影响（不只是单步快）", "how": "端到端 loss 曲线对齐", "weeks": 2 }
+        ],
+        "5": [
+          { "kind": "principle", "item": "改变了硬件使用方式或系统设计", "how": "例如让某种并行变得可行", "weeks": 8 },
+          { "kind": "experiment", "item": "让此前不可行的实验规模变得可行", "how": "规模本身是贡献", "weeks": 8 }
+        ]
+      },
+      "gate": {
+        "3": "端到端加速 + 数值对齐",
+        "4": "必须跨硬件稳定且解释瓶颈",
+        "5": "必须打开新的可能性，不是把现有东西调快"
+      }
+    }
+  },
+  "bandLabels": {
+    "3": "专业顶刊 / 顶会（如 JMLR、领域主力刊）",
+    "4": "高影响子刊 / 顶会 oral 级（如 NeurIPS、ICML、PRX、PNAS、Nature Machine Intelligence）",
+    "5": "综合顶刊（Nature / Science / PRL 级）"
+  }
+}

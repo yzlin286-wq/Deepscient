@@ -1,0 +1,540 @@
+{
+  "$meta": {
+    "schema": "journal-format/1",
+    "note": "出版社 → 排版族。族里同时描述 LaTeX 类与 Word 版式，因为同一篇文章通常要同时交 PDF 和 DOCX。字数/图表/参考文献上限不在这里，在 data/journals.json 的 limits 里，lint 会把两边合并。",
+    "updatedAt": "2026-10-20",
+    "licenses": "LaTeX 类均为 LPPL（elsarticle/IEEEtran/revtex/achemso/nature 随 MiKTeX 分发），模板只引用类名不内嵌代码。",
+    "notes": "nature.cls（MiKTeX 里的 2004 v1.0）把 figure 环境重定义成不接受浮动参数的版本，\\begin{figure}[htbp] 会把 [htbp] 当正文打印出来，图也不会嵌入。因此 nature 族改用 article 类 + Nature 投稿版式（A4、双倍行距、连续行号、图表置于文末），这也正是 Nature 初次投稿要求的形态。"
+  },
+  "publisherToFamily": {
+    "Elsevier": "elsevier",
+    "Cell Press": "cell",
+    "Springer Nature": "springer-nature",
+    "Nature Portfolio": "nature",
+    "AAAS": "science",
+    "PLOS": "plos",
+    "Wiley": "wiley",
+    "APS": "aps",
+    "EMBO Press": "wiley",
+    "NAS": "science",
+    "eLife Sciences": "plos",
+    "NEJM Group": "nejm",
+    "AMA": "nejm",
+    "BMJ": "nejm",
+    "ACS": "acs",
+    "Rockefeller UP": "wiley",
+    "BMC": "bmc",
+    "NeurIPS Foundation": "mlr",
+    "ICML": "mlr",
+    "JMLR": "mlr",
+    "PeerJ": "plos",
+    "F1000": "plos",
+    "Royal Society": "wiley",
+    "SAGE / APS": "wiley",
+    "IEEE": "ieee",
+    "IEEE Xplore": "ieee",
+    "Taylor & Francis": "wiley",
+    "Oxford University Press": "wiley",
+    "OUP": "wiley",
+    "Cambridge University Press": "wiley",
+    "IOP Publishing": "elsevier",
+    "IOP": "elsevier",
+    "MDPI": "bmc",
+    "Frontiers": "bmc",
+    "Frontiers Media": "bmc",
+    "Springer": "springer-nature",
+    "American Physical Society": "aps",
+    "American Chemical Society": "acs",
+    "Public Library of Science": "plos",
+    "AAAS (Science)": "science",
+    "The Royal Society": "wiley",
+    "De Gruyter": "elsevier",
+    "SAGE": "wiley",
+    "World Scientific": "elsevier",
+    "MIT Press": "mlr",
+    "ACM": "ieee"
+  },
+  "journalToFamily": {
+    "nature": "nature",
+    "science": "science",
+    "cell": "cell",
+    "pnas": "science",
+    "elife": "plos",
+    "plos-biology": "plos",
+    "plos-one": "plos",
+    "neurips": "mlr",
+    "icml": "mlr",
+    "jmlr": "mlr"
+  },
+  "families": {
+    "elsevier": {
+      "label": "Elsevier / elsarticle（A4，双倍行距，行号）",
+      "latex": {
+        "class": "elsarticle",
+        "classOptions": [
+          "5p",
+          "times"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "elsarticle-num"
+      },
+      "docx": {
+        "pageSize": "A4",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 16,
+        "headingPt": 13,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "apa-7",
+      "abstractHeading": "Abstract"
+    },
+    "cell": {
+      "label": "Cell Press（Letter，双倍行距，行号）",
+      "latex": {
+        "class": "elsarticle",
+        "classOptions": [
+          "12pt",
+          "times",
+          "authoryear"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "elsarticle-harv"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "cell",
+      "abstractHeading": "Summary"
+    },
+    "springer-nature": {
+      "label": "Springer Nature / sn-jnl（A4，双倍行距，行号）",
+      "latex": {
+        "class": "sn-jnl",
+        "classOptions": [
+          "pdflatex",
+          "Sn-mathphys-num"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "sn-mathphys-num"
+      },
+      "docx": {
+        "pageSize": "A4",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "nature",
+      "abstractHeading": "Abstract"
+    },
+    "nature": {
+      "label": "Nature（A4，投稿版单栏双倍行距）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "naturemag"
+      },
+      "docx": {
+        "pageSize": "A4",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 16,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "nature",
+      "abstractHeading": "Abstract"
+    },
+    "science": {
+      "label": "Science / AAAS / PNAS（Letter，双倍行距，行号）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "plainnat"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "nature",
+      "abstractHeading": "Abstract"
+    },
+    "plos": {
+      "label": "PLOS / eLife / PeerJ / F1000（Letter，双倍行距，连续行号）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "unsrtnat"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "vancouver",
+      "abstractHeading": "Abstract"
+    },
+    "ieee": {
+      "label": "IEEE / IEEEtran（Letter，单倍行距，双栏终稿单栏投稿）",
+      "latex": {
+        "class": "IEEEtran",
+        "classOptions": [
+          "journal"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "IEEEtran"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 19,
+          "right": 19,
+          "bottom": 25,
+          "left": 19
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 10,
+        "lineSpacing": 2,
+        "lineNumbers": false,
+        "columns": 1,
+        "titlePt": 24,
+        "headingPt": 10,
+        "headingBold": false,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "ieee",
+      "abstractHeading": "Abstract"
+    },
+    "aps": {
+      "label": "APS / REVTeX 4.2（Letter，单栏投稿版）",
+      "latex": {
+        "class": "revtex4-2",
+        "classOptions": [
+          "aps",
+          "prl",
+          "reprint"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "apsrev4-2"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 16,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "nature",
+      "abstractHeading": "Abstract"
+    },
+    "acs": {
+      "label": "ACS / achemso（Letter，双倍行距）",
+      "latex": {
+        "class": "achemso",
+        "classOptions": [
+          "manuscript"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "achemso"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "apa-7",
+      "abstractHeading": "Abstract"
+    },
+    "mlr": {
+      "label": "NeurIPS / ICML / JMLR（Letter，单栏投稿版）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "11pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "plainnat"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 11,
+        "lineSpacing": 1,
+        "lineNumbers": false,
+        "columns": 1,
+        "titlePt": 17,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "ieee",
+      "abstractHeading": "Abstract"
+    },
+    "bmc": {
+      "label": "BMC（A4，双倍行距，行号）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "unsrtnat"
+      },
+      "docx": {
+        "pageSize": "A4",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "vancouver",
+      "abstractHeading": "Abstract"
+    },
+    "wiley": {
+      "label": "Wiley / EMBO / Royal Society / SAGE（A4，双倍行距，行号）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "plainnat"
+      },
+      "docx": {
+        "pageSize": "A4",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "apa-7",
+      "abstractHeading": "Abstract"
+    },
+    "nejm": {
+      "label": "NEJM / AMA / BMJ（Letter，双倍行距，行号）",
+      "latex": {
+        "class": "article",
+        "classOptions": [
+          "12pt"
+        ],
+        "fallbackClass": "article",
+        "bibStyle": "unsrtnat"
+      },
+      "docx": {
+        "pageSize": "Letter",
+        "marginsMm": {
+          "top": 25,
+          "right": 25,
+          "bottom": 25,
+          "left": 25
+        },
+        "bodyFont": "Times New Roman",
+        "cjkFont": "宋体",
+        "bodyPt": 12,
+        "lineSpacing": 2,
+        "lineNumbers": true,
+        "columns": 1,
+        "titlePt": 14,
+        "headingPt": 12,
+        "headingBold": true,
+        "paragraphSpaceAfterPt": 0,
+        "firstLineIndentMm": 0
+      },
+      "citation": "vancouver",
+      "abstractHeading": "Abstract"
+    }
+  },
+  "defaultFamily": "generic",
+  "genericFamily": {
+    "label": "通用投稿版（A4，双倍行距，行号）",
+    "latex": {
+      "class": "article",
+      "classOptions": [
+        "12pt"
+      ],
+      "fallbackClass": "article",
+      "bibStyle": "plainnat"
+    },
+    "docx": {
+      "pageSize": "A4",
+      "marginsMm": {
+        "top": 25,
+        "right": 25,
+        "bottom": 25,
+        "left": 25
+      },
+      "bodyFont": "Times New Roman",
+      "cjkFont": "宋体",
+      "bodyPt": 12,
+      "lineSpacing": 2,
+      "lineNumbers": true,
+      "columns": 1,
+      "titlePt": 16,
+      "headingPt": 13,
+      "headingBold": true,
+      "paragraphSpaceAfterPt": 0,
+      "firstLineIndentMm": 0
+    },
+    "citation": "apa-7",
+    "abstractHeading": "Abstract"
+  }
+}

@@ -1,0 +1,2565 @@
+{
+  "$meta": {
+    "note": "期刊画像。band: 5=学科最难 / 1=最低门槛。estimate:true 的数字是经验估计，只用于排序与展示，不参与阻断判定。verifiedAt 超 12 个月时工具会自动降级为提示。",
+    "verifiedAt": "2026-10-20",
+    "sources": [
+      "各刊官方 scope / author guidelines（字数、图数、预印本政策）",
+      "cos.io Registered Reports 参与期刊清单（300+，2026-10 抓取）",
+      "reviewcommons.org affiliate 期刊清单（2026-10 抓取）",
+      "公开的 editorial 表述与被拒作者社区报告（仅用于 estimate 字段）"
+    ],
+    "disclaimer": "acceptRate / deskRejectRate / firstDecisionDays 为量级估计，不得当作承诺或预测。"
+  },
+  "journals": [
+    {
+      "id": "nature",
+      "name": "Nature",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "broad interest",
+        "conceptual advance",
+        "breakthrough",
+        "wide readership"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory",
+        "clinical-trial"
+      ],
+      "limits": {
+        "words": 3000,
+        "figures": 4,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true,
+        "basis": "编辑初筛以分钟计，多数稿不送外审"
+      },
+      "acceptRate": {
+        "value": 0.08,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "nature-communications",
+        "scientific-reports"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0028-0836",
+      "openalexId": "S137773608",
+      "openalexName": "Nature"
+    },
+    {
+      "id": "science",
+      "name": "Science",
+      "type": "journal",
+      "publisher": "AAAS",
+      "band": 5,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "broad interest",
+        "conceptual advance",
+        "breakthrough"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 4500,
+        "figures": 4,
+        "refs": 40
+      },
+      "firstDecisionDays": {
+        "desk": 10,
+        "afterReview": 60,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.65,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.07,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "science-advances",
+        "science-immunology"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0036-8075",
+      "openalexId": "S3880285",
+      "openalexName": "Science"
+    },
+    {
+      "id": "cell",
+      "name": "Cell",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 5,
+      "scopeKeywords": [
+        "molecular biology",
+        "cell biology",
+        "mechanism",
+        "conceptual advance"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 55,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "molecular-cell",
+        "cell-reports"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0092-8674",
+      "openalexId": "S110447773",
+      "openalexName": "Cell"
+    },
+    {
+      "id": "pnas",
+      "name": "PNAS",
+      "type": "journal",
+      "publisher": "NAS",
+      "band": 4,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "significance",
+        "broad interest"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 6000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 12,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.35,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.18,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "pnasnexus"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "Direct Submission 与外审路线周期差很大；Contributed 需院士 sponsor",
+      "issn": "2752-6542",
+      "openalexId": "S4220651275",
+      "openalexName": "PNAS Nexus"
+    },
+    {
+      "id": "nature-communications",
+      "name": "Nature Communications",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 4,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "solid advance",
+        "broad scope"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 8,
+        "refs": 70
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.3,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.32,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "scientific-reports"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2041-1723",
+      "openalexId": "S64187185",
+      "openalexName": "Nature Communications"
+    },
+    {
+      "id": "science-advances",
+      "name": "Science Advances",
+      "type": "journal",
+      "publisher": "AAAS",
+      "band": 4,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "solid advance",
+        "broad scope"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 8,
+        "refs": 70
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.3,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.28,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2375-2548",
+      "openalexId": "S2737427234",
+      "openalexName": "Science Advances"
+    },
+    {
+      "id": "elife",
+      "name": "eLife",
+      "type": "journal",
+      "publisher": "eLife Sciences",
+      "band": 4,
+      "scopeKeywords": [
+        "life sciences",
+        "cell biology",
+        "neuroscience",
+        "genetics",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "observational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 0,
+        "afterReview": 30,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0,
+        "estimate": false,
+        "basis": "Reviewed Preprint 模式：不 desk reject，评审后以 eLife Assessment 呈现"
+      },
+      "acceptRate": {
+        "value": 0,
+        "estimate": false,
+        "basis": "无传统录用/拒稿二分"
+      },
+      "preprint": "required-implicit",
+      "registeredReports": true,
+      "portableReview": [
+        "review-commons",
+        "elife-reviewed-preprints"
+      ],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "notes": "Reviewed Preprints：送审即发布评审内容与 eLife Assessment，作者据评审自决修订；无 desk reject、无传统 accept/reject",
+      "issn": "2050-084X",
+      "openalexId": "S1336409049",
+      "openalexName": "eLife"
+    },
+    {
+      "id": "plos-biology",
+      "name": "PLOS Biology",
+      "type": "journal",
+      "publisher": "PLOS",
+      "band": 4,
+      "scopeKeywords": [
+        "biology",
+        "broad interest",
+        "conceptual advance",
+        "methods"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "observational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 10,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "plos-one"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1544-9173",
+      "openalexId": "S154343897",
+      "openalexName": "PLoS Biology"
+    },
+    {
+      "id": "nature-methods",
+      "name": "Nature Methods",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "methods",
+        "tool",
+        "assay",
+        "imaging",
+        "sequencing",
+        "computational method"
+      ],
+      "designs": [
+        "computational",
+        "experimental"
+      ],
+      "limits": {
+        "words": 3500,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "nature-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "方法刊要求真实可用性验证（不是 benchmark 单点最优）",
+      "issn": "1548-7091",
+      "openalexId": "S127827428",
+      "openalexName": "Nature Methods"
+    },
+    {
+      "id": "nature-biotechnology",
+      "name": "Nature Biotechnology",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "biotechnology",
+        "translation",
+        "engineering",
+        "therapeutic",
+        "platform"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 9,
+        "afterReview": 55,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "nature-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0733-222X",
+      "openalexId": "S106963461",
+      "openalexName": "Nature Biotechnology"
+    },
+    {
+      "id": "nature-medicine",
+      "name": "Nature Medicine",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "clinical",
+        "translation",
+        "trial",
+        "patient",
+        "evidence"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational",
+        "experimental"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "nature-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "临床稿件基本要求预注册 + CONSORT/STROBE 完整报告",
+      "issn": "1078-8956",
+      "openalexId": "S203256638",
+      "openalexName": "Nature Medicine"
+    },
+    {
+      "id": "nature-neuroscience",
+      "name": "Nature Neuroscience",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "neuroscience",
+        "circuit",
+        "behavior",
+        "mechanism",
+        "cognition"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "nature-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1097-6256",
+      "openalexId": "S2298632",
+      "openalexName": "Nature Neuroscience"
+    },
+    {
+      "id": "nature-human-behaviour",
+      "name": "Nature Human Behaviour",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 4,
+      "scopeKeywords": [
+        "behavioral science",
+        "psychology",
+        "social science",
+        "policy",
+        "replication"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 9,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "humanities-and-social-sciences-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "对统计功效与多重比较极敏感；Registered Reports 通道相对友好",
+      "issn": "2397-3374",
+      "openalexId": "S2764866340",
+      "openalexName": "Nature Human Behaviour"
+    },
+    {
+      "id": "nature-machine-intelligence",
+      "name": "Nature Machine Intelligence",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 4,
+      "scopeKeywords": [
+        "machine learning",
+        "artificial intelligence",
+        "robotics",
+        "computational",
+        "application"
+      ],
+      "designs": [
+        "computational",
+        "experimental"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 70
+      },
+      "firstDecisionDays": {
+        "desk": 10,
+        "afterReview": 55,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "nature-communications"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2522-5839",
+      "openalexId": "S2912241403",
+      "openalexName": "Nature Machine Intelligence"
+    },
+    {
+      "id": "nature-physics",
+      "name": "Nature Physics",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "physics",
+        "condensed matter",
+        "quantum",
+        "statistical",
+        "conceptual"
+      ],
+      "designs": [
+        "experimental",
+        "theory",
+        "computational"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 5,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "communications-physics"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1745-2473",
+      "openalexId": "S156274416",
+      "openalexName": "Nature Physics"
+    },
+    {
+      "id": "nature-materials",
+      "name": "Nature Materials",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "materials",
+        "synthesis",
+        "characterization",
+        "device",
+        "properties"
+      ],
+      "designs": [
+        "experimental",
+        "theory",
+        "computational"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 6,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "communications-materials"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1476-1122",
+      "openalexId": "S103895331",
+      "openalexName": "Nature Materials"
+    },
+    {
+      "id": "nature-chemistry",
+      "name": "Nature Chemistry",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "chemistry",
+        "synthesis",
+        "catalysis",
+        "mechanism",
+        "supramolecular"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 6,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "communications-chemistry"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1755-4330",
+      "openalexId": "S202193212",
+      "openalexName": "Nature Chemistry"
+    },
+    {
+      "id": "nature-sustainability",
+      "name": "Nature Sustainability",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 4,
+      "scopeKeywords": [
+        "sustainability",
+        "environment",
+        "policy",
+        "resource",
+        "energy"
+      ],
+      "designs": [
+        "observational",
+        "computational",
+        "experimental",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 10,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "npj-urban-sustainability"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2398-9629",
+      "openalexId": "S4210188283",
+      "openalexName": "Nature Sustainability"
+    },
+    {
+      "id": "nature-climate-change",
+      "name": "Nature Climate Change",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 4,
+      "scopeKeywords": [
+        "climate",
+        "impact",
+        "adaptation",
+        "mitigation",
+        "policy"
+      ],
+      "designs": [
+        "observational",
+        "computational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 6,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 9,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "communications-earth-environment"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1758-678X",
+      "openalexId": "S183584863",
+      "openalexName": "Nature Climate Change"
+    },
+    {
+      "id": "nature-geoscience",
+      "name": "Nature Geoscience",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 5,
+      "scopeKeywords": [
+        "earth science",
+        "geology",
+        "geochemistry",
+        "climate",
+        "planetary"
+      ],
+      "designs": [
+        "observational",
+        "experimental",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 5,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "communications-earth-environment"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1752-0894",
+      "openalexId": "S48977010",
+      "openalexName": "Nature Geoscience"
+    },
+    {
+      "id": "science-immunology",
+      "name": "Science Immunology",
+      "type": "journal",
+      "publisher": "AAAS",
+      "band": 4,
+      "scopeKeywords": [
+        "immunology",
+        "immunity",
+        "inflammation",
+        "mechanism",
+        "therapy"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 4500,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "science-advances"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2470-9468",
+      "openalexId": "S2764653179",
+      "openalexName": "Science Immunology"
+    },
+    {
+      "id": "science-translational-medicine",
+      "name": "Science Translational Medicine",
+      "type": "journal",
+      "publisher": "AAAS",
+      "band": 4,
+      "scopeKeywords": [
+        "translation",
+        "clinical",
+        "therapy",
+        "biomarker",
+        "preclinical"
+      ],
+      "designs": [
+        "experimental",
+        "clinical-trial",
+        "observational"
+      ],
+      "limits": {
+        "words": 4500,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 9,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.13,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "science-advances"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1946-6234",
+      "openalexId": "S24207032",
+      "openalexName": "Science Translational Medicine"
+    },
+    {
+      "id": "molecular-cell",
+      "name": "Molecular Cell",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 4,
+      "scopeKeywords": [
+        "molecular biology",
+        "mechanism",
+        "rna",
+        "dna",
+        "protein"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "cell-reports",
+        "iscience"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1097-2765",
+      "openalexId": "S156208185",
+      "openalexName": "Molecular Cell"
+    },
+    {
+      "id": "cell-reports",
+      "name": "Cell Reports",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 3,
+      "scopeKeywords": [
+        "life sciences",
+        "mechanism",
+        "cell biology",
+        "neuroscience",
+        "immunology"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.3,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "iscience"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2211-1247",
+      "openalexId": "S169236886",
+      "openalexName": "Cell Reports"
+    },
+    {
+      "id": "cell-systems",
+      "name": "Cell Systems",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 4,
+      "scopeKeywords": [
+        "systems biology",
+        "computational",
+        "network",
+        "modeling",
+        "quantitative"
+      ],
+      "designs": [
+        "computational",
+        "experimental"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.18,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "iscience"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2405-4712",
+      "openalexId": "S2764739556",
+      "openalexName": "Cell Systems"
+    },
+    {
+      "id": "neuron",
+      "name": "Neuron",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 5,
+      "scopeKeywords": [
+        "neuroscience",
+        "circuit",
+        "synapse",
+        "behavior",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "cell-reports",
+        "iscience"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0896-6273",
+      "openalexId": "S45757444",
+      "openalexName": "Neuron"
+    },
+    {
+      "id": "immunity",
+      "name": "Immunity",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 5,
+      "scopeKeywords": [
+        "immunology",
+        "immunity",
+        "inflammation",
+        "host defense",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "cell-reports"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1074-7613",
+      "openalexId": "S199671312",
+      "openalexName": "Immunity"
+    },
+    {
+      "id": "cancer-cell",
+      "name": "Cancer Cell",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 5,
+      "scopeKeywords": [
+        "cancer",
+        "oncology",
+        "tumor",
+        "therapy",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "clinical-trial",
+        "computational"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 7,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.12,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "cell-reports"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1535-6108",
+      "openalexId": "S25671836",
+      "openalexName": "Cancer Cell"
+    },
+    {
+      "id": "nejm",
+      "name": "New England Journal of Medicine",
+      "type": "journal",
+      "publisher": "NEJM Group",
+      "band": 5,
+      "scopeKeywords": [
+        "clinical",
+        "trial",
+        "practice-changing",
+        "patient",
+        "evidence"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational"
+      ],
+      "limits": {
+        "words": 2700,
+        "figures": 5,
+        "refs": 40
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.7,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.05,
+        "estimate": true
+      },
+      "preprint": "allowed-restricted",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "nejm-evidence"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "对预印本有额外限制（Ingelfinger 规则的历史解释）；投稿前须核当期政策",
+      "issn": "0028-4793",
+      "openalexId": "S62468778",
+      "openalexName": "New England Journal of Medicine"
+    },
+    {
+      "id": "lancet",
+      "name": "The Lancet",
+      "type": "journal",
+      "publisher": "Elsevier",
+      "band": 5,
+      "scopeKeywords": [
+        "clinical",
+        "trial",
+        "global health",
+        "public health",
+        "practice-changing"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 4500,
+        "figures": 6,
+        "refs": 30
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.7,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.05,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "lancet-regional-health",
+        "eclinicalmedicine"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0099-5355",
+      "openalexId": "S49861241",
+      "openalexName": "The Lancet"
+    },
+    {
+      "id": "jama",
+      "name": "JAMA",
+      "type": "journal",
+      "publisher": "AMA",
+      "band": 5,
+      "scopeKeywords": [
+        "clinical",
+        "trial",
+        "patient",
+        "practice-changing",
+        "evidence"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 3000,
+        "figures": 5,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.7,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.06,
+        "estimate": true
+      },
+      "preprint": "allowed-restricted",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "jama-network-open"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0002-9955",
+      "openalexId": "S172573765",
+      "openalexName": "JAMA"
+    },
+    {
+      "id": "bmj",
+      "name": "BMJ",
+      "type": "journal",
+      "publisher": "BMJ",
+      "band": 4,
+      "scopeKeywords": [
+        "clinical",
+        "public health",
+        "trial",
+        "evidence",
+        "policy"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 5,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "bmj-open"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0007-1447",
+      "openalexId": "S4393911389",
+      "openalexName": "BMJ"
+    },
+    {
+      "id": "plos-medicine",
+      "name": "PLOS Medicine",
+      "type": "journal",
+      "publisher": "PLOS",
+      "band": 4,
+      "scopeKeywords": [
+        "clinical",
+        "public health",
+        "global health",
+        "policy",
+        "evidence"
+      ],
+      "designs": [
+        "clinical-trial",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 8,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "plos-one"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1549-1277",
+      "openalexId": "S197939330",
+      "openalexName": "PLoS Medicine"
+    },
+    {
+      "id": "jacs",
+      "name": "Journal of the American Chemical Society",
+      "type": "journal",
+      "publisher": "ACS",
+      "band": 5,
+      "scopeKeywords": [
+        "chemistry",
+        "synthesis",
+        "catalysis",
+        "materials",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 8,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 35,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.18,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "acs-omega",
+        "joc"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0002-7863",
+      "openalexId": "S111155417",
+      "openalexName": "Journal of the American Chemical Society"
+    },
+    {
+      "id": "angewandte",
+      "name": "Angewandte Chemie International Edition",
+      "type": "journal",
+      "publisher": "Wiley",
+      "band": 4,
+      "scopeKeywords": [
+        "chemistry",
+        "synthesis",
+        "catalysis",
+        "materials",
+        "supramolecular"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 6,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 30,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.45,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.22,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "chemistry-europe",
+        "eurjoc"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "Communication 格式（短），对single-figure 完整故事要求高",
+      "issn": "1433-7851",
+      "openalexId": "S67393510",
+      "openalexName": "Angewandte Chemie International Edition"
+    },
+    {
+      "id": "advanced-materials",
+      "name": "Advanced Materials",
+      "type": "journal",
+      "publisher": "Wiley",
+      "band": 4,
+      "scopeKeywords": [
+        "materials",
+        "device",
+        "nanomaterials",
+        "energy",
+        "biomaterials"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 7,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 30,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.2,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "advanced-science",
+        "small"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0935-9648",
+      "openalexId": "S99352657",
+      "openalexName": "Advanced Materials"
+    },
+    {
+      "id": "prl",
+      "name": "Physical Review Letters",
+      "type": "journal",
+      "publisher": "APS",
+      "band": 5,
+      "scopeKeywords": [
+        "physics",
+        "quantum",
+        "condensed matter",
+        "statistical",
+        "fundamental"
+      ],
+      "designs": [
+        "experimental",
+        "theory",
+        "computational"
+      ],
+      "limits": {
+        "words": 3750,
+        "figures": 4,
+        "refs": 40
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.25,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "prb",
+        "prresearch"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "硬长度上限（4 页），超页直接退回；编辑看重'单一清晰结论'",
+      "issn": "0031-9007",
+      "openalexId": "S24807848",
+      "openalexName": "Physical Review Letters"
+    },
+    {
+      "id": "prx",
+      "name": "Physical Review X",
+      "type": "journal",
+      "publisher": "APS",
+      "band": 4,
+      "scopeKeywords": [
+        "physics",
+        "quantum",
+        "condensed matter",
+        "interdisciplinary",
+        "fundamental"
+      ],
+      "designs": [
+        "experimental",
+        "theory",
+        "computational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 10,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 8,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.2,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [
+        "prresearch"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2160-3308",
+      "openalexId": "S137042341",
+      "openalexName": "Physical Review X"
+    },
+    {
+      "id": "embo-j",
+      "name": "The EMBO Journal",
+      "type": "journal",
+      "publisher": "EMBO Press",
+      "band": 4,
+      "scopeKeywords": [
+        "molecular biology",
+        "cell biology",
+        "mechanism",
+        "development"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 8,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.18,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "embo-reports"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0261-4189",
+      "openalexId": "S127916151",
+      "openalexName": "The EMBO Journal"
+    },
+    {
+      "id": "embo-reports",
+      "name": "EMBO Reports",
+      "type": "journal",
+      "publisher": "EMBO Press",
+      "band": 3,
+      "scopeKeywords": [
+        "molecular biology",
+        "cell biology",
+        "science policy",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "observational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 8,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 38,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.45,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.22,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1469-221X",
+      "openalexId": "S57252141",
+      "openalexName": "EMBO Reports"
+    },
+    {
+      "id": "jcb",
+      "name": "Journal of Cell Biology",
+      "type": "journal",
+      "publisher": "Rockefeller UP",
+      "band": 3,
+      "scopeKeywords": [
+        "cell biology",
+        "organelle",
+        "cytoskeleton",
+        "mechanism",
+        "imaging"
+      ],
+      "designs": [
+        "experimental",
+        "computational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 8,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.45,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.22,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0021-9525",
+      "openalexId": "S96410829",
+      "openalexName": "The Journal of Cell Biology"
+    },
+    {
+      "id": "genome-biology",
+      "name": "Genome Biology",
+      "type": "journal",
+      "publisher": "BMC",
+      "band": 3,
+      "scopeKeywords": [
+        "genomics",
+        "bioinformatics",
+        "sequencing",
+        "computational",
+        "method"
+      ],
+      "designs": [
+        "computational",
+        "experimental"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 10,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 40,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.28,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [
+        "bmc-genomics"
+      ],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1465-6906",
+      "openalexId": "S81160022",
+      "openalexName": "Genome biology"
+    },
+    {
+      "id": "current-biology",
+      "name": "Current Biology",
+      "type": "journal",
+      "publisher": "Cell Press",
+      "band": 3,
+      "scopeKeywords": [
+        "biology",
+        "evolution",
+        "behavior",
+        "ecology",
+        "mechanism"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational"
+      ],
+      "limits": {
+        "words": 4500,
+        "figures": 6,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 35,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.5,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.22,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "iscience"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "issn": "0960-9822",
+      "openalexId": "S128425624",
+      "openalexName": "Current Biology"
+    },
+    {
+      "id": "neurips",
+      "name": "NeurIPS",
+      "type": "conference",
+      "publisher": "NeurIPS Foundation",
+      "band": 4,
+      "scopeKeywords": [
+        "machine learning",
+        "artificial intelligence",
+        "computational",
+        "benchmark",
+        "theory"
+      ],
+      "designs": [
+        "computational",
+        "theory",
+        "experimental"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 10,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 0,
+        "afterReview": 90,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.1,
+        "estimate": true,
+        "basis": "主要靠格式与合规检查"
+      },
+      "acceptRate": {
+        "value": 0.25,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "notes": "固定截稿日 → 周期由会议日历决定，不是期刊式滚动",
+      "issn": null,
+      "openalexId": null,
+      "intelPolicy": "conference-no-issn"
+    },
+    {
+      "id": "icml",
+      "name": "ICML",
+      "type": "conference",
+      "publisher": "ICML",
+      "band": 4,
+      "scopeKeywords": [
+        "machine learning",
+        "artificial intelligence",
+        "computational",
+        "theory"
+      ],
+      "designs": [
+        "computational",
+        "theory",
+        "experimental"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 10,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 0,
+        "afterReview": 85,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.25,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": null,
+      "openalexId": null,
+      "intelPolicy": "conference-no-issn"
+    },
+    {
+      "id": "jmlr",
+      "name": "Journal of Machine Learning Research",
+      "type": "journal",
+      "publisher": "JMLR",
+      "band": 3,
+      "scopeKeywords": [
+        "machine learning",
+        "statistics",
+        "theory",
+        "computational",
+        "algorithm"
+      ],
+      "designs": [
+        "computational",
+        "theory",
+        "experimental"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 0,
+        "afterReview": 120,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.2,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.3,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "statement",
+      "notes": "滚动投稿无 desk 门槛但周期长（数月）",
+      "issn": "1532-4435",
+      "openalexId": "S118988714",
+      "openalexName": "Journal of Machine Learning Research"
+    },
+    {
+      "id": "scientific-reports",
+      "name": "Scientific Reports",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 1,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "sound science",
+        "no novelty requirement"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 5,
+        "afterReview": 60,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.45,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "notes": "判据是'技术上是sound'而非新颖性 —— 适合拆出的负结果与方法细节",
+      "issn": "2045-2322",
+      "openalexId": "S196734849",
+      "openalexName": "Scientific Reports"
+    },
+    {
+      "id": "plos-one",
+      "name": "PLOS ONE",
+      "type": "journal",
+      "publisher": "PLOS",
+      "band": 1,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "sound science",
+        "no novelty requirement"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 4,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.1,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.45,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "1932-6203",
+      "openalexId": "S202381698",
+      "openalexName": "PLoS ONE"
+    },
+    {
+      "id": "peerj",
+      "name": "PeerJ",
+      "type": "journal",
+      "publisher": "PeerJ",
+      "band": 1,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "sound science",
+        "biology",
+        "computer science"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 5,
+        "afterReview": 55,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2167-8359",
+      "openalexId": "S1983995261",
+      "openalexName": "PeerJ"
+    },
+    {
+      "id": "f1000research",
+      "name": "F1000Research",
+      "type": "journal",
+      "publisher": "F1000",
+      "band": 1,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "open peer review",
+        "data note",
+        "sound science"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 2,
+        "afterReview": 25,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.05,
+        "estimate": true,
+        "basis": "先发布后公开评审"
+      },
+      "acceptRate": {
+        "value": 0.6,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "notes": "先上线再评审，最适合抢 priority 与记录负结果",
+      "issn": "2046-1402",
+      "openalexId": "S4210239046",
+      "openalexName": "F1000Research"
+    },
+    {
+      "id": "royal-society-open-science",
+      "name": "Royal Society Open Science",
+      "type": "journal",
+      "publisher": "Royal Society",
+      "band": 2,
+      "scopeKeywords": [
+        "multidisciplinary",
+        "sound science",
+        "biology",
+        "physics",
+        "psychology"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "computational",
+        "theory",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 0,
+        "figures": 0,
+        "refs": 0
+      },
+      "firstDecisionDays": {
+        "desk": 6,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.2,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.4,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [
+        "review-commons"
+      ],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "issn": "2054-5703",
+      "openalexId": "S2737558550",
+      "openalexName": "Royal Society Open Science"
+    },
+    {
+      "id": "psychological-science",
+      "name": "Psychological Science",
+      "type": "journal",
+      "publisher": "SAGE / APS",
+      "band": 4,
+      "scopeKeywords": [
+        "psychology",
+        "cognitive",
+        "social",
+        "behavioral",
+        "replication"
+      ],
+      "designs": [
+        "experimental",
+        "observational",
+        "meta-analysis"
+      ],
+      "limits": {
+        "words": 4000,
+        "figures": 6,
+        "refs": 50
+      },
+      "firstDecisionDays": {
+        "desk": 10,
+        "afterReview": 50,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.55,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.15,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": true,
+      "portableReview": [],
+      "transferChain": [
+        "ampps"
+      ],
+      "oaPolicy": "hybrid",
+      "dataPolicy": "mandatory-statement",
+      "notes": "强制预注册与数据共享的核查最严；样本量与功效常被直接质疑",
+      "issn": "0956-7976",
+      "openalexId": "S58854535",
+      "openalexName": "Psychological Science"
+    },
+    {
+      "id": "nature-communications-eng",
+      "name": "Communications Engineering",
+      "type": "journal",
+      "publisher": "Springer Nature",
+      "band": 3,
+      "scopeKeywords": [
+        "engineering",
+        "device",
+        "systems",
+        "applied physics",
+        "materials"
+      ],
+      "designs": [
+        "experimental",
+        "computational",
+        "theory"
+      ],
+      "limits": {
+        "words": 5000,
+        "figures": 8,
+        "refs": 60
+      },
+      "firstDecisionDays": {
+        "desk": 7,
+        "afterReview": 45,
+        "estimate": true
+      },
+      "deskRejectRate": {
+        "value": 0.35,
+        "estimate": true
+      },
+      "acceptRate": {
+        "value": 0.3,
+        "estimate": true
+      },
+      "preprint": "allowed",
+      "registeredReports": false,
+      "portableReview": [],
+      "transferChain": [],
+      "oaPolicy": "full-oa",
+      "dataPolicy": "mandatory-statement",
+      "notes": "Nature 系 open-access 子刊，作为 transfer 目标或稳健落点",
+      "issn": "2731-3395",
+      "openalexId": "S4387280558",
+      "openalexName": "Communications Engineering"
+    }
+  ]
+}

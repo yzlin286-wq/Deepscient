@@ -1,0 +1,59 @@
+name: 功能建议
+description: 希望它多做什么，或者少做什么
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先说**场景**：你在做研究时卡在哪一步，现在是怎么绕过去的。带具体场景的建议比
+        「希望更智能」有用得多 —— 后者没法验证，也就没法实现。
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 场景
+      description: 你在做什么研究、卡在哪、现在怎么绕过
+      placeholder: 做 meta 分析时，要从 30 篇 PDF 里抽同样的三个字段，现在只能一篇篇读
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望的形态
+      description: 一个工具？一道门？一个界面入口？描述得越具体越好
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 大致属于哪一块
+      options:
+        - 流程与门（12 阶段）
+        - 工具（36 个）
+        - 学科数据（55 门）
+        - 技能（随包 17 / 第三方 81）
+        - 文献与数据源
+        - MCP 工具层
+        - 界面与交互
+        - 计费与记录
+        - 其他 / 说不清
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 有没有现成的做法可以参考
+      description: 论文、开源项目、你用过觉得好用的工具。有出处最好
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: honesty
+    attributes:
+      label: 边界确认
+      options:
+        - label: 我理解这个项目不做「自动编数据」「代写投稿信」「绕过期刊 AI 声明」
+          required: false

@@ -1,0 +1,3081 @@
+{
+  "$meta": {
+    "schema": "statistics/1",
+    "note": "统计决策支持的唯一数据源。代码里不写任何检验选择规则——决策树、检验元数据、假设检查、降级链、效应量、多重比较全部在这里。science_stats 遍历 decisionTree 得到候选检验，再按 requires 与 assumptions 检查数据，不满足就沿 fallback 降级，并在 cautions 里说清降级理由。",
+    "license": "规则描述与公式是公开方法学事实，出处逐条标注在 source 字段；未复制任何软件的帮助文本。",
+    "updatedAt": "2026-10-21",
+    "ironRules": [
+      "不做逐步检验（如先测方差齐性再选 t 检验）：两阶段流程会让 α 失控，直接用稳健方法。",
+      "假设不满足必须给降级建议，不能硬跑参数检验；降级要写进 cautions，不能悄悄换。",
+      "p 值不是效应量。每份结果都必须同时给效应量与置信区间。",
+      "决策树只问设计问题（用户知道的），数据性质由 assumptions 在运行时检查。"
+    ]
+  },
+  "decisionTree": {
+    "root": "outcome",
+    "nodes": {
+      "outcome": {
+        "question": "因变量（结局）是什么类型？",
+        "options": [
+          {
+            "value": "continuous",
+            "label": "连续量（浓度、反应时、分数、强度）",
+            "next": "design-continuous"
+          },
+          {
+            "value": "binary",
+            "label": "二分类（发生/未发生、有效/无效）",
+            "next": "design-binary"
+          },
+          {
+            "value": "count",
+            "label": "计数（每视野个数、每小时事件数）",
+            "next": "design-count"
+          },
+          {
+            "value": "time",
+            "label": "到事件发生的时间（含删失）",
+            "next": "design-survival"
+          },
+          {
+            "value": "ordinal",
+            "label": "有序分类（1-5  Likert、轻/中/重）",
+            "next": "design-ordinal"
+          },
+          {
+            "value": "multivariate",
+            "label": "多个结局同时分析",
+            "next": "design-multivariate"
+          }
+        ]
+      },
+      "design-continuous": {
+        "question": "连续结局与什么比较？",
+        "options": [
+          {
+            "value": "two-independent",
+            "label": "两组独立样本比较",
+            "test": "ttest-welch"
+          },
+          {
+            "value": "two-paired",
+            "label": "同一样本两次测量（前后）",
+            "test": "ttest-rel"
+          },
+          {
+            "value": "three-plus-independent",
+            "label": "三组及以上独立样本",
+            "test": "anova-oneway"
+          },
+          {
+            "value": "three-plus-paired",
+            "label": "三组及以上重复测量",
+            "test": "rm-anova"
+          },
+          {
+            "value": "association",
+            "label": "两个连续量的关联",
+            "test": "pearson"
+          },
+          {
+            "value": "prediction",
+            "label": "用多个预测变量解释一个连续结局",
+            "test": "ols"
+          },
+          {
+            "value": "agreement",
+            "label": "两种测量方法的一致性",
+            "test": "bland-altman"
+          },
+          {
+            "value": "equivalence",
+            "label": "证明两组没有实质差异",
+            "test": "tost"
+          }
+        ]
+      },
+      "design-binary": {
+        "question": "二分类结局的组间结构？",
+        "options": [
+          {
+            "value": "two-independent",
+            "label": "两组独立",
+            "test": "chi2"
+          },
+          {
+            "value": "two-paired",
+            "label": "同一批对象的配对二分（前后）",
+            "test": "mcnemar"
+          },
+          {
+            "value": "small-expected",
+            "label": "任一格期望频数 <5 或总 n<40",
+            "test": "fisher"
+          },
+          {
+            "value": "prediction",
+            "label": "多个预测变量预测发生概率",
+            "test": "logit"
+          },
+          {
+            "value": "risk",
+            "label": "需要风险比 / 相对危险度",
+            "test": "logit-risk"
+          }
+        ]
+      },
+      "design-count": {
+        "question": "计数的离散程度？",
+        "options": [
+          {
+            "value": "poisson",
+            "label": "方差≈均值（泊松）",
+            "test": "poisson"
+          },
+          {
+            "value": "overdispersed",
+            "label": "方差远大于均值（过度离散）",
+            "test": "negbin"
+          },
+          {
+            "value": "zero-inflated",
+            "label": "大量零值",
+            "test": "zeroinfl"
+          },
+          {
+            "value": "simple-compare",
+            "label": "只比较两组计数",
+            "test": "mannwhitney"
+          }
+        ]
+      },
+      "design-survival": {
+        "question": "生存/失效数据的分析目标？",
+        "options": [
+          {
+            "value": "describe",
+            "label": "描述生存曲线",
+            "test": "kaplan-meier"
+          },
+          {
+            "value": "compare-groups",
+            "label": "比较几组的生存曲线",
+            "test": "logrank"
+          },
+          {
+            "value": "adjusted",
+            "label": "校正协变量后的风险比",
+            "test": "cox"
+          }
+        ]
+      },
+      "design-ordinal": {
+        "question": "有序结局的分析目标？",
+        "options": [
+          {
+            "value": "two-independent",
+            "label": "两组独立比较",
+            "test": "mannwhitney"
+          },
+          {
+            "value": "two-paired",
+            "label": "配对比较",
+            "test": "wilcoxon"
+          },
+          {
+            "value": "three-plus",
+            "label": "三组及以上",
+            "test": "kruskal"
+          },
+          {
+            "value": "model",
+            "label": "有序 logistic 回归",
+            "test": "ordinal-logit"
+          }
+        ]
+      },
+      "design-multivariate": {
+        "question": "多个结局的处理方式？",
+        "options": [
+          {
+            "value": "separate-corrected",
+            "label": "分别检验 + 多重比较校正",
+            "strategy": "any-then-correct"
+          },
+          {
+            "value": "manova",
+            "label": "联合检验（MANOVA）",
+            "test": "manova"
+          },
+          {
+            "value": "dimension-reduce",
+            "label": "降维后分析（PCA/因子）",
+            "test": "pca"
+          }
+        ]
+      }
+    }
+  },
+  "tests": {
+    "ttest-welch": {
+      "label": "Welch 两样本 t 检验",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "two-independent",
+      "requires": {
+        "groups": 2,
+        "paired": false,
+        "normal": true,
+        "equalVar": false,
+        "minNPerGroup": 2
+      },
+      "assumptions": [
+        {
+          "id": "independence",
+          "label": "两组样本互相独立",
+          "check": "design",
+          "action": "若同一批对象测两次 → ttest-rel"
+        },
+        {
+          "id": "normality",
+          "label": "每组近似正态，或每组 n≥30（中心极限定理）",
+          "check": "shapiro|n",
+          "action": "不满足 → mannwhitney"
+        },
+        {
+          "id": "outliers",
+          "label": "无极端离群值主导均值差",
+          "check": "iqr",
+          "action": "报告去掉离群后的敏感性分析"
+        }
+      ],
+      "fallback": [
+        "mannwhitney",
+        "permutation"
+      ],
+      "effectSizes": [
+        "cohens-d",
+        "hedges-g"
+      ],
+      "power": {
+        "fn": "ttest_ind",
+        "params": {
+          "ratio": 1
+        }
+      },
+      "py": "scipy.stats.ttest_ind(a, b, equal_var=False)",
+      "r": "t.test(y ~ g, data = d, var.equal = FALSE)",
+      "reportAs": "Welch 两样本 t 检验，t({df}) = {stat}，p = {p}，Cohen's d = {d}（95% CI {dCi}）",
+      "misuse": [
+        {
+          "wrong": "先做 Levene 检验，齐性就用 Student t，不齐就用 Welch",
+          "why": "这个两阶段流程让第一类错误率脱离名义 α，是常见但已被证明有问题做法",
+          "right": "一律用 Welch；它在方差齐时几乎不损失功效，不齐时显著更稳",
+          "source": "Delacre, Lakens & Leys 2017, SPPS"
+        },
+        {
+          "wrong": "只报 p 不报效应量",
+          "why": "p 小只说明「不像随机」，不说明「差异有多大」，读者无法判断实际意义",
+          "right": "同时给 Cohen's d 与 95% CI",
+          "source": "APA 7th, pp.88"
+        }
+      ],
+      "why": "两组独立、连续结局的标准检验。用 Welch 而不是 Student 是当前的推荐做法：方差不齐是常态，不是例外。",
+      "source": "Welch 1947; Delacre et al. 2017; APA 7th"
+    },
+    "ttest-rel": {
+      "label": "配对样本 t 检验",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "two-paired",
+      "requires": {
+        "groups": 2,
+        "paired": true,
+        "normal": true,
+        "minNPerGroup": 2
+      },
+      "assumptions": [
+        {
+          "id": "pairing",
+          "label": "确实配对（同一对象/同一批次/匹配对）",
+          "check": "design",
+          "action": "不配对 → ttest-welch"
+        },
+        {
+          "id": "diff-normality",
+          "label": "差值为近似正态（检验的是差值，不是两组各自）",
+          "check": "shapiro-diff",
+          "action": "不满足 → wilcoxon"
+        }
+      ],
+      "fallback": [
+        "wilcoxon",
+        "permutation"
+      ],
+      "effectSizes": [
+        "cohens-dz",
+        "cohens-d-av"
+      ],
+      "power": {
+        "fn": "ttest_paired",
+        "params": {}
+      },
+      "py": "scipy.stats.ttest_rel(a, b)",
+      "r": "t.test(d$pre, d$post, paired = TRUE)",
+      "reportAs": "配对 t 检验，t({df}) = {stat}，p = {p}，Cohen's dz = {d}",
+      "misuse": [
+        {
+          "wrong": "用独立样本 t 检验分析前后测",
+          "why": "忽略配对会把个体差异算进误差项，功效被白白丢掉（同一效应下所需 n 常差一倍）",
+          "right": "用配对检验或线性混合模型",
+          "source": "Maxwell, Delaney & Kelley 2017, ch.12"
+        },
+        {
+          "wrong": "检验两组各自的正态性来判断配对 t 是否可用",
+          "why": "配对 t 的前提是差值正态，不是两组各自正态",
+          "right": "对差值做正态性检查",
+          "source": "Lakens 2013, Frontiers in Psychology"
+        }
+      ],
+      "why": "同一对象前后测、或配对设计。比独立样本检验更敏感，因为个体差异被消掉。",
+      "source": "Lakens 2013; Maxwell et al. 2017"
+    },
+    "mannwhitney": {
+      "label": "Mann-Whitney U 检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "two-independent",
+      "requires": {
+        "groups": 2,
+        "paired": false,
+        "normal": false,
+        "minNPerGroup": 3
+      },
+      "assumptions": [
+        {
+          "id": "independence",
+          "label": "两组独立",
+          "check": "design",
+          "action": "配对 → wilcoxon"
+        },
+        {
+          "id": "shape",
+          "label": "两组分布形状相近（否则只能解释为随机优势，不是中位数差）",
+          "check": "manual",
+          "action": "形状不同时改报 P(X>Y) 与 Cliff's delta，不要报中位数差"
+        }
+      ],
+      "fallback": [
+        "permutation",
+        "bootstrap-median"
+      ],
+      "effectSizes": [
+        "cliffs-delta",
+        "rank-biserial"
+      ],
+      "power": {
+        "fn": "mannwhitney",
+        "params": {
+          "aref": 0.5
+        }
+      },
+      "py": "scipy.stats.mannwhitneyu(a, b, alternative='two-sided')",
+      "r": "wilcox.test(y ~ g, data = d, exact = FALSE)",
+      "reportAs": "Mann-Whitney U = {stat}，p = {p}，Cliff's δ = {d}",
+      "misuse": [
+        {
+          "wrong": "当作「中位数检验」并报告中位数差",
+          "why": "只有在两组分布形状相同时它才等价于位置移动；形状不同时它检验的是随机优势",
+          "right": "报 Cliff's delta 或 P(X>Y)",
+          "source": "Kruskal 1952; Cliff 1993"
+        },
+        {
+          "wrong": "数据正态也用它「更保险」",
+          "why": "正态数据下它会损失约 5% 相对功效，属于无谓牺牲",
+          "right": "正态用 t 检验",
+          "source": "Hodges & Lehmann 1956 ARE"
+        }
+      ],
+      "why": "非正态、有序、或有界的小样本两组比较。",
+      "source": "Mann & Whitney 1947; Cliff 1993"
+    },
+    "wilcoxon": {
+      "label": "Wilcoxon 符号秩检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "two-paired",
+      "requires": {
+        "groups": 2,
+        "paired": true,
+        "normal": false,
+        "minNPerGroup": 5
+      },
+      "assumptions": [
+        {
+          "id": "pairing",
+          "label": "配对",
+          "check": "design",
+          "action": "不配对 → mannwhitney"
+        },
+        {
+          "id": "symmetry",
+          "label": "差值分布对称（否则改用符号检验）",
+          "check": "manual",
+          "action": "严重偏斜 → sign-test"
+        }
+      ],
+      "fallback": [
+        "sign-test",
+        "permutation"
+      ],
+      "effectSizes": [
+        "rank-biserial",
+        "cohens-dz"
+      ],
+      "power": {
+        "fn": "wilcoxon",
+        "params": {}
+      },
+      "py": "scipy.stats.wilcoxon(a, b)",
+      "r": "wilcox.test(d$pre, d$post, paired = TRUE)",
+      "reportAs": "Wilcoxon 符号秩检验，W = {stat}，p = {p}，匹配对秩相关 r = {d}",
+      "misuse": [
+        {
+          "wrong": "小样本（n<6）还报精确 p",
+          "why": "精确分布下最小可达 p 受 n 限制，n=5 时双侧最小 p=0.0625，永远不显著",
+          "right": "先算最小可达 p，再判断这个样本量能不能支持结论",
+          "source": "Wilcoxon 1945 分布表"
+        }
+      ],
+      "why": "配对但差值非正态的有序/连续结局。",
+      "source": "Wilcoxon 1945"
+    },
+    "anova-oneway": {
+      "label": "单因素方差分析",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "three-plus-independent",
+      "requires": {
+        "groups": 3,
+        "paired": false,
+        "normal": true,
+        "equalVar": false,
+        "minNPerGroup": 2
+      },
+      "assumptions": [
+        {
+          "id": "independence",
+          "label": "各组独立",
+          "check": "design",
+          "action": "重复测量 → rm-anova"
+        },
+        {
+          "id": "normality-resid",
+          "label": "残差近似正态",
+          "check": "shapiro-resid",
+          "action": "不满足 → kruskal"
+        },
+        {
+          "id": "homoscedasticity",
+          "label": "各组方差相近（Levene p>0.05）",
+          "check": "levene",
+          "action": "不满足 → welch-anova"
+        }
+      ],
+      "fallback": [
+        "welch-anova",
+        "kruskal",
+        "permutation-anova"
+      ],
+      "effectSizes": [
+        "eta-squared",
+        "omega-squared"
+      ],
+      "power": {
+        "fn": "anova",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "scipy.stats.f_oneway(*groups)",
+      "r": "aov(y ~ g, data = d)",
+      "reportAs": "单因素 ANOVA，F({df1},{df2}) = {stat}，p = {p}，η² = {eta}（95% CI {etaCi}）",
+      "misuse": [
+        {
+          "wrong": "ANOVA 显著后做多次两两 t 检验不校正",
+          "why": "k 组的两两比较有 k(k-1)/2 次，α 会迅速膨胀；4 组时名义 .05 实际约 .26",
+          "right": "Tukey HSD（均衡）或 Holm（不均衡）",
+          "source": "Tukey 1949; Holm 1979"
+        },
+        {
+          "wrong": "把 η² 当效应量唯一指标",
+          "why": "η² 随设计（组数、n）系统性偏大",
+          "right": "报 ω² 或偏 η²，并说明用的是哪个",
+          "source": "Olejnik & Algina 2003"
+        }
+      ],
+      "why": "三组及以上独立样本的均值比较。",
+      "source": "Fisher 1925; Olejnik & Algina 2003"
+    },
+    "welch-anova": {
+      "label": "Welch ANOVA（方差不齐）",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "three-plus-independent",
+      "requires": {
+        "groups": 3,
+        "paired": false,
+        "normal": true,
+        "equalVar": false,
+        "minNPerGroup": 2
+      },
+      "assumptions": [
+        {
+          "id": "normality-resid",
+          "label": "残差近似正态",
+          "check": "shapiro-resid",
+          "action": "不满足 → kruskal"
+        }
+      ],
+      "fallback": [
+        "kruskal",
+        "permutation-anova"
+      ],
+      "effectSizes": [
+        "eta-squared"
+      ],
+      "power": {
+        "fn": "anova",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "statsmodels.stats.oneway.anova_oneway(groups, use_var='unequal')",
+      "r": "oneway.test(y ~ g, data = d, var.equal = FALSE)",
+      "reportAs": "Welch ANOVA，F({df1},{df2}) = {stat}，p = {p}",
+      "misuse": [
+        {
+          "wrong": "方差不齐仍用普通 ANOVA",
+          "why": "组样本量不等时第一类错误率可膨胀到 10% 以上",
+          "right": "Welch ANOVA 或 Kruskal",
+          "source": "Welch 1951; Lix et al. 1996"
+        }
+      ],
+      "why": "方差不齐或组样本量悬殊时的多组均值比较。",
+      "source": "Welch 1951; Lix, Keselman & Keselman 1996"
+    },
+    "rm-anova": {
+      "label": "重复测量方差分析",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "three-plus-paired",
+      "requires": {
+        "groups": 3,
+        "paired": true,
+        "normal": true,
+        "minNPerGroup": 3
+      },
+      "assumptions": [
+        {
+          "id": "sphericity",
+          "label": "球形性（Mauchly 检验；违反时用 Greenhouse-Geisser 校正）",
+          "check": "mauchly",
+          "action": "违反 → 报 GG 校正后的 df 与 p"
+        },
+        {
+          "id": "normality-resid",
+          "label": "残差近似正态",
+          "check": "shapiro-resid",
+          "action": "不满足 → friedman"
+        },
+        {
+          "id": "missing",
+          "label": "无系统性缺失",
+          "check": "missing-rate",
+          "action": "有缺失 → 改用混合模型（MixedLM）而非删个案"
+        }
+      ],
+      "fallback": [
+        "friedman",
+        "mixedlm"
+      ],
+      "effectSizes": [
+        "partial-eta-squared"
+      ],
+      "power": {
+        "fn": "rm_anova",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "statsmodels.stats.anova.AnovaRM(df, 'y', 'subject', ['cond']).fit()",
+      "r": "afex::aov_ez(id='subject', dv='y', within='cond', data=d)",
+      "reportAs": "重复测量 ANOVA，F({df1},{df2}) = {stat}，p = {p}，偏 η² = {eta}",
+      "misuse": [
+        {
+          "wrong": "球形性违反不校正直接报 p",
+          "why": "球形性违反会让 F 的自由度虚高，p 被系统性低估",
+          "right": "报 Greenhouse-Geisser 或 Huynh-Feldt 校正",
+          "source": "Greenhouse & Geisser 1959"
+        },
+        {
+          "wrong": "有缺失就整行删除",
+          "why": "完整案例分析在非随机缺失下会产生偏倚，且浪费数据",
+          "right": "线性混合模型用全部可用观测",
+          "source": "Little & Rubin 2019"
+        }
+      ],
+      "why": "同一批对象在三个及以上条件下测量。",
+      "source": "Greenhouse & Geisser 1959; Little & Rubin 2019"
+    },
+    "friedman": {
+      "label": "Friedman 检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "three-plus-paired",
+      "requires": {
+        "groups": 3,
+        "paired": true,
+        "normal": false,
+        "minNPerGroup": 3
+      },
+      "assumptions": [
+        {
+          "id": "completeness",
+          "label": "每个对象在全部条件下都有观测（或用秩法处理缺失）",
+          "check": "missing-rate",
+          "action": "缺失多 → mixedlm"
+        }
+      ],
+      "fallback": [
+        "mixedlm"
+      ],
+      "effectSizes": [
+        "kendalls-w"
+      ],
+      "power": {
+        "fn": "friedman",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "scipy.stats.friedmanchisquare(*conditions)",
+      "r": "friedman.test(as.matrix(d))",
+      "reportAs": "Friedman 检验，χ²({df}) = {stat}，p = {p}，Kendall's W = {w}",
+      "misuse": [
+        {
+          "wrong": "显著后做多次配对 Wilcoxon 不校正",
+          "why": "同样是多重比较膨胀",
+          "right": "Holm 校正",
+          "source": "Holm 1979"
+        }
+      ],
+      "why": "重复测量但数据非正态或有序。",
+      "source": "Friedman 1937"
+    },
+    "kruskal": {
+      "label": "Kruskal-Wallis 检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "three-plus-independent",
+      "requires": {
+        "groups": 3,
+        "paired": false,
+        "normal": false,
+        "minNPerGroup": 2
+      },
+      "assumptions": [
+        {
+          "id": "independence",
+          "label": "各组独立",
+          "check": "design",
+          "action": "配对 → friedman"
+        },
+        {
+          "id": "shape",
+          "label": "各组分布形状相近",
+          "check": "manual",
+          "action": "形状不同 → 只报随机优势，不报中位数"
+        }
+      ],
+      "fallback": [
+        "permutation-anova"
+      ],
+      "effectSizes": [
+        "epsilon-squared"
+      ],
+      "power": {
+        "fn": "kruskal",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "scipy.stats.kruskal(*groups)",
+      "r": "kruskal.test(y ~ g, data = d)",
+      "reportAs": "Kruskal-Wallis，H({df}) = {stat}，p = {p}，ε² = {eps}",
+      "misuse": [
+        {
+          "wrong": "报告各组中位数与四分位距并声称「中位数有差异」",
+          "why": "非参数检验比较的是分布位置的整体偏移，形状不同时中位数差可能为零而检验显著",
+          "right": "报 ε² 或成对随机优势",
+          "source": "Kruskal & Wallis 1952"
+        }
+      ],
+      "why": "多组独立、非正态或有序结局。",
+      "source": "Kruskal & Wallis 1952"
+    },
+    "pearson": {
+      "label": "Pearson 相关",
+      "family": "associate",
+      "outcome": "continuous",
+      "design": "association",
+      "requires": {
+        "groups": 1,
+        "paired": false,
+        "normal": true,
+        "minN": 3
+      },
+      "assumptions": [
+        {
+          "id": "linearity",
+          "label": "关系近似线性（先画散点图）",
+          "check": "manual",
+          "action": "非线性 → spearman 或加多项式项"
+        },
+        {
+          "id": "bivariate-normal",
+          "label": "双变量近似正态、无强离群",
+          "check": "shapiro|iqr",
+          "action": "不满足 → spearman"
+        }
+      ],
+      "fallback": [
+        "spearman",
+        "kendall"
+      ],
+      "effectSizes": [
+        "r-squared",
+        "fisher-z"
+      ],
+      "power": {
+        "fn": "correlation",
+        "params": {}
+      },
+      "py": "scipy.stats.pearsonr(x, y)",
+      "r": "cor.test(d$x, d$y, method = 'pearson')",
+      "reportAs": "Pearson 相关，r({df}) = {stat}，p = {p}，95% CI {ci}",
+      "misuse": [
+        {
+          "wrong": "r=0.3, p<.001 就说「强相关」",
+          "why": "p 只反映 n；n=1000 时 r=0.1 也显著。强度要看 r 本身与 CI",
+          "right": "报 r 与 CI，并按领域惯例解释强度",
+          "source": "Cohen 1988"
+        },
+        {
+          "wrong": "相关当因果",
+          "why": "第三变量、反向因果、选择偏倚都能产生相关",
+          "right": "用设计（随机化/工具变量/DID）识别因果",
+          "source": "Pearl 2009"
+        }
+      ],
+      "why": "两个连续量的线性关联强度。",
+      "source": "Pearson 1895; Cohen 1988"
+    },
+    "spearman": {
+      "label": "Spearman 秩相关",
+      "family": "associate",
+      "outcome": "continuous|ordinal",
+      "design": "association",
+      "requires": {
+        "groups": 1,
+        "paired": false,
+        "normal": false,
+        "minN": 4
+      },
+      "assumptions": [
+        {
+          "id": "monotonic",
+          "label": "关系单调（不要求线性）",
+          "check": "manual",
+          "action": "非单调 → 分段或非线性模型"
+        }
+      ],
+      "fallback": [
+        "kendall"
+      ],
+      "effectSizes": [
+        "rho-squared"
+      ],
+      "power": {
+        "fn": "correlation",
+        "params": {}
+      },
+      "py": "scipy.stats.spearmanr(x, y)",
+      "r": "cor.test(d$x, d$y, method = 'spearman')",
+      "reportAs": "Spearman 秩相关，ρ = {stat}，p = {p}",
+      "misuse": [
+        {
+          "wrong": "数据有并列秩（ties）仍用无校正公式",
+          "why": "大量并列会让 ρ 的分布偏移",
+          "right": "用带 ties 校正的实现（scipy 默认已处理）",
+          "source": "Spearman 1904"
+        }
+      ],
+      "why": "单调但非线性的关联，或有序数据。",
+      "source": "Spearman 1904"
+    },
+    "kendall": {
+      "label": "Kendall τ",
+      "family": "associate",
+      "outcome": "ordinal",
+      "design": "association",
+      "requires": {
+        "groups": 1,
+        "paired": false,
+        "normal": false,
+        "minN": 4
+      },
+      "assumptions": [
+        {
+          "id": "monotonic",
+          "label": "关系单调",
+          "check": "manual",
+          "action": "非单调 → 分段分析"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "tau"
+      ],
+      "power": {
+        "fn": "correlation",
+        "params": {}
+      },
+      "py": "scipy.stats.kendalltau(x, y)",
+      "r": "cor.test(d$x, d$y, method = 'kendall')",
+      "reportAs": "Kendall τ = {stat}，p = {p}",
+      "misuse": [
+        {
+          "wrong": "小样本 + 大量并列时用 τ-a",
+          "why": "并列多时 τ-b 更合适",
+          "right": "用 τ-b",
+          "source": "Kendall 1938"
+        }
+      ],
+      "why": "小样本或大量并列的有序关联，比 Spearman 更稳健。",
+      "source": "Kendall 1938"
+    },
+    "chi2": {
+      "label": "Pearson χ² 独立性检验",
+      "family": "compare",
+      "outcome": "binary|categorical",
+      "design": "two-independent",
+      "requires": {
+        "groups": 2,
+        "paired": false,
+        "minExpected": 5
+      },
+      "assumptions": [
+        {
+          "id": "expected",
+          "label": "所有格期望频数 ≥5（否则 fisher）",
+          "check": "expected-counts",
+          "action": "不满足 → fisher"
+        },
+        {
+          "id": "independence",
+          "label": "每个观测只落一格（非配对）",
+          "check": "design",
+          "action": "配对二分 → mcnemar"
+        }
+      ],
+      "fallback": [
+        "fisher",
+        "mcnemar"
+      ],
+      "effectSizes": [
+        "cramers-v",
+        "phi"
+      ],
+      "power": {
+        "fn": "chi2",
+        "params": {
+          "df": 1
+        }
+      },
+      "py": "scipy.stats.chi2_contingency(table)",
+      "r": "chisq.test(table(d$g, d$y))",
+      "reportAs": "χ²({df}, N={n}) = {stat}，p = {p}，Cramér's V = {v}",
+      "misuse": [
+        {
+          "wrong": "2×2 表用 Yates 连续性校正",
+          "why": "Yates 校正过度保守，现代建议直接报未校正或改用 Fisher",
+          "right": "报未校正 χ²，或 Fisher 精确检验",
+          "source": "Camilli & Hopkins 1979"
+        },
+        {
+          "wrong": "把 χ² 显著解释为「关联很强」",
+          "why": "χ² 随 n 线性增长；V 才是强度",
+          "right": "报 Cramér's V",
+          "source": "Cohen 1988"
+        }
+      ],
+      "why": "两个分类变量的独立性。",
+      "source": "Pearson 1900; Cohen 1988"
+    },
+    "fisher": {
+      "label": "Fisher 精确检验",
+      "family": "compare",
+      "outcome": "binary|categorical",
+      "design": "two-independent",
+      "requires": {
+        "groups": 2,
+        "paired": false,
+        "minExpected": 0
+      },
+      "assumptions": [
+        {
+          "id": "fixed-margins",
+          "label": "行列合计固定（条件推断）",
+          "check": "design",
+          "action": "非固定设计可考虑 Barnard"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "odds-ratio"
+      ],
+      "power": {
+        "fn": "fisher",
+        "params": {}
+      },
+      "py": "scipy.stats.fisher_exact(table)",
+      "r": "fisher.test(table(d$g, d$y))",
+      "reportAs": "Fisher 精确检验，p = {p}，OR = {or}（95% CI {orCi}）",
+      "misuse": [
+        {
+          "wrong": "大样本仍用 Fisher",
+          "why": "计算量与保守性都无必要；χ² 已足够",
+          "right": "期望频数都 ≥5 时用 χ²",
+          "source": "Agresti 2002"
+        }
+      ],
+      "why": "小样本或稀疏列联表。",
+      "source": "Fisher 1935; Agresti 2002"
+    },
+    "mcnemar": {
+      "label": "McNemar 检验",
+      "family": "compare",
+      "outcome": "binary",
+      "design": "two-paired",
+      "requires": {
+        "groups": 2,
+        "paired": true
+      },
+      "assumptions": [
+        {
+          "id": "pairing",
+          "label": "配对二分（同一对象前后）",
+          "check": "design",
+          "action": "不配对 → chi2"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "odds-ratio"
+      ],
+      "power": {
+        "fn": "mcnemar",
+        "params": {}
+      },
+      "py": "statsmodels.stats.contingency_tables.mcnemar(table, exact=True)",
+      "r": "mcnemar.test(table(d$pre, d$post))",
+      "reportAs": "McNemar 检验，p = {p}，不一致对数 = {n}",
+      "misuse": [
+        {
+          "wrong": "用普通 χ² 分析配对二分",
+          "why": "配对表的四个格不独立，χ² 的前提被破坏",
+          "right": "McNemar",
+          "source": "McNemar 1947"
+        }
+      ],
+      "why": "同一批对象的二分前后变化。",
+      "source": "McNemar 1947"
+    },
+    "ols": {
+      "label": "普通最小二乘回归",
+      "family": "predict",
+      "outcome": "continuous",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 10
+      },
+      "assumptions": [
+        {
+          "id": "linearity",
+          "label": "结局与预测变量近似线性",
+          "check": "residual-plot",
+          "action": "加多项式/样条，或变换"
+        },
+        {
+          "id": "independence",
+          "label": "残差独立（无聚类/时间自相关）",
+          "check": "design",
+          "action": "聚类 → 稳健 SE 或混合模型"
+        },
+        {
+          "id": "homoscedasticity",
+          "label": "残差同方差",
+          "check": "breusch-pagan",
+          "action": "不满足 → HC3 稳健 SE"
+        },
+        {
+          "id": "normality-resid",
+          "label": "残差近似正态（大样本可放宽）",
+          "check": "shapiro-resid",
+          "action": "影响 CI，n 小时考虑 bootstrap"
+        },
+        {
+          "id": "influence",
+          "label": "无强影响点（Cook's D）",
+          "check": "cooks-d",
+          "action": "报告含/不含该点的两版"
+        }
+      ],
+      "fallback": [
+        "ols-robust",
+        "quantile-regression",
+        "mixedlm"
+      ],
+      "effectSizes": [
+        "r-squared",
+        "adjusted-r2",
+        "cohens-f2"
+      ],
+      "power": {
+        "fn": "f2",
+        "params": {
+          "predictors": 1
+        }
+      },
+      "py": "statsmodels.api.OLS(y, X).fit()",
+      "r": "lm(y ~ ., data = d)",
+      "reportAs": "OLS 回归，β = {beta}（95% CI {ci}），t({df}) = {stat}，p = {p}，R² = {r2}",
+      "misuse": [
+        {
+          "wrong": "只看整体 R² 与 p，不看系数",
+          "why": "整体显著不代表任何单个预测变量有意义",
+          "right": "逐系数报 β、CI、p，并说明单位",
+          "source": "APA 7th"
+        },
+        {
+          "wrong": "异方差或聚类数据用默认 SE",
+          "why": "默认 SE 假设同方差独立，实际会低估，p 偏小",
+          "right": "HC3 或聚类稳健 SE",
+          "source": "White 1980; MacKinnon & White 1985"
+        },
+        {
+          "wrong": "用逐步回归挑变量",
+          "why": "逐步回归的 p 与 CI 全部失效，且极不稳定",
+          "right": "按理论预设模型，或正则化 + 交叉验证",
+          "source": "Harrell 2015"
+        }
+      ],
+      "why": "连续结局 + 多个预测变量的标准模型。",
+      "source": "White 1980; Harrell 2015"
+    },
+    "ols-robust": {
+      "label": "OLS + HC3 稳健标准误",
+      "family": "predict",
+      "outcome": "continuous",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 10
+      },
+      "assumptions": [
+        {
+          "id": "linearity",
+          "label": "线性",
+          "check": "residual-plot",
+          "action": "加非线性项"
+        }
+      ],
+      "fallback": [
+        "quantile-regression",
+        "bootstrap"
+      ],
+      "effectSizes": [
+        "r-squared",
+        "cohens-f2"
+      ],
+      "power": {
+        "fn": "f2",
+        "params": {
+          "predictors": 1
+        }
+      },
+      "py": "statsmodels.api.OLS(y, X).fit(cov_type='HC3')",
+      "r": "lmtest::coeftest(m, vcov = sandwich::vcovHC(m, type='HC3'))",
+      "reportAs": "OLS（HC3 稳健 SE），β = {beta}（95% CI {ci}），p = {p}",
+      "misuse": [
+        {
+          "wrong": "稳健 SE 就不用管函数形式",
+          "why": "稳健 SE 只修正方差估计，不修正遗漏的非线性或遗漏变量",
+          "right": "仍要检查残差图与模型设定",
+          "source": "MacKinnon & White 1985"
+        }
+      ],
+      "why": "异方差存在时的回归推断，n≥30 时几乎无代价。",
+      "source": "White 1980; MacKinnon & White 1985"
+    },
+    "logit": {
+      "label": "Logistic 回归",
+      "family": "predict",
+      "outcome": "binary",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20,
+        "minEventsPerPredictor": 10
+      },
+      "assumptions": [
+        {
+          "id": "events-per-variable",
+          "label": "每个预测变量至少 10 个事件（EPV≥10）",
+          "check": "epv",
+          "action": "不足 → 减变量、Firth 惩罚、或正则化"
+        },
+        {
+          "id": "linearity-logit",
+          "label": "连续预测变量与 logit 线性",
+          "check": "box-tidwell",
+          "action": "加样条或分段"
+        },
+        {
+          "id": "separation",
+          "label": "无完全分离",
+          "check": "separation",
+          "action": "Firth 惩罚 logistic"
+        }
+      ],
+      "fallback": [
+        "firth-logit",
+        "logit-regularized"
+      ],
+      "effectSizes": [
+        "odds-ratio",
+        "mcfadden-r2"
+      ],
+      "power": {
+        "fn": "logit",
+        "params": {
+          "p0": 0.3
+        }
+      },
+      "py": "statsmodels.api.Logit(y, X).fit(disp=0)",
+      "r": "glm(y ~ ., data = d, family = binomial)",
+      "reportAs": "Logistic 回归，OR = {or}（95% CI {ci}），Wald χ² = {stat}，p = {p}，McFadden R² = {r2}",
+      "misuse": [
+        {
+          "wrong": "把 OR 当 RR 解释",
+          "why": "结局不罕见（>10%）时 OR 会明显高估 RR",
+          "right": "报 RR（用 log-binomial 或 Poisson with robust SE），或明确说这是 OR",
+          "source": "Zhang & Yu 1998"
+        },
+        {
+          "wrong": "EPV<10 仍拟合多变量模型",
+          "why": "系数有偏、CI 过窄、模型不收敛",
+          "right": "减变量或 Firth",
+          "source": "Peduzzi et al. 1996"
+        },
+        {
+          "wrong": "用 R² 判断拟合优度并与其他模型比较",
+          "why": "McFadden R² 不是方差解释比例，不能按 OLS 的直觉读",
+          "right": "报 AUC、校准曲线、Brier score",
+          "source": "Hosmer, Lemeshow & Sturdivant 2013"
+        }
+      ],
+      "why": "二分类结局的 multivariable 模型。",
+      "source": "Peduzzi et al. 1996; Hosmer et al. 2013"
+    },
+    "poisson": {
+      "label": "Poisson 回归",
+      "family": "predict",
+      "outcome": "count",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "mean-variance",
+          "label": "方差≈均值",
+          "check": "overdispersion",
+          "action": "方差远大于均值 → negbin"
+        },
+        {
+          "id": "independence",
+          "label": "观测独立",
+          "check": "design",
+          "action": "聚类 → GEE 或混合模型"
+        }
+      ],
+      "fallback": [
+        "negbin",
+        "quasipoisson"
+      ],
+      "effectSizes": [
+        "rate-ratio",
+        "mcfadden-r2"
+      ],
+      "power": {
+        "fn": "poisson",
+        "params": {}
+      },
+      "py": "statsmodels.api.GLM(y, X, family=sm.families.Poisson()).fit()",
+      "r": "glm(y ~ ., data = d, family = poisson)",
+      "reportAs": "Poisson 回归，RR = {rr}（95% CI {ci}），p = {p}",
+      "misuse": [
+        {
+          "wrong": "过度离散不检查直接报 SE",
+          "why": "过度离散会让 SE 被低估，p 偏小（常低估 2-3 倍）",
+          "right": "先查离散度，超标用负二项或 quasi-Poisson",
+          "source": "Cameron & Trivedi 2013"
+        }
+      ],
+      "why": "计数结局且方差与均值相当。",
+      "source": "Cameron & Trivedi 2013"
+    },
+    "negbin": {
+      "label": "负二项回归",
+      "family": "predict",
+      "outcome": "count",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "overdispersion",
+          "label": "确实过度离散（否则 Poisson 更有效）",
+          "check": "overdispersion",
+          "action": "不过度 → poisson"
+        }
+      ],
+      "fallback": [
+        "quasipoisson",
+        "zeroinfl"
+      ],
+      "effectSizes": [
+        "rate-ratio"
+      ],
+      "power": {
+        "fn": "negbin",
+        "params": {}
+      },
+      "py": "statsmodels.api.NegativeBinomial(y, X).fit(disp=0)",
+      "r": "MASS::glm.nb(y ~ ., data = d)",
+      "reportAs": "负二项回归，RR = {rr}（95% CI {ci}），p = {p}，α = {alpha}",
+      "misuse": [
+        {
+          "wrong": "零值过多仍用普通负二项",
+          "why": "结构性零与抽样零混在一起会偏倚系数",
+          "right": "零膨胀模型或 hurdle 模型",
+          "source": "Lambert 1992"
+        }
+      ],
+      "why": "过度离散的计数结局。",
+      "source": "Lambert 1992; Cameron & Trivedi 2013"
+    },
+    "mixedlm": {
+      "label": "线性混合模型",
+      "family": "predict",
+      "outcome": "continuous",
+      "design": "multilevel",
+      "requires": {
+        "groups": 1,
+        "minN": 20,
+        "clusters": 5
+      },
+      "assumptions": [
+        {
+          "id": "random-structure",
+          "label": "随机效应结构由设计决定，不是由拟合指标挑",
+          "check": "design",
+          "action": "随机斜率全开常不收敛 → 简化并报敏感性"
+        },
+        {
+          "id": "normality-resid",
+          "label": "残差近似正态",
+          "check": "shapiro-resid",
+          "action": "严重偏离 → 变换或 GLMM"
+        },
+        {
+          "id": "missing",
+          "label": "缺失机制可忽略（MAR）",
+          "check": "manual",
+          "action": "MNAR 需敏感性分析"
+        }
+      ],
+      "fallback": [
+        "gee",
+        "rm-anova"
+      ],
+      "effectSizes": [
+        "marginal-r2",
+        "conditional-r2"
+      ],
+      "power": {
+        "fn": "mixedlm",
+        "params": {
+          "clusters": 10
+        }
+      },
+      "py": "statsmodels.formula.api.mixedlm('y ~ x', df, groups=df['subject']).fit()",
+      "r": "lme4::lmer(y ~ x + (1|subject), data = d)",
+      "reportAs": "线性混合模型，β = {beta}（95% CI {ci}），p = {p}；随机效应 SD = {sd}",
+      "misuse": [
+        {
+          "wrong": "用「去掉不显著随机效应」的方式简化模型",
+          "why": "随机效应结构应由设计决定；按 p 值删除会低估不确定性",
+          "right": "保留由设计决定的随机结构，用 REML 估计",
+          "source": "Barr et al. 2013; Bates et al. 2015"
+        },
+        {
+          "wrong": "报 p 值但不报随机效应方差",
+          "why": "读者无法判断聚类强度，也无法复现",
+          "right": "报 ICC 与随机效应 SD",
+          "source": "Nakagawa & Schielzeth 2013"
+        }
+      ],
+      "why": "重复测量、多中心、嵌套数据；比删缺失或先平均更有效且不偏。",
+      "source": "Bates et al. 2015; Nakagawa & Schielzeth 2013"
+    },
+    "gee": {
+      "label": "广义估计方程（GEE）",
+      "family": "predict",
+      "outcome": "continuous|binary|count",
+      "design": "multilevel",
+      "requires": {
+        "groups": 1,
+        "clusters": 5
+      },
+      "assumptions": [
+        {
+          "id": "working-correlation",
+          "label": "工作相关结构；用稳健 SE 时错设也不影响一致性",
+          "check": "design",
+          "action": "聚类数 <10 时用 sandwich 小样本校正"
+        }
+      ],
+      "fallback": [
+        "mixedlm"
+      ],
+      "effectSizes": [
+        "odds-ratio",
+        "rate-ratio"
+      ],
+      "power": {
+        "fn": "gee",
+        "params": {}
+      },
+      "py": "statsmodels.api.GEE(y, X, groups=cluster, family=..., cov_struct=Independence()).fit()",
+      "r": "geepack::geeglm(y ~ x, id = subject, data = d)",
+      "reportAs": "GEE（可交换相关，稳健 SE），β = {beta}（95% CI {ci}），p = {p}",
+      "misuse": [
+        {
+          "wrong": "GEE 与混合模型混用解释",
+          "why": "GEE 给的是总体平均效应（population-averaged），混合模型给的是条件效应；数值不同不是错",
+          "right": "明确报的是哪一种",
+          "source": "Hubbard et al. 2010"
+        }
+      ],
+      "why": "关心群体平均效应、或聚类数较多但簇内结构不是重点。",
+      "source": "Liang & Zeger 1986; Hubbard et al. 2010"
+    },
+    "kaplan-meier": {
+      "label": "Kaplan-Meier 生存曲线",
+      "family": "survive",
+      "outcome": "time",
+      "design": "describe",
+      "requires": {
+        "groups": 1
+      },
+      "assumptions": [
+        {
+          "id": "censoring",
+          "label": "删失独立于事件时间（非信息删失）",
+          "check": "design",
+          "action": "信息删失 → 竞争风险模型"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "median-survival"
+      ],
+      "power": {
+        "fn": "survival",
+        "params": {}
+      },
+      "py": "自实现（numpy）：KM 估计 + Greenwood 方差",
+      "r": "survival::survfit(Surv(time, event) ~ 1, data = d)",
+      "reportAs": "中位生存 {median} 个月（95% CI {ci}），{events}/{n} 例事件",
+      "misuse": [
+        {
+          "wrong": "用 t 检验比较生存时间",
+          "why": "删失观测的真实时间未知，均值不可估",
+          "right": "KM + log-rank 或 Cox",
+          "source": "Kaplan & Meier 1958"
+        }
+      ],
+      "why": "描述带删失的时间-事件数据。",
+      "source": "Kaplan & Meier 1958"
+    },
+    "logrank": {
+      "label": "Log-rank 检验",
+      "family": "survive",
+      "outcome": "time",
+      "design": "compare-groups",
+      "requires": {
+        "groups": 2
+      },
+      "assumptions": [
+        {
+          "id": "proportional-hazards",
+          "label": "风险比随时间恒定（看 log-log 图）",
+          "check": "ph-check",
+          "action": "交叉 → 报 RMST 差或分段分析"
+        },
+        {
+          "id": "censoring",
+          "label": "非信息删失",
+          "check": "design",
+          "action": "竞争风险 → Fine-Gray"
+        }
+      ],
+      "fallback": [
+        "cox",
+        "rmst"
+      ],
+      "effectSizes": [
+        "hazard-ratio"
+      ],
+      "power": {
+        "fn": "logrank",
+        "params": {
+          "events": 100
+        }
+      },
+      "py": "自实现（numpy）：log-rank 卡方 + 风险比",
+      "r": "survival::survdiff(Surv(time, event) ~ g, data = d)",
+      "reportAs": "Log-rank χ²({df}) = {stat}，p = {p}；HR = {hr}（95% CI {ci}）",
+      "misuse": [
+        {
+          "wrong": "生存曲线明显交叉仍报单一 HR",
+          "why": "PH 假设被违反时 HR 是一个没有意义的平均值",
+          "right": "报 RMST 差或分段 HR",
+          "source": "Uno et al. 2014"
+        },
+        {
+          "wrong": "按中位生存时间是否有重叠来判断显著性",
+          "why": "CI 重叠不等于不显著，反之亦然",
+          "right": "看检验结果与 HR 的 CI",
+          "source": "Cox & Oakes 1984"
+        }
+      ],
+      "why": "两组生存曲线比较的标准检验。",
+      "source": "Mantel 1966; Cox & Oakes 1984"
+    },
+    "cox": {
+      "label": "Cox 比例风险回归",
+      "family": "survive",
+      "outcome": "time",
+      "design": "adjusted",
+      "requires": {
+        "groups": 1,
+        "eventsPerPredictor": 10
+      },
+      "assumptions": [
+        {
+          "id": "ph",
+          "label": "比例风险（Schoenfeld 残差检验）",
+          "check": "ph-check",
+          "action": "违反 → 分层或时间交互项"
+        },
+        {
+          "id": "epv",
+          "label": "每个预测变量 ≥10 个事件",
+          "check": "epv",
+          "action": "不足 → 减变量或惩罚"
+        }
+      ],
+      "fallback": [
+        "rmst",
+        "fine-gray"
+      ],
+      "effectSizes": [
+        "hazard-ratio"
+      ],
+      "power": {
+        "fn": "cox",
+        "params": {
+          "events": 100
+        }
+      },
+      "py": "statsmodels.duration.hazard_regression.PHReg",
+      "r": "survival::coxph(Surv(time, event) ~ ., data = d)",
+      "reportAs": "Cox 回归，HR = {hr}（95% CI {ci}），Wald p = {p}，C-index = {c}",
+      "misuse": [
+        {
+          "wrong": "不做 PH 检验直接报 HR",
+          "why": "PH 违反时 HR 不能解释为「风险倍数」",
+          "right": "Schoenfeld 检验 + 违反时分层",
+          "source": "Grambsch & Therneau 1994"
+        }
+      ],
+      "why": "校正协变量后的时间-事件分析。",
+      "source": "Cox 1972; Grambsch & Therneau 1994"
+    },
+    "tost": {
+      "label": "双单侧检验（等效性）",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "equivalence",
+      "requires": {
+        "groups": 2
+      },
+      "assumptions": [
+        {
+          "id": "margin",
+          "label": "等效界值必须**事先**设定且有依据",
+          "check": "design",
+          "action": "事后根据数据定界值等于没做"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "cohens-d"
+      ],
+      "power": {
+        "fn": "tost",
+        "params": {}
+      },
+      "py": "自实现：两个单侧 t 检验的较大 p",
+      "r": "TOSTER::t_TOST(...)",
+      "reportAs": "等效性检验（界值 ±{margin}），t({df}) = {stat}，p = {p}；90% CI {ci} 落在界内",
+      "misuse": [
+        {
+          "wrong": "p>0.05 就宣称「两组相同」",
+          "why": "不显著只说明证据不足，不说明等效",
+          "right": "用 TOST 并预设界值",
+          "source": "Lakens 2017"
+        }
+      ],
+      "why": "要证明「没有实质差异」时必须用它，不能用「p>0.05」。",
+      "source": "Schuirmann 1987; Lakens 2017"
+    },
+    "permutation": {
+      "label": "置换检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "any",
+      "requires": {
+        "groups": 2
+      },
+      "assumptions": [
+        {
+          "id": "exchangeability",
+          "label": "原假设下观测可交换",
+          "check": "design",
+          "action": "非可交换（如聚类）→ 按簇置换"
+        }
+      ],
+      "fallback": [
+        "bootstrap"
+      ],
+      "effectSizes": [
+        "cohens-d"
+      ],
+      "power": {
+        "fn": "permutation",
+        "params": {}
+      },
+      "py": "自实现：随机重排标签 >=5000 次",
+      "r": "coin::independence_test(y ~ g, data = d)",
+      "reportAs": "置换检验（{B} 次重排），p = {p}",
+      "misuse": [
+        {
+          "wrong": "置换次数太少（如 200 次）就报 p<0.001",
+          "why": "p 的最小可分辨值是 1/(B+1)；B=200 时最小 p=0.005",
+          "right": "B≥5000，或报 p < 1/(B+1)",
+          "source": "Phipson & Smyth 2010"
+        }
+      ],
+      "why": "分布未知、样本小、或有复杂设计时的稳健替代。",
+      "source": "Phipson & Smyth 2010"
+    },
+    "bootstrap-median": {
+      "label": "Bootstrap 中位数差",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "two-independent",
+      "requires": {
+        "groups": 2,
+        "minNPerGroup": 5
+      },
+      "assumptions": [
+        {
+          "id": "representative",
+          "label": "样本对总体有代表性",
+          "check": "design",
+          "action": "选择偏倚无法靠 bootstrap 修正"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "median-diff"
+      ],
+      "power": {
+        "fn": "bootstrap",
+        "params": {}
+      },
+      "py": "自实现：分层 bootstrap 5000 次，取 2.5/97.5 分位",
+      "r": "boot::boot(...)",
+      "reportAs": "中位数差 {diff}（95% bootstrap CI {ci}）",
+      "misuse": [
+        {
+          "wrong": "用正态近似 CI 代替 percentile CI",
+          "why": "中位数抽样分布偏斜，正态近似不准",
+          "right": "用 BCa 或 percentile",
+          "source": "Efron & Tibshirani 1993"
+        }
+      ],
+      "why": "分布严重偏斜时的组间差异，比均值差更能代表典型个体。",
+      "source": "Efron & Tibshirani 1993"
+    },
+    "bootstrap": {
+      "label": "非参数 Bootstrap（回归/均值差的 CI）",
+      "family": "resample",
+      "outcome": "continuous|binary|count",
+      "design": "any",
+      "requires": {
+        "groups": 1,
+        "minN": 20,
+        "note": "重抽样次数 ≥2000；聚类数据须按簇重抽样"
+      },
+      "assumptions": [
+        {
+          "id": "exchangeability",
+          "label": "样本可视为来自同一总体（个体间可交换）",
+          "check": "design",
+          "action": "聚类/时间序列结构下个体不独立，须改为按簇或按块重抽样，否则 CI 过窄"
+        },
+        {
+          "id": "representative",
+          "label": "样本对总体有代表性",
+          "check": "design",
+          "action": "bootstrap 只能反映抽样变异，不能修正选择偏倚"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "adjusted-r2",
+        "cohens-d"
+      ],
+      "power": {
+        "fn": "bootstrap",
+        "params": {
+          "resamples": 2000
+        }
+      },
+      "py": "自实现：numpy.random.default_rng(seed).integers 重抽样 2000 次，取 2.5/97.5 分位；回归系数用成对 bootstrap",
+      "r": "boot::boot(data, statistic, R = 2000); boot::boot.ci(...)",
+      "reportAs": "bootstrap 95% CI {ci}（{resamples} 次重抽样，{type} 法）",
+      "misuse": [
+        {
+          "wrong": "用 bootstrap CI 判断显著性再报 p 值",
+          "why": "两者口径不一样，容易挑到彼此矛盾的结果再选一个报",
+          "right": "事前一并写定：报 CI 就报 CI，报 p 就报 p，都在方法里声明",
+          "source": "Efron & Tibshirani 1993"
+        },
+        {
+          "wrong": "聚类数据按个体重抽样",
+          "why": "破坏了簇内相关，CI 会明显过窄，假阳性率升高",
+          "right": "按簇重抽样（cluster bootstrap）或块 bootstrap",
+          "source": "Cameron, Gelbach & Miller 2008"
+        }
+      ],
+      "why": "当统计量分布未知或明显偏斜时，bootstrap 给出不依赖正态假设的区间；也是少簇、少样本情形下推断的兜底。",
+      "source": "Efron & Tibshirani 1993 (An Introduction to the Bootstrap)"
+    },
+    "pca": {
+      "label": "主成分分析",
+      "family": "reduce",
+      "outcome": "multivariate",
+      "design": "dimension-reduce",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "scale",
+          "label": "变量已标准化（否则量纲大的主导）",
+          "check": "manual",
+          "action": "用相关矩阵而非协方差矩阵"
+        },
+        {
+          "id": "linearity",
+          "label": "线性结构假设",
+          "check": "manual",
+          "action": "非线性 → UMAP/t-SNE（但只用于可视化）"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "explained-variance"
+      ],
+      "power": {
+        "fn": "pca",
+        "params": {}
+      },
+      "py": "sklearn.decomposition.PCA().fit_transform(X)",
+      "r": "prcomp(X, scale. = TRUE)",
+      "reportAs": "前 {k} 个主成分解释 {var}% 方差；PC1 载荷 {loadings}",
+      "misuse": [
+        {
+          "wrong": "用 PCA 降维后再做检验，把成分当原始变量",
+          "why": "成分是数据的线性组合，其 p 值没有原始假设的解释",
+          "right": "PCA 用于探索或去共线性，假设检验回到原始变量或用 MANOVA",
+          "source": "Jolliffe 2002"
+        },
+        {
+          "wrong": "t-SNE 图上的簇间距当作定量差异",
+          "why": "t-SNE 只保留局部邻域，全局距离无意义",
+          "right": "只做可视化，定量用 PCA 或原空间",
+          "source": "van der Maaten & Hinton 2008"
+        }
+      ],
+      "why": "多指标降维、去共线性、或探索性结构。",
+      "source": "Jolliffe 2002"
+    },
+    "bayes-factor-t": {
+      "label": "JZS Bayes 因子（t 检验）",
+      "family": "bayes",
+      "outcome": "continuous",
+      "design": "two-independent|two-paired",
+      "requires": {
+        "groups": 2
+      },
+      "assumptions": [
+        {
+          "id": "prior",
+          "label": "默认 Cauchy 先验 r=0.707；换先验必须报敏感性",
+          "check": "manual",
+          "action": "报 r=0.707/1.0/√2 三档"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "cohens-d"
+      ],
+      "power": {
+        "fn": "bayes",
+        "params": {}
+      },
+      "py": "自实现：Rouder et al. 2009 的 JZS 解析式（数值积分）",
+      "r": "BayesFactor::ttestBF(...)",
+      "reportAs": "BF₁₀ = {bf}（JZS，r=0.707），按 Jeffreys 刻度属「{label}」证据",
+      "misuse": [
+        {
+          "wrong": "把 BF₁₀=3 说成「证明了 H1」",
+          "why": "BF 是相对证据，3 只是弱证据；且随先验变化",
+          "right": "报 BF 与先验，并按刻度说明强度",
+          "source": "Jeffreys 1961; Rouder et al. 2009"
+        },
+        {
+          "wrong": "用 BF 代替效应量",
+          "why": "BF 只说证据强弱，不说差异大小",
+          "right": "BF + 效应量 + CI 一起报",
+          "source": "Wagenmakers et al. 2018"
+        }
+      ],
+      "why": "需要量化「支持 H0」的证据时；p>0.05 给不了这个。",
+      "source": "Rouder et al. 2009; Wagenmakers et al. 2018"
+    },
+    "bland-altman": {
+      "label": "Bland-Altman 一致性分析",
+      "family": "compare",
+      "outcome": "continuous",
+      "design": "agreement",
+      "requires": {
+        "groups": 1,
+        "paired": true,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "pairing",
+          "label": "同一对象上用两种方法各测一次（或同一对象的两次重复测量）",
+          "check": "design",
+          "action": "两组不同对象 → 那是组间比较，不是一致性，用 ttest-welch"
+        },
+        {
+          "id": "bias-constant",
+          "label": "差值不随测量均值系统性变化（无比例偏倚）",
+          "check": "manual",
+          "action": "有比例偏倚 → 把差值对均值回归，或先做对数变换再算 LoA"
+        },
+        {
+          "id": "normal-diff",
+          "label": "差值近似正态，LoA 才对称",
+          "check": "shapiro-diff",
+          "action": "偏斜 → 报百分位 LoA（2.5/97.5 分位），并说明不是 ±1.96SD"
+        }
+      ],
+      "fallback": [],
+      "effectSizes": [
+        "median-diff"
+      ],
+      "power": {
+        "fn": "ttest_paired",
+        "params": {}
+      },
+      "py": "import numpy as np, scipy.stats; d = a - b; bias = d.mean(); sd = d.std(ddof=1); loa = (bias - 1.96*sd, bias + 1.96*sd); p = 2*scipy.stats.t.sf(abs(bias/(sd/np.sqrt(d.size))), d.size-1)",
+      "r": "blandr::bland.altman.stats(a, b)",
+      "reportAs": "Bland-Altman：偏差 {bias}（95% CI {biasCi}），一致性界限 {loaLower} 至 {loaUpper}；{pct}% 的点落在界内",
+      "misuse": [
+        {
+          "wrong": "用 Pearson r 或 ICC 一个数字证明「两方法一致」",
+          "why": "高相关可以伴随巨大系统偏差：r=0.98 时两方法仍可能平均相差 20 个单位，相关衡量的是同向变化，不是数值相等",
+          "right": "报偏差与一致性界限 LoA，并对照事先定好的临床可接受范围",
+          "source": "Bland & Altman 1986"
+        },
+        {
+          "wrong": "差值明显偏斜或随均值增大，仍照抄 ±1.96×SD",
+          "why": "对称与恒定方差两个前提都不成立，LoA 会算宽或算窄，覆盖概率不再是 95%",
+          "right": "报百分位 LoA，或把差值对均值回归后再算",
+          "source": "Bland & Altman 1999"
+        },
+        {
+          "wrong": "只报 LoA 不报偏差",
+          "why": "偏差是系统误差，LoA 是随机误差；只给 LoA 读者无法判断该先校准还是先改进精度",
+          "right": "偏差、LoA、落在界内的比例三个一起报",
+          "source": "Bland & Altman 1986"
+        }
+      ],
+      "why": "两种测量方法（新方法 vs 金标准、两台仪器、两次重复测量）的一致性。相关系数与 ICC 都可能高估一致性，差值分布才是判据：报偏差与一致性界限，不报相关系数。",
+      "source": "Bland & Altman 1986; Bland & Altman 1999"
+    },
+    "logit-risk": {
+      "label": "风险差 / 风险比的直接估计（log-binomial 或边际标准化）",
+      "family": "predict",
+      "outcome": "binary",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "model-form",
+          "label": "log 链接下线性可加，且拟合概率不越界（≤1）",
+          "check": "manual",
+          "action": "log-binomial 报错或不收敛 → Poisson + 稳健 SE，或边际标准化"
+        },
+        {
+          "id": "confounding",
+          "label": "要做因果解释时，协变量集合需满足可交换性",
+          "check": "design",
+          "action": "标准化只对给定协变量集合成立，未测混杂仍在"
+        },
+        {
+          "id": "baseline-risk",
+          "label": "必须同时报基线风险（RR 脱离基线无法解释）",
+          "check": "manual",
+          "action": "RR 与 RD 一起报"
+        }
+      ],
+      "fallback": [
+        "logit"
+      ],
+      "effectSizes": [
+        "rate-ratio"
+      ],
+      "power": {
+        "fn": "logit",
+        "params": {
+          "p0": 0.3
+        }
+      },
+      "py": "import numpy as np, statsmodels.api as sm; Xc = sm.add_constant(X); m = sm.GLM(y, Xc, family=sm.families.Binomial(sm.families.links.Log())).fit(cov_type='HC0'); RR = np.exp(m.params); ci = np.exp(m.conf_int()); pr = m.predict(Xc); RD = pr[X[:, 0] == 1].mean() - pr[X[:, 0] == 0].mean()",
+      "r": "glm(y ~ x, family = binomial(link = 'log'))；不收敛时 glm(y ~ x, family = poisson(link = 'log')) + sandwich::vcovHC(m, type = 'HC0')",
+      "reportAs": "log-binomial：RR = {rr}（95% CI {ci}），风险差 RD = {rd}（95% CI {rdCi}）；{events}/{n} 例事件，基线风险 {p0}",
+      "misuse": [
+        {
+          "wrong": "把 logistic 的 OR 直接说成「风险高 {or} 倍」",
+          "why": "结局不罕见时 OR 系统性远离 1：基线风险 30% 时 OR=2 对应的 RR 只有约 1.5，读者会高估效应",
+          "right": "直接估 RR（log-binomial 或 Poisson + 稳健 SE），或报风险差 RD",
+          "source": "Zhang & Yu 1998"
+        },
+        {
+          "wrong": "log-binomial 报错不收敛，就换成 logistic 继续把结果写成 RR",
+          "why": "换了模型就换了参数含义，方法里不改写等于误标",
+          "right": "改 Poisson + robust SE（Zou 修正）或边际标准化，并在方法里写明用的哪一个",
+          "source": "Zou 2004"
+        },
+        {
+          "wrong": "只报 RR 不报基线风险或 RD",
+          "why": "RR 相同、基线不同时公共卫生意义可以完全相反；RD 才反映绝对负担",
+          "right": "RR、RD、基线风险三者同报",
+          "source": "Rothman, Greenland & Lash 2008"
+        }
+      ],
+      "why": "二分类结局要报绝对风险差或风险比时用它。OR 只在结局罕见（<10%）时才近似 RR，横断面与队列研究里结局常常不罕见，此时必须直接估 RR 或 RD。log-binomial 的 log 链接容易越界不收敛，工程上用 Poisson + 稳健 SE 或边际标准化更稳。",
+      "source": "Zou 2004; Zhang & Yu 1998; Rothman, Greenland & Lash 2008"
+    },
+    "zeroinfl": {
+      "label": "零膨胀模型（ZIP / ZINB）",
+      "family": "predict",
+      "outcome": "count",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 30
+      },
+      "assumptions": [
+        {
+          "id": "excess-zeros",
+          "label": "零的比例明显超过同均值泊松能产生的量",
+          "check": "zeros-vs-expected",
+          "action": "零不多 → 直接用 poisson 或 negbin"
+        },
+        {
+          "id": "two-process",
+          "label": "零来自两个可区分的过程（结构性零 vs 抽样零）",
+          "check": "manual",
+          "action": "分不清哪类零 → 用 hurdle 模型，别硬套零膨胀"
+        },
+        {
+          "id": "vuong",
+          "label": "Vuong 检验支持零膨胀成分值得保留",
+          "check": "vuong",
+          "action": "Vuong 不显著 → 退回 poisson/negbin，别为了「更复杂」而选它"
+        }
+      ],
+      "fallback": [
+        "negbin",
+        "quasipoisson"
+      ],
+      "effectSizes": [
+        "rate-ratio",
+        "mcfadden-r2"
+      ],
+      "power": {
+        "fn": "poisson",
+        "params": {}
+      },
+      "py": "import numpy as np, scipy.stats, statsmodels.api as sm; from statsmodels.discrete.count_model import ZeroInflatedPoisson; Xc = sm.add_constant(X); mp = sm.Poisson(y, Xc).fit(disp=0); mz = ZeroInflatedPoisson(y, Xc, exog_infl=np.ones((len(y), 1)), inflation='logit').fit(disp=0); dl = mz.model.loglikeobs(mz.params) - mp.model.loglikeobs(mp.params); vuong = dl.sum()/(np.sqrt(len(dl))*dl.std(ddof=1)); p = 2*scipy.stats.norm.sf(abs(vuong))",
+      "r": "pscl::zeroinfl(y ~ x | 1, data = d, dist = 'poisson')；pscl::vuong(m_zip, m_pois)",
+      "reportAs": "零膨胀 Poisson：计数部分 RR = {rr}（95% CI {ci}），零膨胀部分 OR = {zor}；Vuong z = {v}，p = {p}",
+      "misuse": [
+        {
+          "wrong": "零多就直接上零膨胀，不做对比检验",
+          "why": "过度离散本身也会制造大量零，ZIP 与负二项常常拟合得差不多；选错会让系数解释混乱",
+          "right": "先做 Vuong 检验（ZIP vs Poisson/NB），再看 AIC/BIC 与预测校准",
+          "source": "Vuong 1989"
+        },
+        {
+          "wrong": "把零膨胀部分的系数当「效应方向」来解读",
+          "why": "零膨胀系数描述的是「必然为零」这个过程的概率，与计数部分的 RR 方向可以相反，混读会得出相反结论",
+          "right": "两部分分别解释，明确各自对应哪个过程",
+          "source": "Lambert 1992"
+        },
+        {
+          "wrong": "把两个部分的系数各自做 Wald 检验就当下结论",
+          "why": "两部分共享同一批观测，分别检验不控制整体错误率",
+          "right": "预设主假设，必要时对两部分做统一校正，或用似然比整体检验",
+          "source": "Cameron & Trivedi 2013"
+        }
+      ],
+      "why": "计数数据零值过多（每视野阳性细胞数、一年就诊次数、每月事故数）。零膨胀把「结构零」（根本不可能发生）与「抽样零」分开建模，普通 Poisson/负二项会把两者混在一起，系数被结构零带偏。",
+      "source": "Lambert 1992; Vuong 1989; Cameron & Trivedi 2013"
+    },
+    "ordinal-logit": {
+      "label": "有序 logistic 回归（比例优势模型）",
+      "family": "predict",
+      "outcome": "ordinal",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 30
+      },
+      "assumptions": [
+        {
+          "id": "proportional-odds",
+          "label": "比例优势：各切点上协变量系数相同（Brant 检验）",
+          "check": "brant",
+          "action": "违反 → 部分比例优势模型，或二分后做 logistic"
+        },
+        {
+          "id": "linearity",
+          "label": "连续预测变量与累积 logit 线性",
+          "check": "box-tidwell",
+          "action": "加样条或分段"
+        },
+        {
+          "id": "categories",
+          "label": "各等级样本量足够，无空等级",
+          "check": "expected-counts",
+          "action": "合并相邻等级，或退回二分类"
+        }
+      ],
+      "fallback": [
+        "logit",
+        "firth-logit"
+      ],
+      "effectSizes": [
+        "mcfadden-r2"
+      ],
+      "power": {
+        "fn": "logit",
+        "params": {
+          "p0": 0.4
+        }
+      },
+      "py": "import numpy as np, scipy.stats, statsmodels.api as sm; from statsmodels.miscmodels.ordinal_model import OrderedModel; m = OrderedModel(y, X, distr='logit').fit(method='bfgs', disp=False); cuts = np.unique(y)[:-1]; fs = [sm.Logit((y > k).astype(float), sm.add_constant(X)).fit(disp=0) for k in cuts]; B = np.array([f.params[1:] for f in fs]); Bbar = B.mean(0); W = sum((B[i]-Bbar) @ np.linalg.pinv(fs[i].cov_params()[1:, 1:]) @ (B[i]-Bbar) for i in range(len(cuts))); p_brant = scipy.stats.chi2.sf(W, df=(len(cuts)-1)*X.shape[1])",
+      "r": "MASS::polr(factor(y) ~ x, data = d, Hess = TRUE)；brant::brant(m)",
+      "reportAs": "有序 logistic：OR = {or}（95% CI {ci}），阈值 {thresholds}；Brant χ²({df}) = {brant}，p = {pBrant}",
+      "misuse": [
+        {
+          "wrong": "有序结局用多项 logistic（multinomial）",
+          "why": "丢掉等级顺序信息，参数翻倍、功效下降，系数还失去「每升一级」的可解释性",
+          "right": "先试比例优势模型，假设不成立再放松成部分比例优势",
+          "source": "McCullagh 1980"
+        },
+        {
+          "wrong": "不做比例优势检验就报单一 OR",
+          "why": "各切点效应方向相反时，单一 OR 会互相抵消甚至符号翻转，掩盖真实模式",
+          "right": "报 Brant 检验；违反时给各切点 OR，或改用部分比例优势/多项模型",
+          "source": "Brant 1990"
+        },
+        {
+          "wrong": "把 1-5 Likert 当连续量做 t 检验/ANOVA",
+          "why": "等距假设通常不成立，天花板/地板效应会让均值差失真，方差分析的前提也难满足",
+          "right": "有序模型；至少用秩方法并说明选择理由",
+          "source": "Agresti 2010"
+        }
+      ],
+      "why": "有序分类结局（轻/中/重、1-5 Likert、肿瘤分级）的标准模型：把累积 logit 建为协变量的线性函数，只估一组系数。代价是比例优势假设——各切点效应同向同量——这个假设必须用 Brant 检验正面回答。",
+      "source": "McCullagh 1980; Brant 1990; Agresti 2010"
+    },
+    "manova": {
+      "label": "多元方差分析（MANOVA）",
+      "family": "compare",
+      "outcome": "multivariate",
+      "design": "three-plus-independent",
+      "requires": {
+        "groups": 2,
+        "paired": false,
+        "minNPerGroup": 5,
+        "outcomes": 2
+      },
+      "assumptions": [
+        {
+          "id": "multivariate-normal",
+          "label": "各组内多个结局联合近似多元正态",
+          "check": "manual",
+          "action": "严重偏离 → 置换 MANOVA，或逐变量检验 + 校正"
+        },
+        {
+          "id": "covariance-homogeneity",
+          "label": "各组协方差矩阵相近（Box's M 对偏离极敏感，仅作参考）",
+          "check": "box-m",
+          "action": "不齐且组样本量悬殊 → 用 Pillai's trace，并报敏感性分析"
+        },
+        {
+          "id": "correlated-outcomes",
+          "label": "结局间至少中等相关（否则 MANOVA 无增益）",
+          "check": "manual",
+          "action": "几乎不相关 → 分别检验 + 校正更简单、功效更高"
+        }
+      ],
+      "fallback": [
+        "anova-oneway",
+        "permutation-anova"
+      ],
+      "effectSizes": [
+        "partial-eta-squared"
+      ],
+      "power": {
+        "fn": "anova",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "import pandas as pd; from statsmodels.multivariate.manova import MANOVA; ma = MANOVA.from_formula('y1 + y2 ~ g', data=df); stat = ma.mv_test().results['g']['stat']; pillai = stat.loc[\"Pillai's trace\"]",
+      "r": "manova(cbind(y1, y2) ~ g, data = d)；car::Anova(m, test.statistic = 'Pillai')",
+      "reportAs": "MANOVA（Pillai's trace）：V = {v}，F({df1},{df2}) = {stat}，p = {p}，偏 η² = {eta}",
+      "misuse": [
+        {
+          "wrong": "MANOVA 显著后逐变量做 t 检验且不校正",
+          "why": "整体检验只说明「至少有一个组合方向有差异」，不保护后续任何单变量比较，α 会迅速膨胀",
+          "right": "单变量比较做 Holm/BH 校正，或用判别分析描述差异方向",
+          "source": "Bray & Maxwell 1985"
+        },
+        {
+          "wrong": "专挑 Roy's greatest root 报，因为它最显著",
+          "why": "选统计量不能看 p 值；Roy 对协方差齐性最敏感，方差不齐时第一类错误率严重失控",
+          "right": "默认报 Pillai's trace（最稳健），并明确说明选了哪一个统计量",
+          "source": "Olson 1974"
+        },
+        {
+          "wrong": "用 MANOVA 的 p 值代替各结局的方向与大小",
+          "why": "整体检验不给方向；显著也可能只由一个结局驱动",
+          "right": "报各结局的均值/效应量与 CI，整体检验只作为总闸门",
+          "source": "Huberty & Olejnik 2006"
+        }
+      ],
+      "why": "多个相关连续结局同时比较（收缩压+舒张压+心率、多个量表分）。比多次单变量检验更能控制整体错误率，也能捕捉结局间的组合差异；Pillai's trace 对协方差矩阵不齐和样本量不均衡最稳健。",
+      "source": "Olson 1974; Bray & Maxwell 1985; Huberty & Olejnik 2006"
+    },
+    "sign-test": {
+      "label": "符号检验",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "two-paired",
+      "requires": {
+        "groups": 2,
+        "paired": true,
+        "minNPerGroup": 6
+      },
+      "assumptions": [
+        {
+          "id": "pairing",
+          "label": "确实配对（同一对象两次测量或匹配对）",
+          "check": "design",
+          "action": "不配对 → mannwhitney"
+        },
+        {
+          "id": "no-ties",
+          "label": "差值不为零的对足够多（零差值被丢弃）",
+          "check": "manual",
+          "action": "零差值多 → 报丢弃比例，或用 Wilcoxon 的零处理并说明"
+        }
+      ],
+      "fallback": [
+        "permutation"
+      ],
+      "effectSizes": [
+        "rank-biserial"
+      ],
+      "power": {
+        "fn": "wilcoxon",
+        "params": {}
+      },
+      "py": "import numpy as np, scipy.stats; d = a - b; nz = d[d != 0]; k = int((nz > 0).sum()); p = scipy.stats.binomtest(k, nz.size, 0.5).pvalue; phat = k/nz.size",
+      "r": "binom.test(sum(d$post > d$pre), sum(d$post != d$pre), 0.5)",
+      "reportAs": "符号检验：{k}/{nz} 对为正，p = {p}；P(后>前) = {phat}（95% CI {ci}）",
+      "misuse": [
+        {
+          "wrong": "差值明显偏斜、有极端值时仍用 Wilcoxon 符号秩",
+          "why": "符号秩检验要求差值分布对称；偏斜时少数极端差值会主导秩和，p 值不可信",
+          "right": "改用符号检验，只用方向信息",
+          "source": "Dixon & Mood 1946"
+        },
+        {
+          "wrong": "样本很小还指望符号检验出显著",
+          "why": "它只利用方向，渐近相对功效约为 Wilcoxon 的 2/3；n=10 时即使 10/10 同向，双侧 p 也只有 0.002 量级，且没有任何余量",
+          "right": "先算所需 n，或改用更有效的方法并检查其假设",
+          "source": "Gibbons & Chakraborti 2011"
+        },
+        {
+          "wrong": "把 P(后>前) = 0.7 当成「平均提高 0.7」",
+          "why": "符号检验只给方向概率，不给差值大小",
+          "right": "同时报差值的中位数与 CI（bootstrap）",
+          "source": "Siegel & Castellan 1988"
+        }
+      ],
+      "why": "配对数据里假设最少的检验：只要求配对与独立，不要求正态、不要求对称，甚至不要求差值可量化，只要有方向。功效低是它的代价，用在「差值分布说不清、或有极端值」的时候。",
+      "source": "Dixon & Mood 1946; Gibbons & Chakraborti 2011"
+    },
+    "permutation-anova": {
+      "label": "置换方差分析",
+      "family": "compare",
+      "outcome": "continuous|ordinal",
+      "design": "three-plus-independent",
+      "requires": {
+        "groups": 3,
+        "paired": false,
+        "minNPerGroup": 3
+      },
+      "assumptions": [
+        {
+          "id": "exchangeability",
+          "label": "原假设下各组标签可交换（随机分配或随机抽样）",
+          "check": "design",
+          "action": "有聚类/配对结构 → 按簇或按对置换，不能逐观测重排"
+        },
+        {
+          "id": "balanced-dispersion",
+          "label": "组间离散度不应差异过大，否则置换的是「分布」不是「均值」",
+          "check": "levene",
+          "action": "离散度差异大 → 只解释为随机优势，或改用 Brunner-Munzel"
+        },
+        {
+          "id": "permutations",
+          "label": "重排次数足够（B≥5000），p 的分辨率是 1/(B+1)",
+          "check": "manual",
+          "action": "B 不足 → 报 p < 1/(B+1) 而不是硬报 0"
+        }
+      ],
+      "fallback": [
+        "kruskal"
+      ],
+      "effectSizes": [
+        "eta-squared",
+        "omega-squared"
+      ],
+      "power": {
+        "fn": "anova",
+        "params": {
+          "k": 3
+        }
+      },
+      "py": "import numpy as np, scipy.stats; F = scipy.stats.f_oneway(*groups).statistic; allv = np.concatenate(groups); cut = np.cumsum([len(x) for x in groups])[:-1]; rng = np.random.default_rng(0); null = np.array([scipy.stats.f_oneway(*np.split(rng.permutation(allv), cut)).statistic for _ in range(5000)]); p = (np.sum(null >= F) + 1)/(null.size + 1)",
+      "r": "coin::oneway_test(y ~ g, data = d, distribution = approximate(B = 5000))",
+      "reportAs": "置换 ANOVA（{B} 次重排）：F = {stat}，p = {p}；η² = {eta}（95% CI {etaCi}）",
+      "misuse": [
+        {
+          "wrong": "置换 500 次就报 p < 0.001",
+          "why": "置换 p 的分辨率下限是 1/(B+1)，B=500 时最小只能到 0.002，报更小的值是假的",
+          "right": "B≥5000，或写成 p < 1/(B+1)",
+          "source": "Phipson & Smyth 2010"
+        },
+        {
+          "wrong": "把置换检验当「万能非参数 ANOVA」，不看离散度",
+          "why": "组间方差不同时它实际检验的是「分布是否相同」，显著不能归因于均值差",
+          "right": "同时报各组离散度，或改用 Brunner-Munzel / Welch ANOVA",
+          "source": "Brunner & Munzel 2000"
+        },
+        {
+          "wrong": "有聚类结构（同一受试者多次、同一批次）仍逐观测重排",
+          "why": "破坏簇结构会低估方差，p 值偏小",
+          "right": "按簇整体置换，或用混合模型",
+          "source": "Anderson 2001"
+        }
+      ],
+      "why": "ANOVA 的正态/方差假设不满足、样本很小、分布说不清时的稳健替代：不假设任何分布，只要求可交换性，直接用数据自身的置换分布算 p。注意它检验的是「组间分布相同」，不是「均值相同」。",
+      "source": "Phipson & Smyth 2010; Anderson 2001"
+    },
+    "quantile-regression": {
+      "label": "分位数回归",
+      "family": "predict",
+      "outcome": "continuous",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "linearity-quantile",
+          "label": "在所报的分位点上，条件分位数与预测变量线性",
+          "check": "residual-plot",
+          "action": "加样条/多项式，或做变换"
+        },
+        {
+          "id": "independence",
+          "label": "观测独立（SE 依赖此假设）",
+          "check": "design",
+          "action": "聚类/重复测量 → 聚类 bootstrap"
+        },
+        {
+          "id": "tau-set",
+          "label": "分位点事先选定，不是挑出来的",
+          "check": "design",
+          "action": "事后挑 τ 等于变相多重比较"
+        }
+      ],
+      "fallback": [
+        "ols-robust",
+        "bootstrap-median"
+      ],
+      "effectSizes": [
+        "median-diff"
+      ],
+      "power": {
+        "fn": "f2",
+        "params": {
+          "predictors": 1
+        }
+      },
+      "py": "import statsmodels.formula.api as smf; fit = {q: smf.quantreg('y ~ x', df).fit(q=q) for q in (0.1, 0.5, 0.9)}; coef = {q: (r.params['x'], r.conf_int().loc['x'].tolist()) for q, r in fit.items()}",
+      "r": "quantreg::rq(y ~ x, data = d, tau = c(0.1, 0.5, 0.9))",
+      "reportAs": "分位数回归：τ=0.1 β={b10}（95% CI {ci10}）；τ=0.5 β={b50}（{ci50}）；τ=0.9 β={b90}（{ci90}）",
+      "misuse": [
+        {
+          "wrong": "只报中位数（τ=0.5）一个分位点",
+          "why": "中位数看不到尾部效应，而临床与政策关心的往往正是高分位（高花费、重症）或低分位人群",
+          "right": "至少报 0.1/0.5/0.9 三个点，并说明为什么选这些点",
+          "source": "Koenker & Bassett 1978"
+        },
+        {
+          "wrong": "逐个分位点比「哪个显著」来判断效应是否随分位变化",
+          "why": "同一模型内不同 τ 的估计高度相关，逐点显著性不能回答「有没有变化」这个问题",
+          "right": "对系数差做联合 Wald 检验，或用 bootstrap 比较不同 τ 的估计",
+          "source": "Koenker 2005"
+        },
+        {
+          "wrong": "把分位数回归的系数读成「均值变化」",
+          "why": "它描述的是条件分位数位置的移动，不是均值移动；两者只有在分布平移时才相同",
+          "right": "明确说报的是哪个分位点的效应",
+          "source": "Hao & Naiman 2007"
+        }
+      ],
+      "why": "分布偏斜、有界、或有离群值，以及关心尾部（高花费人群、极端反应者）的连续结局。与 OLS 相比不假设误差分布，对离群值不敏感；代价是每个分位点一套系数，必须成套报。",
+      "source": "Koenker & Bassett 1978; Koenker 2005"
+    },
+    "firth-logit": {
+      "label": "Firth 惩罚 logistic 回归",
+      "family": "predict",
+      "outcome": "binary",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20,
+        "minEventsPerPredictor": 1
+      },
+      "assumptions": [
+        {
+          "id": "penalty",
+          "label": "Jeffreys 先验惩罚会收缩系数，OR 不能读成无偏估计",
+          "check": "manual",
+          "action": "报 profile likelihood CI，并在方法里写明用了惩罚"
+        },
+        {
+          "id": "separation",
+          "label": "确实存在完全/准完全分离或事件数极少",
+          "check": "separation",
+          "action": "无分离且 EPV 充足 → 普通 logit 更有效、更易解释"
+        },
+        {
+          "id": "model-form",
+          "label": "线性预测项设定正确（惩罚不修正函数形式）",
+          "check": "box-tidwell",
+          "action": "加样条，或先做变换"
+        }
+      ],
+      "fallback": [
+        "logit-regularized"
+      ],
+      "effectSizes": [
+        "odds-ratio",
+        "mcfadden-r2"
+      ],
+      "power": {
+        "fn": "logit",
+        "params": {
+          "p0": 0.1
+        }
+      },
+      "py": "import numpy as np\ndef firth(X, y, iters=100):\n    X1 = np.column_stack([np.ones(len(y)), np.asarray(X, float)]); y = np.asarray(y, float)\n    b = np.zeros(X1.shape[1])\n    for _ in range(iters):\n        mu = 1/(1 + np.exp(-X1 @ b)); W = mu*(1 - mu); I = X1.T @ (X1*W[:, None])\n        h = W*np.einsum('ij,jk,ik->i', X1, np.linalg.inv(I), X1)\n        b = b + np.linalg.solve(I, X1.T @ (y - mu + h*(0.5 - mu)))\n    return b, np.sqrt(np.diag(np.linalg.inv(I)))\nbeta, se = firth(X, y); OR = np.exp(beta); ci = np.exp(beta - 1.96*se)",
+      "r": "logistf::logistf(y ~ x, data = d)",
+      "reportAs": "Firth 惩罚 logistic：OR = {or}（profile likelihood 95% CI {ci}），penalized log-likelihood = {ll}；{events}/{n} 例事件",
+      "misuse": [
+        {
+          "wrong": "完全分离时删掉「不合逻辑」的个案让模型收敛",
+          "why": "被删的往往正是信息量最大的观测，系数与 CI 都会被系统性改变，且删除标准来自结果本身",
+          "right": "Firth 惩罚 logistic，或精确 logistic（logistf / elrm）",
+          "source": "Heinze & Schemper 2002"
+        },
+        {
+          "wrong": "用 Wald CI 报 Firth 的结果",
+          "why": "惩罚估计的抽样分布偏斜，Wald CI 会低估上界、甚至给出越界的 OR 区间",
+          "right": "报 profile likelihood CI",
+          "source": "Heinze & Schemper 2002"
+        },
+        {
+          "wrong": "把 Firth 后的 OR 当作无偏效应量直接与文献比",
+          "why": "惩罚本身带来向 1 的收缩，收缩幅度随事件数变化，不同研究不可直接比",
+          "right": "说明这是惩罚估计；有足够事件时与未惩罚模型对照报敏感性",
+          "source": "Firth 1993"
+        }
+      ],
+      "why": "罕见事件、完全/准完全分离、或 EPV 明显不足时的 logistic。Firth 用 Jeffreys 先验惩罚似然，给出有限的系数估计，避免 MLE 发散到无穷；代价是系数被收缩，解释时要说明。",
+      "source": "Firth 1993; Heinze & Schemper 2002"
+    },
+    "logit-regularized": {
+      "label": "正则化 logistic 回归（LASSO/ridge + 嵌套交叉验证）",
+      "family": "predict",
+      "outcome": "binary",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 50,
+        "predictors": 10
+      },
+      "assumptions": [
+        {
+          "id": "penalty-tuning",
+          "label": "惩罚强度由交叉验证选，且性能必须在外层再评估",
+          "check": "nested-cv",
+          "action": "在训练集调参又报同一集合的性能 = 乐观偏倚"
+        },
+        {
+          "id": "scaling",
+          "label": "预测变量已标准化（否则惩罚对量纲不公平）",
+          "check": "manual",
+          "action": "把 StandardScaler 放进 Pipeline，每折内拟合"
+        },
+        {
+          "id": "leakage",
+          "label": "特征筛选、插补、标准化都在每一折内部完成",
+          "check": "design",
+          "action": "先全数据筛选再 CV 会显著高估性能"
+        }
+      ],
+      "fallback": [
+        "firth-logit"
+      ],
+      "effectSizes": [
+        "odds-ratio"
+      ],
+      "power": {
+        "fn": "logit",
+        "params": {
+          "p0": 0.3
+        }
+      },
+      "py": "from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score\ncv = StratifiedKFold(5, shuffle=True, random_state=0)\ngs = GridSearchCV(LogisticRegression(penalty='l2', max_iter=5000), {'C': [0.01, 0.1, 1.0, 10.0]}, cv=cv, scoring='neg_log_loss')\nauc = cross_val_score(gs, X, y, cv=cv, scoring='roc_auc').mean()",
+      "r": "glmnet::cv.glmnet(X, y, family = 'binomial', alpha = 1, foldid = foldid)",
+      "reportAs": "正则化 logistic（{penalty}，λ 由内层 5 折 CV 选定）：嵌套 CV AUC = {auc}（95% CI {ci}）；非零系数 {k} 个 / 共 {p} 个",
+      "misuse": [
+        {
+          "wrong": "报训练集或调参那一折的 AUC",
+          "why": "λ 是在同一批数据上挑的，性能必然乐观；高维时差距可达 0.1 以上，外部验证会崩",
+          "right": "嵌套交叉验证：外层评估不参与任何调参",
+          "source": "Cawley & Talbot 2010"
+        },
+        {
+          "wrong": "把惩罚后的系数当 OR 报出来",
+          "why": "系数被收缩且随 λ 变化，不是一致的效应估计，不能作因果或效应量解释",
+          "right": "只报预测性能；要效应量用预设模型、Firth 或双重选择后重新拟合",
+          "source": "Tibshirani 1996"
+        },
+        {
+          "wrong": "先在全数据上做单变量筛选/插补，再交叉验证",
+          "why": "信息泄漏：测试折的信息进入了特征选择，性能估计虚高",
+          "right": "所有数据依赖步骤放进每一折内部（Pipeline）",
+          "source": "Ambroise & McLachlan 2002"
+        }
+      ],
+      "why": "预测变量多于事件、强共线、或纯预测目的（不追求可解释系数）。此时普通 logistic 无法稳定估计，需要惩罚把系数压住；但它给的是预测性能，不是效应量，且必须用嵌套交叉验证评估，不能报训练集性能。",
+      "source": "Tibshirani 1996; Cawley & Talbot 2010"
+    },
+    "quasipoisson": {
+      "label": "准泊松回归",
+      "family": "predict",
+      "outcome": "count",
+      "design": "prediction",
+      "requires": {
+        "groups": 1,
+        "minN": 20
+      },
+      "assumptions": [
+        {
+          "id": "overdispersion",
+          "label": "存在过度离散（Pearson χ²/df 明显大于 1）",
+          "check": "overdispersion",
+          "action": "不超标 → poisson 更有效"
+        },
+        {
+          "id": "mean-variance-form",
+          "label": "只假设方差 = φ×均值，不指定离散的具体函数形式",
+          "check": "manual",
+          "action": "需要显式离散参数与似然（要比较模型/预测）→ negbin"
+        }
+      ],
+      "fallback": [
+        "negbin"
+      ],
+      "effectSizes": [
+        "rate-ratio"
+      ],
+      "power": {
+        "fn": "poisson",
+        "params": {}
+      },
+      "py": "import numpy as np, statsmodels.api as sm; m = sm.GLM(y, sm.add_constant(X), family=sm.families.Poisson()).fit(scale='X2'); disp = m.pearson_chi2/m.df_resid; RR = np.exp(m.params); ci = np.exp(m.conf_int())",
+      "r": "glm(y ~ x, data = d, family = quasipoisson)",
+      "reportAs": "准泊松回归：RR = {rr}（95% CI {ci}），离散参数 φ = {disp}（Pearson χ²/df）",
+      "misuse": [
+        {
+          "wrong": "用 AIC 比较准泊松与其他模型",
+          "why": "准泊松不是完整似然（只估了离散参数），没有真正的 AIC；算出来的差值没有意义",
+          "right": "要按 AIC 比较就改用负二项（有完整似然），否则只比系数与稳健拟合优度",
+          "source": "Ver Hoef & Boveng 2007"
+        },
+        {
+          "wrong": "过度离散不检查，直接报泊松 SE",
+          "why": "SE 被低估，p 偏小、CI 过窄，常见低估 2-3 倍，结论可能完全反过来",
+          "right": "先算 Pearson χ²/df，明显 >1 就用准泊松或负二项，并把 φ 报出来",
+          "source": "Cameron & Trivedi 2013"
+        },
+        {
+          "wrong": "把 φ 当成「拟合好」的指标",
+          "why": "φ 只描述离散程度，与模型是否漏掉重要预测变量无关",
+          "right": "φ 与残差诊断、预测校准分开看",
+          "source": "Wedderburn 1974"
+        }
+      ],
+      "why": "计数数据过度离散、又不想为离散指定具体分布时的稳妥选择：只多估一个离散参数 φ，系数点估计与泊松相同，SE 按 √φ 放大。它的局限是只有拟似然，不能做基于似然的模型比较。",
+      "source": "Wedderburn 1974; Ver Hoef & Boveng 2007"
+    },
+    "rmst": {
+      "label": "限制平均生存时间差（RMST）",
+      "family": "survive",
+      "outcome": "time",
+      "design": "compare-groups",
+      "requires": {
+        "groups": 2,
+        "tau": true
+      },
+      "assumptions": [
+        {
+          "id": "tau-prespecified",
+          "label": "时间窗 τ 必须在看数据前定好，并有临床依据",
+          "check": "design",
+          "action": "事后挑 τ 等于挑结果，必须报 2-3 个预设 τ 的敏感性分析"
+        },
+        {
+          "id": "follow-up",
+          "label": "τ 之前各组仍有足够随访（KM 曲线在 τ 处不太空）",
+          "check": "manual",
+          "action": "随访不足 → 缩小 τ，或延长随访后再分析"
+        },
+        {
+          "id": "non-informative",
+          "label": "删失非信息性",
+          "check": "design",
+          "action": "信息删失 → 竞争风险框架（fine-gray）"
+        }
+      ],
+      "fallback": [
+        "logrank"
+      ],
+      "effectSizes": [
+        "median-survival",
+        "median-diff"
+      ],
+      "power": {
+        "fn": "survival",
+        "params": {
+          "events": 100
+        }
+      },
+      "py": "import numpy as np\ndef km_rmst(t, e, tau):\n    times, inv = np.unique(t, return_inverse=True); dd = np.bincount(inv, weights=e)\n    nr = len(t) - np.concatenate([[0], np.cumsum(np.bincount(inv))[:-1]])\n    S = np.cumprod(1 - dd/nr)\n    return float(np.sum(np.concatenate([[1.0], S]) * np.diff(np.minimum(np.concatenate([[0.0], times, [tau]]), tau))))\nrmst = {k: km_rmst(time[g == k], ev[g == k], tau) for k in np.unique(g)}\ndiff = rmst[1] - rmst[0]",
+      "r": "survRM2::rmst2(time, status, arm, tau = 24)",
+      "reportAs": "RMST（τ = {tau} 个月）：{g1} {rmst1} 个月 vs {g0} {rmst0} 个月，差 {diff}（95% CI {ci}）",
+      "misuse": [
+        {
+          "wrong": "曲线明显交叉仍报单一 HR",
+          "why": "PH 违反时 HR 是「平均风险比」，交叉的两条曲线会互相抵消，数值接近 1 却完全没有临床意义",
+          "right": "报 RMST 差（τ 预先设定），或分段 HR",
+          "source": "Uno et al. 2014"
+        },
+        {
+          "wrong": "看到数据后再选 τ",
+          "why": "τ 决定结论的方向和大小，事后选择是变相的多重比较，几乎总能挑出「显著」的窗口",
+          "right": "方案里写死 τ 及依据；敏感性分析报 2-3 个预设 τ",
+          "source": "Royston & Parmar 2013"
+        },
+        {
+          "wrong": "τ 取到超过最长随访时间",
+          "why": "超出部分没有数据支持，KM 曲线尾部极不稳定，RMST 会被系统性带偏",
+          "right": "τ 取各组最长随访的最小值以内",
+          "source": "Tian, Zhao & Wei 2014"
+        },
+        {
+          "wrong": "把 RMST 差读成「中位生存差」",
+          "why": "RMST 是 τ 内的平均生存时间，与中位数是不同的概括量，数值与 CI 都不可互换",
+          "right": "明确报的是 RMST 差；中位数另有其 CI",
+          "source": "Royston & Parmar 2013"
+        }
+      ],
+      "why": "生存曲线交叉、PH 不成立时需要它：RMST 是 τ 时间窗内的平均生存时间（曲线下面积），单位是月/年，临床可解释，且完全不依赖 PH 假设。代价是必须预设 τ，且 τ 之后的信息被丢掉。",
+      "source": "Royston & Parmar 2013; Uno et al. 2014; Tian, Zhao & Wei 2014"
+    },
+    "fine-gray": {
+      "label": "Fine-Gray 竞争风险模型（sHR）",
+      "family": "survive",
+      "outcome": "time",
+      "design": "adjusted",
+      "requires": {
+        "groups": 1,
+        "competing": true,
+        "eventsPerPredictor": 10
+      },
+      "assumptions": [
+        {
+          "id": "competing",
+          "label": "确实存在竞争事件，且竞争事件不可忽略",
+          "check": "design",
+          "action": "竞争事件极少（<5%）→ cause-specific Cox 更易解释"
+        },
+        {
+          "id": "epv",
+          "label": "每个预测变量 ≥10 个目标事件",
+          "check": "epv",
+          "action": "不足 → 减变量，或把竞争事件合并后再评估"
+        },
+        {
+          "id": "censoring",
+          "label": "删失独立于目标事件与竞争事件",
+          "check": "design",
+          "action": "信息删失 → 敏感性分析（如悲观/乐观极端情形）"
+        },
+        {
+          "id": "ph-subdistribution",
+          "label": "子分布风险比恒定（CIF 的 log(-log) 图平行）",
+          "check": "ph-check",
+          "action": "违反 → 时间交互项，或报指定时点的 CIF 差"
+        }
+      ],
+      "fallback": [
+        "cox"
+      ],
+      "effectSizes": [
+        "hazard-ratio"
+      ],
+      "power": {
+        "fn": "survival",
+        "params": {
+          "events": 100
+        }
+      },
+      "py": "import numpy as np, scipy.optimize\ndef fine_gray(X, time, cause, coi=1):\n    X = np.column_stack([np.ones(len(time)), np.asarray(X, float)])\n    t = np.asarray(time, float); c = np.asarray(cause, int)\n    et = np.unique(t); nr = np.array([np.sum(t >= u) for u in et])\n    G = np.cumprod(1 - np.array([np.sum((t == u) & (c == 0)) for u in et])/nr)\n    Gf = lambda s: (float(G[np.searchsorted(et, s, side='right') - 1]) if np.any(et <= s) else 1.0)\n    te = np.unique(t[c == coi])\n    R = np.array([(t >= u) | ((c != coi) & (c != 0) & (t < u)) for u in te], bool)\n    W = np.array([[Gf(u)/Gf(min(ti, u)) for ti in t] for u in te])\n    D = (t[None, :] == te[:, None]) & (c == coi)[None, :]\n    def nll(b):\n        eta = X @ b; pe = np.exp(eta); s = 0.0\n        for j in range(len(te)):\n            r = R[j]\n            s += eta[D[j]].sum() - D[j].sum()*np.log(np.sum(W[j][r]*pe[r]))\n        return -s\n    res = scipy.optimize.minimize(nll, np.zeros(X.shape[1]), method='BFGS')\n    se = np.sqrt(np.diag(np.asarray(res.hess_inv)))\n    return np.exp(res.x), np.exp(res.x - 1.96*se), np.exp(res.x + 1.96*se)\nsHR, lo, hi = fine_gray(X, time, cause)",
+      "r": "cmprsk::crr(ftime, fstatus, cov1 = X, failcode = 1, cencode = 0)",
+      "reportAs": "Fine-Gray：sHR = {shr}（95% CI {ci}），{events} 个目标事件 / {competing} 个竞争事件；供对照的 cause-specific HR = {chr}",
+      "misuse": [
+        {
+          "wrong": "把 sHR 解释成「发生该事件的瞬时风险是几倍」",
+          "why": "sHR 对应的是累积发生函数（CIF）的（子分布）风险，风险集里还留着已发生竞争事件的人，与 cause-specific HR 的含义不同，数值也不相等",
+          "right": "报 sHR 时说清是「累积发生率」的效应；要病因学解释就同时报 cause-specific HR",
+          "source": "Fine & Gray 1999; Austin, Lee & Fine 2016"
+        },
+        {
+          "wrong": "有竞争事件还做普通 KM + log-rank",
+          "why": "把竞争事件当删失会高估目标事件的累积发生率，1-KM 系统性偏大，越到后期偏得越多",
+          "right": "用累积发生函数（Aalen-Johansen）描述，用 Fine-Gray 建模",
+          "source": "Austin, Lee & Fine 2016"
+        },
+        {
+          "wrong": "只报一个模型就下结论",
+          "why": "Fine-Gray 与 cause-specific 回答不同问题（预测/负担 vs 病因），只报一个容易过度解读",
+          "right": "两个模型都报，并说明差异来源",
+          "source": "Latouche et al. 2013"
+        }
+      ],
+      "why": "存在竞争事件（「死于其他原因」竞争「死于心脏病」、「复发」竞争「死亡」）时的回归。普通 Cox/KM 把竞争事件当删失，会高估目标事件风险；Fine-Gray 直接对累积发生函数建模，给 sHR。注意 sHR 与 cause-specific HR 回答的不是同一个问题。",
+      "source": "Fine & Gray 1999; Austin, Lee & Fine 2016; Latouche et al. 2013"
+    }
+  },
+  "corrections": {
+    "none": {
+      "label": "不校正",
+      "when": "只有一个预设假设，或校正会让功效不足",
+      "note": "必须在方法里声明「未校正，因为只有一个主假设」"
+    },
+    "bonferroni": {
+      "label": "Bonferroni",
+      "when": "比较次数很少（≤5）且需要最保守控制",
+      "note": "过于保守；比较多时改用 Holm"
+    },
+    "holm": {
+      "label": "Holm 逐步法",
+      "when": "需要控制族错误率（FWER）且比较次数中等",
+      "note": "一致优于 Bonferroni，无条件推荐替代它"
+    },
+    "fdr_bh": {
+      "label": "Benjamini-Hochberg FDR",
+      "when": "探索性或多重检验较多，可接受假发现比例",
+      "note": "高通量场景（组学、脑影像）的事实标准"
+    },
+    "fdr_by": {
+      "label": "Benjamini-Yekutieli FDR",
+      "when": "检验间存在任意依赖",
+      "note": "比 BH 保守，依赖结构未知时用"
+    }
+  },
+  "effectSizes": {
+    "cohens-d": {
+      "label": "Cohen's d",
+      "family": "mean-difference",
+      "formula": "(mean1 - mean2) / pooled_sd",
+      "ci": "非中心 t 分布",
+      "small": 0.2,
+      "medium": 0.5,
+      "large": 0.8,
+      "note": "两独立组。样本量小时偏大，改用 Hedges' g。",
+      "source": "Cohen 1988"
+    },
+    "hedges-g": {
+      "label": "Hedges' g",
+      "family": "mean-difference",
+      "formula": "d × (1 - 3/(4(n1+n2)-9))",
+      "ci": "同 d，用校正后的值",
+      "small": 0.2,
+      "medium": 0.5,
+      "large": 0.8,
+      "note": "小样本（n<20/组）时应报这个而不是 d。",
+      "source": "Hedges 1981"
+    },
+    "cohens-dz": {
+      "label": "Cohen's dz（配对）",
+      "family": "mean-difference",
+      "formula": "mean(diff) / sd(diff)",
+      "ci": "非中心 t",
+      "small": 0.2,
+      "medium": 0.5,
+      "large": 0.8,
+      "note": "配对设计；与 d_av 不同，不能混用。",
+      "source": "Lakens 2013"
+    },
+    "cohens-d-av": {
+      "label": "Cohen's d_av（配对，平均 SD）",
+      "family": "mean-difference",
+      "formula": "mean(diff) / ((sd1+sd2)/2)",
+      "note": "可与独立组 d 比较的配对版本。",
+      "source": "Cumming 2012"
+    },
+    "eta-squared": {
+      "label": "η²",
+      "family": "variance-explained",
+      "formula": "SS_between / SS_total",
+      "small": 0.01,
+      "medium": 0.06,
+      "large": 0.14,
+      "note": "随设计系统性偏大；多因素设计用偏 η²。",
+      "source": "Cohen 1988"
+    },
+    "partial-eta-squared": {
+      "label": "偏 η²",
+      "family": "variance-explained",
+      "formula": "SS_effect / (SS_effect + SS_error)",
+      "small": 0.01,
+      "medium": 0.06,
+      "large": 0.14,
+      "note": "重复测量与多因素设计的标准报告量。",
+      "source": "Olejnik & Algina 2003"
+    },
+    "omega-squared": {
+      "label": "ω²",
+      "family": "variance-explained",
+      "formula": "(SS_between - df_between×MS_error) / (SS_total + MS_error)",
+      "small": 0.01,
+      "medium": 0.06,
+      "large": 0.14,
+      "note": "对总体效应的无偏估计，小样本下优于 η²。",
+      "source": "Olejnik & Algina 2003"
+    },
+    "epsilon-squared": {
+      "label": "ε²（Kruskal）",
+      "family": "rank-based",
+      "formula": "H / ((n²-1)/(n+1))",
+      "small": 0.01,
+      "medium": 0.08,
+      "large": 0.26,
+      "note": "Kruskal-Wallis 的效应量。",
+      "source": "Kelley 1935"
+    },
+    "cramers-v": {
+      "label": "Cramér's V",
+      "family": "association",
+      "formula": "sqrt(χ² / (n × min(r-1, c-1)))",
+      "small": 0.1,
+      "medium": 0.3,
+      "large": 0.5,
+      "note": "列联表关联强度；自由度>1 时上界可小于 1。",
+      "source": "Cramér 1946"
+    },
+    "phi": {
+      "label": "φ",
+      "family": "association",
+      "formula": "sqrt(χ² / n)",
+      "small": 0.1,
+      "medium": 0.3,
+      "large": 0.5,
+      "note": "仅 2×2 表。",
+      "source": "Pearson 1900"
+    },
+    "cliffs-delta": {
+      "label": "Cliff's δ",
+      "family": "rank-based",
+      "formula": "P(X>Y) - P(X<Y)",
+      "small": 0.147,
+      "medium": 0.33,
+      "large": 0.474,
+      "note": "非参数两组效应量，与分布形状无关。",
+      "source": "Cliff 1993"
+    },
+    "rank-biserial": {
+      "label": "秩二列相关 r",
+      "family": "rank-based",
+      "formula": "1 - 2U/(n1×n2)（Mann-Whitney）或 Z/√N（Wilcoxon）",
+      "small": 0.1,
+      "medium": 0.3,
+      "large": 0.5,
+      "note": "与 Mann-Whitney/Wilcoxon 配套。",
+      "source": "Cureton 1956"
+    },
+    "kendalls-w": {
+      "label": "Kendall's W",
+      "family": "rank-based",
+      "formula": "χ²_friedman / (n(k-1))",
+      "small": 0.1,
+      "medium": 0.3,
+      "large": 0.5,
+      "note": "Friedman 的一致性系数。",
+      "source": "Kendall & Babington Smith 1939"
+    },
+    "odds-ratio": {
+      "label": "OR",
+      "family": "ratio",
+      "formula": "(a×d)/(b×c)",
+      "note": "结局罕见时可近似 RR；>10% 时会高估。",
+      "source": "Zhang & Yu 1998"
+    },
+    "hazard-ratio": {
+      "label": "HR",
+      "family": "ratio",
+      "formula": "exp(β)",
+      "note": "仅在 PH 成立时可解释为「瞬时风险倍数」。",
+      "source": "Cox 1972"
+    },
+    "rate-ratio": {
+      "label": "RR（率比）",
+      "family": "ratio",
+      "formula": "exp(β)（Poisson/负二项）",
+      "note": "计数模型的系数指数化。",
+      "source": "Cameron & Trivedi 2013"
+    },
+    "r-squared": {
+      "label": "R²",
+      "family": "variance-explained",
+      "formula": "1 - SS_res/SS_tot",
+      "small": 0.02,
+      "medium": 0.13,
+      "large": 0.26,
+      "note": "随预测变量数单调不减；比较模型用调整 R²。",
+      "source": "Cohen 1988"
+    },
+    "cohens-f2": {
+      "label": "Cohen's f²",
+      "family": "variance-explained",
+      "formula": "R²/(1-R²)",
+      "small": 0.02,
+      "medium": 0.15,
+      "large": 0.35,
+      "note": "回归的效应量，直接对应功效计算。",
+      "source": "Cohen 1988"
+    },
+    "mcfadden-r2": {
+      "label": "McFadden 伪 R²",
+      "family": "variance-explained",
+      "formula": "1 - LL_model/LL_null",
+      "small": 0.2,
+      "medium": 0.4,
+      "large": 0.6,
+      "note": "不是方差解释比例，不能按 OLS 的 R² 读。",
+      "source": "McFadden 1974"
+    },
+    "fisher-z": {
+      "label": "Fisher z（相关的 CI）",
+      "family": "association",
+      "formula": "atanh(r) ± z/√(n-3)",
+      "note": "相关系数的 CI 必须经 z 变换，直接 ±1.96SE 会越界。",
+      "source": "Fisher 1921"
+    },
+    "rho-squared": {
+      "label": "ρ²（Spearman 决定系数）",
+      "family": "variance-explained",
+      "formula": "ρ²",
+      "ci": "先对 ρ 做 Fisher z 变换求 CI，再平方（区间因此不对称）",
+      "small": 0.02,
+      "medium": 0.13,
+      "large": 0.26,
+      "note": "秩相关的方差解释比例，不等于 Pearson r²；等级数据上它才是有意义的那一个。",
+      "source": "Spearman 1904; Cohen 1988"
+    },
+    "tau": {
+      "label": "Kendall's τ（τ-b）",
+      "family": "association",
+      "formula": "(C - D) / √((n0 - n1)(n0 - n2))",
+      "ci": "bootstrap percentile，或 Fisher z 近似",
+      "small": 0.1,
+      "medium": 0.3,
+      "large": 0.5,
+      "note": "同等强度下 τ 的绝对值通常约为 Pearson r 的 0.7 倍，这里给的是常用粗刻度；并列多时必须用 τ-b，不能用 τ-a。",
+      "source": "Kendall 1938"
+    },
+    "adjusted-r2": {
+      "label": "调整 R²",
+      "family": "variance-explained",
+      "formula": "1 - (1 - R²)(n - 1)/(n - p - 1)",
+      "ci": "bootstrap，或交叉验证 R² 的区间",
+      "small": 0.02,
+      "medium": 0.13,
+      "large": 0.26,
+      "note": "比较预测变量数不同的模型时必须用它；n 接近 p 时它会明显低于 R²，甚至为负。",
+      "source": "Ezekiel 1930; Cohen 1988"
+    },
+    "marginal-r2": {
+      "label": "边际 R²（混合模型）",
+      "family": "variance-explained",
+      "formula": "var(Xβ) / (var(Xβ) + var(Zu) + var(ε))",
+      "ci": "bootstrap（按簇重抽样）",
+      "small": 0.02,
+      "medium": 0.13,
+      "large": 0.26,
+      "note": "固定效应单独解释的方差比例；与条件 R² 一起报才能看出聚类占了多少。",
+      "source": "Nakagawa & Schielzeth 2013"
+    },
+    "conditional-r2": {
+      "label": "条件 R²（混合模型）",
+      "family": "variance-explained",
+      "formula": "(var(Xβ) + var(Zu)) / (var(Xβ) + var(Zu) + var(ε))",
+      "ci": "bootstrap（按簇重抽样）",
+      "note": "含随机效应的总解释比例；条件 R² 高而边际 R² 低，说明差异主要来自个体/中心间差别，不是预测变量。",
+      "source": "Nakagawa & Schielzeth 2013"
+    },
+    "median-survival": {
+      "label": "中位生存时间",
+      "family": "location",
+      "formula": "min{ t : S(t) ≤ 0.5 }",
+      "ci": "Greenwood 方差 + log-log 变换",
+      "note": "曲线始终不降到 0.5 时中位数不可估，必须写「未达到」而不是给一个数；随访不足时同理。",
+      "source": "Kaplan & Meier 1958"
+    },
+    "median-diff": {
+      "label": "中位数差",
+      "family": "location",
+      "formula": "median1 - median2",
+      "ci": "bootstrap percentile 或 BCa",
+      "note": "偏斜分布下的组间差异，单位与原始量一致；不能与均值差混报，也不等于 Hodges-Lehmann 估计。",
+      "source": "Efron & Tibshirani 1993"
+    },
+    "explained-variance": {
+      "label": "主成分解释方差比例",
+      "family": "variance-explained",
+      "formula": "λk / Σλ",
+      "note": "前 k 个成分的累计比例；k 的选择要按预设标准（如累计 ≥70% 或平行分析），不能看完碎石图再定。",
+      "source": "Jolliffe 2002"
+    }
+  },
+  "powerFns": {
+    "ttest_ind": {
+      "impl": "statsmodels.stats.power.TTestIndPower",
+      "params": [
+        "effect_size",
+        "nobs1",
+        "alpha",
+        "power",
+        "ratio"
+      ],
+      "note": "两组独立；ratio 为 n2/n1"
+    },
+    "ttest_paired": {
+      "impl": "statsmodels.stats.power.TTestPower",
+      "params": [
+        "effect_size",
+        "nobs",
+        "alpha",
+        "power"
+      ],
+      "note": "配对；effect_size 用 dz"
+    },
+    "anova": {
+      "impl": "statsmodels.stats.power.FTestAnovaPower",
+      "params": [
+        "effect_size",
+        "nobs",
+        "alpha",
+        "power",
+        "k_groups"
+      ],
+      "note": "effect_size 用 f"
+    },
+    "correlation": {
+      "impl": "statsmodels.stats.power.NormalIndPower 近似 + Fisher z",
+      "params": [
+        "effect_size",
+        "nobs",
+        "alpha",
+        "power"
+      ],
+      "note": "r 经 z 变换"
+    },
+    "chi2": {
+      "impl": "statsmodels.stats.power.GofChisquarePower / NormalIndPower(w=)",
+      "params": [
+        "effect_size",
+        "nobs",
+        "alpha",
+        "power",
+        "n_bins"
+      ],
+      "note": "effect_size 用 w"
+    },
+    "f2": {
+      "impl": "statsmodels.stats.power.FTestPower",
+      "params": [
+        "effect_size",
+        "nobs",
+        "alpha",
+        "power",
+        "df_num"
+      ],
+      "note": "多元回归用 f²"
+    },
+    "logit": {
+      "impl": "statsmodels.stats.power.NormalIndPower(w=) + Hsieh 公式",
+      "params": [
+        "p0",
+        "p1",
+        "alpha",
+        "power"
+      ],
+      "note": "两组比例"
+    },
+    "survival": {
+      "impl": "Schoenfeld 公式：events = (z_{1-α/2}+z_{power})² / (log HR)² / (p1×p2)",
+      "params": [
+        "hr",
+        "alpha",
+        "power",
+        "allocation"
+      ],
+      "note": "事件数驱动，不是样本量"
+    },
+    "mixedlm": {
+      "impl": "设计效应校正：n_ind × (1 + (m-1)ρ)",
+      "params": [
+        "effect_size",
+        "clusters",
+        "cluster_size",
+        "icc"
+      ],
+      "note": "ICC 未知时按 0.05/0.1/0.2 报敏感性"
+    },
+    "bayes": {
+      "impl": "不适用（BF 不需要事前功效）",
+      "params": [],
+      "note": "贝叶斯设计可用 precision 或 BF 设计分析"
+    }
+  }
+}

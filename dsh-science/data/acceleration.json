@@ -1,0 +1,111 @@
+{
+  "$meta": {
+    "verifiedAt": "2026-10-20",
+    "note": "加速通道的真实机制与门槛。数字是量级估计，用于排期，不是承诺。",
+    "sources": [
+      "cos.io/initiatives/registered-reports（300+ 期刊，2026-10 抓取）",
+      "reviewcommons.org（affiliate 期刊清单，2026-10 抓取）",
+      "各出版商 transfer / article transfer service 公开说明"
+    ]
+  },
+  "registeredReports": {
+    "label": "Registered Reports（结果前过审）",
+    "why": "唯一能提高录用概率的机制：stage 1 通过即 in-principle acceptance，结果不影响录用（除非偏离注册方案或质量不达标）。同时消除发表偏倚、低统计功效、选择性报告。",
+    "journalsCount": "300+",
+    "requires": ["假设检验型设计", "可在数据采集前写清方案", "有明确的样本量论证"],
+    "notFor": ["探索性/描述性研究", "已有数据的回顾分析（需改造为 secondary RR）"],
+    "workflow": [
+      { "stage": 1, "name": "Stage 1 方案", "content": "背景与理论、假设、设计与抽样、样本量论证、分析计划、阳性结果与阴性结果各自的解释", "days": 45, "note": "审稿人只看方案，不看数据" },
+      { "stage": 2, "name": "Stage 2 全文", "content": "按注册方案执行的结果、与方案的所有偏离及其理由、预设分析 vs 探索性分析", "days": 60, "note": "只要按方案执行，结果不被用来拒稿" }
+    ],
+    "caveats": [
+      "中途改主分析必须在文中标为 exploratory，否则 IPA 失效",
+      "样本量若事后不足，仍会被要求补数据（这是质量不达标，不是结果不好看）",
+      "部分期刊要求 RR 与常规投稿走不同入口，投前查当期指南"
+    ],
+    "examples": ["Cortex", "European Journal of Neuroscience", "Royal Society Open Science", "BMC Medicine", "BMJ (部分)", "PLOS Biology", "Nature Human Behaviour", "Nature Neuroscience", "eLife", "PLOS ONE", "PeerJ", "F1000Research", "Current Biology"]
+  },
+  "portableReview": {
+    "label": "期刊无关评审（portable review）",
+    "why": "一次评审被多家期刊承认，省掉 2–3 轮重复外审；每轮通常 2–4 个月。",
+    "platforms": [
+      {
+        "id": "review-commons",
+        "name": "Review Commons",
+        "runBy": "ASAPbio + EMBO",
+        "entry": "预印本（bioRxiv / medRxiv）",
+        "affiliates": ["eLife", "EMBO Journal", "EMBO Reports", "Life Science Alliance", "Journal of Cell Biology", "Molecular Biology of the Cell", "PLOS Biology", "PLOS Genetics", "Genetics", "G3", "Genome Biology", "Genes & Development", "Open Biology", "Journal of General Physiology", "Development（2024 起试点）", "Journal of Cell Science（2024 起试点）"],
+        "days": 30,
+        "note": "评审报告与作者回应随预印本公开；投稿时附上报告，期刊可直接据此决定"
+      },
+      {
+        "id": "elife-reviewed-preprints",
+        "name": "eLife Reviewed Preprints",
+        "runBy": "eLife",
+        "entry": "直接投稿 eLife",
+        "affiliates": ["eLife"],
+        "days": 30,
+        "note": "无 desk reject、无传统 accept/reject：送审即发布评审与 eLife Assessment，作者据评审自决修订"
+      },
+      {
+        "id": "pci",
+        "name": "Peer Community In",
+        "runBy": "PCI（分学科多个子站）",
+        "entry": "预印本",
+        "affiliates": ["PCI 推荐后可投其「PCI-friendly」期刊清单，覆盖生态、进化、心理学、基因组学等"],
+        "days": 60,
+        "note": "推荐（recommendation）不等于期刊录用，但可显著缩短后续评审"
+      }
+    ]
+  },
+  "transferChains": {
+    "label": "转投链（带审稿意见走，不重新排队）",
+    "chains": [
+      { "publisher": "Springer Nature", "path": ["nature", "nature-communications", "scientific-reports"], "note": "Nature 系 transfer service 可携带审稿意见" },
+      { "publisher": "AAAS", "path": ["science", "science-advances", "science-immunology"], "note": "编辑可建议转投，需作者同意" },
+      { "publisher": "Cell Press", "path": ["cell", "molecular-cell", "cell-reports", "iscience"], "note": "Cell Press Multi-Journal Transfer" },
+      { "publisher": "Elsevier", "path": ["lancet", "eclinicalmedicine", "lancet-regional-health"], "note": "Article Transfer Service" },
+      { "publisher": "Wiley", "path": ["angewandte", "chemistry-europe", "eurjoc"], "note": "部分刊支持" },
+      { "publisher": "APA / SAGE", "path": ["psychological-science", "ampps"], "note": "学会内部转投" }
+    ],
+    "caveats": [
+      "transfer 前先判断原审稿意见对新刊是否仍适用：针对 Nature 的 importance 批评带到子刊往往不再成立",
+      "transfer 通常不能再改内容（只能按意见改），等于放弃一次重写机会",
+      "跨出版商不能 transfer，只能重投"
+    ]
+  },
+  "preprint": {
+    "label": "预印本先行",
+    "why": "占 priority；是 Review Commons / PCI 的入口；被拒也不空手。",
+    "policyMatrix": [
+      { "policy": "allowed", "meaning": "多数期刊接受，投稿时声明预印本 DOI 即可", "examples": ["Nature 系（含子刊）", "Science 系", "PLOS", "eLife", "EMBO Press", "Cell Press（多数）"] },
+      { "policy": "allowed-restricted", "meaning": "接受但需在投稿时说明，且媒体 embargo 规则更严", "examples": ["NEJM", "JAMA"] },
+      { "policy": "discouraged", "meaning": "不禁止但编辑可能认为已失去新颖性", "examples": ["部分临床高影响刊"] }
+    ],
+    "caveats": [
+      "Ingelfinger 规则的历史解释仍影响 NEJM/JAMA，投前查当期政策",
+      "预印本一旦上线不能撤（可更新版本），标题与摘要请先定稿",
+      "会议论文（NeurIPS/ICML）与预印本不冲突，但要在投稿信里说明"
+    ]
+  },
+  "decisionTree": [
+    { "reason": "scope", "signal": "编辑说 not suitable for our readership / outside scope", "action": "换刊，不要改稿", "rationale": "scope 不匹配无法通过修改内容解决；改稿只会拖时间" },
+    { "reason": "format", "signal": "字数/图数/参考文献超限、格式不符", "action": "改格式后同刊重投", "rationale": "这是纯技术退回，最快路径是照着 limits 改完立刻重投" },
+    { "reason": "novelty", "signal": "limited advance / not of broad interest / incremental", "action": "改主张表述 + 补对比实验，再投同档或降一档", "rationale": "novelty 批评通常是「没写清新在哪」，而不是真的不新；先改 framing 再降档" },
+    { "reason": "method", "signal": "insufficient controls / statistical concerns / n too small", "action": "补实验或补分析，再投同刊", "rationale": "方法批评是可修复的；带着未修复的方法问题转投，下一轮会遇到同样的意见" },
+    { "reason": "significance", "signal": "important but not for this journal / would fit a specialist journal", "action": "用 transfer 或直接投子刊", "rationale": "这是最「良性」的拒稿：科学没问题，只是档位不对" },
+    { "reason": "unknown", "signal": "无明确理由或模板化拒信", "action": "先做一次 audit + scoop check，再决定是否降档", "rationale": "模板拒信往往意味着 desk reject，实际原因需要自己诊断" }
+  ],
+  "timelineDefaults": {
+    "note": "排期用的量级估计，单位天。真实值以 journals.json 的 firstDecisionDays 为准。",
+    "preprintPostDays": 3,
+    "deskDecisionDays": 8,
+    "reviewRoundDays": 45,
+    "revisionDays": 30,
+    "secondRoundDays": 25,
+    "transferDays": 10,
+    "registeredReportStage1Days": 45,
+    "registeredReportStage2Days": 60,
+    "portableReviewDays": 30
+  }
+}

@@ -1,0 +1,17 @@
+# 统一换行：仓库里一律 LF，检出时按平台
+* text=auto eol=lf
+
+# PowerShell 脚本必须原样保留字节：bin/launch.ps1 是 UTF-8 with BOM，
+# 被 git 做换行转换或去 BOM 后，Windows PowerShell 5.1 会把中文读成乱码。
+*.ps1 -text
+*.cmd -text eol=crlf
+
+# 二进制
+*.tgz binary
+*.png binary
+*.ico binary
+*.zst binary
+
+# 语言统计口径
+*.md linguist-documentation
+dsh-science/skills-vendor/manifest.json linguist-generated=false

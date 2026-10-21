@@ -1,0 +1,45 @@
+{
+  "name": "trial-survival",
+  "design": "rct-parallel",
+  "domain": "biomed",
+  "testId": "logrank",
+  "columns": {
+    "time": "time",
+    "event": "event",
+    "group": "arm"
+  },
+  "csv": "data.csv",
+  "howToCall": {
+    "tool": "science_stats",
+    "args": {
+      "projectId": "<你的课题 id>",
+      "testId": "logrank",
+      "csvPath": "data/exp1.csv",
+      "columns": {
+        "time": "time",
+        "event": "event",
+        "group": "arm"
+      }
+    },
+    "note": "列名固定：time / event / group。event=0 表示删失，必须保留这些行"
+  },
+  "expected": {
+    "n": {
+      "control": 40,
+      "treated": 40
+    },
+    "statistic": 23.6352,
+    "df": 1,
+    "p": 1e-06,
+    "effectSize": {
+      "kind": "hazard-ratio",
+      "value": 0.6872
+    },
+    "medianSurvival": 8.5
+  },
+  "whatToLookAt": [
+    "event=0 是删失，不是缺失——删失信息必须保留，删掉会让曲线偏高",
+    "log-rank 假设比例风险；两条曲线交叉时改用 RMST",
+    "中位生存时间来自 Kaplan-Meier，不是原始时间的中位数"
+  ]
+}

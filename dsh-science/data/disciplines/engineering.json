@@ -1,0 +1,586 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "engineering",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "engineering",
+  "label": "工程与技术",
+  "questionTypes": [
+    {
+      "id": "performance-vs-baseline",
+      "label": "性能是否超过现有方案",
+      "when": "有可复现的现有方法/产品作为对照，指标可量化",
+      "needs": [
+        "同工况同预算的强基线",
+        "≥5 次独立重复的均值与区间",
+        "相对提升与其置信区间"
+      ]
+    },
+    {
+      "id": "sensitivity",
+      "label": "哪些设计参数决定性能",
+      "when": "参数空间已界定，可做受控试验或高保真仿真",
+      "needs": [
+        "因子与水平表",
+        "随机化与区组",
+        "主效应/交互效应的方差分解"
+      ]
+    },
+    {
+      "id": "robustness",
+      "label": "工况扰动下是否可靠",
+      "when": "实际使用条件有波动（温度、负载、电压、振动）",
+      "needs": [
+        "扰动范围与分布",
+        "裕度设计与最坏情况分析",
+        "退化/寿命模型"
+      ]
+    },
+    {
+      "id": "compliance",
+      "label": "是否满足标准/规范",
+      "when": "产品要交付或认证",
+      "needs": [
+        "标准编号与版本",
+        "条款逐条符合性证据",
+        "认可实验室或第三方测试报告"
+      ]
+    },
+    {
+      "id": "failure",
+      "label": "失效机理与寿命",
+      "when": "有失效样本或可做加速试验",
+      "needs": [
+        "失效判据",
+        "加速模型与应力水平",
+        "删失数据的统计处理"
+      ]
+    },
+    {
+      "id": "scale-up",
+      "label": "放大/量产是否保持性能",
+      "when": "从样机走向批量，需证明一致性",
+      "needs": [
+        "过程能力指数 Cpk",
+        "批次间方差",
+        "测量系统能力（%GRR）"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "design-prototype-test",
+      "label": "设计—原型—测试循环（V 模型）",
+      "when": "从需求到实物的开发验证，尤其是机电/控制系统",
+      "requires": [
+        "需求到指标的可追踪矩阵（每条需求对应一个 test case）",
+        "仿真与试验的对应清单（同一工况、同一载荷）",
+        "设计冻结版本号与变更记录",
+        "FMEA 与关键失效模式清单"
+      ],
+      "nRule": "每个工况 ≥5 次独立重复（n=3 只能给均值，给不出可用的 95% 区间）；验证矩阵覆盖 ≥3 个工况点 × 3 个载荷水平 = 9 组，关键失效模式每条至少 1 组破坏性试验",
+      "threats": [
+        {
+          "risk": "需求改了但 test case 没跟着改，验证矩阵与最终设计脱节",
+          "mitigation": "需求-测试追踪矩阵纳入版本控制，每次设计变更强制回归对应 test case"
+        },
+        {
+          "risk": "仿真里用理想边界条件，试验台却带夹具柔度与摩擦",
+          "mitigation": "把夹具柔度、传感器质量、摩擦计入模型，做模型更新（model updating）"
+        },
+        {
+          "risk": "样机是手工件，性能来自装配精度而非设计",
+          "mitigation": "用与量产同工艺的样件复测，或报手工件与工艺件的差异"
+        },
+        {
+          "risk": "只测额定工况，边界工况空缺",
+          "mitigation": "按规定的最恶劣工况（温度极值、最大负载、最低电压）补测"
+        }
+      ],
+      "reporting": [],
+      "why": "工程结论的可信度来自「需求—设计—试验」链条闭合，任何一环缺失，性能数字都只是样机的偶然表现。",
+      "source": "VDI 2206:2004 (Design methodology for mechatronic systems)"
+    },
+    {
+      "id": "baseline-ablation",
+      "label": "基线对比与消融实验",
+      "when": "声称某项设计/算法/结构带来提升，需要证明提升归因",
+      "requires": [
+        "已发表的最强基线，且在同一数据/工况上复现",
+        "同预算比较（算力、功耗、成本、时间）",
+        "逐模块消融：每去掉一个模块单独测",
+        "随机种子或独立样件 ≥5 个"
+      ],
+      "nRule": "相对提升 Δ=(μ_new−μ_base)/μ_base，n=5 时 95% CI 半宽 ≈ t₀.₉₇₅,₄·s/√n ≈ 1.24s；若重复间 s=3%，提升 <4% 时区间跨 0，需把重复数加到 n≈(2.78·3/2)²≈17 才能分辨 2% 的差异",
+      "threats": [
+        {
+          "risk": "基线是自己实现的弱版本（strawman baseline），超参未调",
+          "mitigation": "用原作者代码/权重，按其论文超参复现并报复现值与原论文的差距"
+        },
+        {
+          "risk": "基线与本方法的数据划分、预处理、预算不一致",
+          "mitigation": "统一数据划分与预处理脚本，报参数量/算力/功耗对比表"
+        },
+        {
+          "risk": "只报最好的一次结果（best-of-n）",
+          "mitigation": "报全部种子的均值±标准差，并说明如何选超参（验证集，非测试集）"
+        },
+        {
+          "risk": "消融只删一个大模块，看不到子模块贡献",
+          "mitigation": "做增量式消融（逐模块累加），给每一步的 Δ 与区间"
+        }
+      ],
+      "reporting": [],
+      "why": "「我们的系统达到 X」不是证据；「相对最强基线提升 Y%，且消融显示提升来自哪一部分」才是。",
+      "source": "Henderson et al. 2018, AAAI-18 (Deep Reinforcement Learning That Matters)"
+    },
+    {
+      "id": "doe-factorial",
+      "label": "试验设计（全因子 / 部分因子）",
+      "when": "多个参数同时影响输出，需要分离主效应与交互作用",
+      "requires": [
+        "因子与水平事前确定并写在方案里",
+        "试验顺序随机化、必要时分区组",
+        "重复或中心点以估计纯误差",
+        "残差诊断（正态性、等方差、独立性）"
+      ],
+      "nRule": "2^k 全因子：k=4 需 16 次；部分因子 2^(4−1) 用 8 次即可（分辨率 IV，主效应不与二阶交互混杂）；要估计纯误差需 ≥2 个中心点或每条件 2 次重复。筛选阶段因子数 >5 时用 2^(k−p) 分辨率 III 设计并接受主效应与二阶交互混杂",
+      "threats": [
+        {
+          "risk": "试验顺序未随机化，机器预热/刀具磨损被当成因子效应",
+          "mitigation": "随机化运行顺序并记录时间戳，把漂移作为区组因子"
+        },
+        {
+          "risk": "分辨率不足导致主效应与二阶交互混杂却按主效应解释",
+          "mitigation": "声明设计分辨率，混杂结构写进正文；关键结论用折叠设计（fold-over）验证"
+        },
+        {
+          "risk": "没有纯误差估计，p 值来自模型残差而非重复",
+          "mitigation": "加中心点或重复，报 lack-of-fit 检验"
+        },
+        {
+          "risk": "因子水平范围过窄，结论只在小区间内成立",
+          "mitigation": "水平范围按实际工作区间设定，并在边界补验证点"
+        }
+      ],
+      "reporting": [],
+      "why": "工程参数往往强交互，一次改一个因子的做法既费试验又漏掉交互项。",
+      "source": "Montgomery 2017 (Design and Analysis of Experiments, 9th ed., Wiley)"
+    },
+    {
+      "id": "gauge-rr",
+      "label": "测量系统分析（Gauge R&R）",
+      "when": "要判断观测到的差异是产品差异还是量具/人员差异",
+      "requires": [
+        "10 个零件 × 3 个操作员 × 3 次重复的交叉设计",
+        "零件选取覆盖过程变差范围",
+        "测量顺序随机且操作员盲测",
+        "量具已校准并在有效期内"
+      ],
+      "nRule": "%GRR = 100·√(σ²_GRR)/√(σ²_total)；判据：%GRR <10% 可接受、10–30% 视成本与风险、>30% 不可接受；可区分类别数 ndc = 1.41·(PV/GRR) 必须 ≥5，否则该量具分辨不出过程差异",
+      "threats": [
+        {
+          "risk": "零件取自同一批次、变差范围窄，GRR 被高估",
+          "mitigation": "零件覆盖过程实际变差（含上下限附近），报零件变差范围"
+        },
+        {
+          "risk": "操作员知道自己测的是同一零件，产生记忆偏倚",
+          "mitigation": "零件编号掩盖、顺序随机，同一零件不在相邻时间点重复"
+        },
+        {
+          "risk": "用均值极差法代替 ANOVA 法，交互作用被并入重复性",
+          "mitigation": "用 ANOVA 法，报操作员×零件交互项及其显著性"
+        },
+        {
+          "risk": "只做一次 GRR 就长期沿用",
+          "mitigation": "换班次、换量具、换环境后重做，纳入控制计划"
+        }
+      ],
+      "reporting": [],
+      "why": "测量系统能力不够时，任何工艺改进的「效果」都可能是量具噪声；这一步是工程统计的前置门槛。",
+      "source": "AIAG 2010 (Measurement Systems Analysis Reference Manual, 4th ed.)"
+    },
+    {
+      "id": "accelerated-life",
+      "label": "加速寿命 / 可靠性试验",
+      "when": "产品寿命远长于开发周期，需要外推",
+      "requires": [
+        "加速模型选定依据（Arrhenius、逆幂律、Eyring）",
+        "≥3 个应力水平且至少一个接近使用条件",
+        "失效判据与检测间隔写明",
+        "删失（censored）数据的统计处理"
+      ],
+      "nRule": "Weibull 形状参数 β 的稳定估计需 ≥10 个失效样本；B10 寿命的 90% 置信下限在 15 个样本全失效时约为点估计的 0.6 倍，只有 5 个失效时会低到约 0.35 倍——样本不够时只能报下限，不报点估计",
+      "threats": [
+        {
+          "risk": "加速应力引入非使用条件下的失效机理（机理偏移）",
+          "mitigation": "每个应力水平做失效分析（显微/剖切），确认机理一致后再外推"
+        },
+        {
+          "risk": "只用一个高应力水平，加速模型无从验证",
+          "mitigation": "≥3 个应力水平，检验寿命-应力关系的线性（或模型拟合优度）"
+        },
+        {
+          "risk": "把删失样本当失效或直接剔除",
+          "mitigation": "用含删失的极大似然（Weibull 或对数正态）拟合"
+        },
+        {
+          "risk": "样品数与试验时长按惯例定，功效未知",
+          "mitigation": "事前算样本量：给定 β、目标 B10 与置信水平反推所需失效数"
+        }
+      ],
+      "reporting": [],
+      "why": "可靠性数字的外推建立在「机理不变」的假设上，这个假设必须用失效分析证明。",
+      "source": "IEC 62506:2013 (Methods for product accelerated testing)"
+    },
+    {
+      "id": "simulation-validation",
+      "label": "仿真—实验验证（V&V）",
+      "when": "用仿真替代部分试验，或仿真结果要作为设计依据",
+      "requires": [
+        "网格/时间步无关性检验",
+        "与解析解或基准实验的代码验证",
+        "输入与模型不确定度定量（UQ）",
+        "验证度量：面积/相位/峰值误差与 ASME V&V 20 的 |E|"
+      ],
+      "nRule": "网格加密 2 倍后关键量变化 <2% 才算收敛；验证度量 |E| = |S−D|/√(u²_S+u²_D) ≤ 1 才判为「验证通过」，>1 说明模型误差超出两者不确定度之和",
+      "threats": [
+        {
+          "risk": "网格无关性只做一次加密，验证不到收敛阶",
+          "mitigation": "至少 3 套网格，报 Richardson 外推与观测收敛阶"
+        },
+        {
+          "risk": "仿真与试验的边界条件/材料参数不一致",
+          "mitigation": "用试验反演材料参数（model updating），报反演后的参数区间"
+        },
+        {
+          "risk": "只对比一条曲线「趋势一致」就宣称验证通过",
+          "mitigation": "给 |E| 值、峰值与相位误差表，逐工况判定"
+        },
+        {
+          "risk": "输入不确定度未量化，|E| 的分母随意填",
+          "mitigation": "用 DOE 或 Sobol 敏感性给出输入不确定度，再算 |E|"
+        }
+      ],
+      "reporting": [],
+      "why": "仿真是模型不是现实；「验证通过」是带判据的结论，不是看图说话。",
+      "source": "ASME V&V 20-2009 (Standard for Verification and Validation in Computational Fluid Dynamics and Heat Transfer)"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "strain",
+      "label": "应变",
+      "unit": "με",
+      "how": "应变片惠斯通电桥，同批贴温度补偿片，采样与载荷同步触发",
+      "precision": "±1 με，桥路非线性 <0.1% FS",
+      "artifact": "贴片方向偏差、胶层蠕变、引线电阻",
+      "calibration": "并联标准电阻做 shunt calibration，每批次贴片后执行"
+    },
+    {
+      "id": "temperature",
+      "label": "温度",
+      "unit": "°C / K",
+      "how": "T 型热电偶或 PT100 四线制，冷端补偿与屏蔽接地",
+      "precision": "±0.5 °C（含冷端与线性化误差）",
+      "artifact": "安装接触热阻、辐射误差、热惯性",
+      "calibration": "冰点与干体炉两点校准，季度复核"
+    },
+    {
+      "id": "vibration",
+      "label": "振动加速度",
+      "unit": "m/s²、g",
+      "how": "IEPE 加速度计 + 24 bit 采集，采样率 ≥10 倍关心频带上限",
+      "precision": "幅值线性 ±1%，可用频带上限取传感器谐振频率的 1/3",
+      "artifact": "安装共振、电缆噪声、接地环路",
+      "calibration": "背靠背比对校准（ISO 16063-21），年度送检"
+    },
+    {
+      "id": "efficiency",
+      "label": "效率 / 功率",
+      "unit": "% / kW",
+      "how": "功率分析仪测输入电功率，扭矩-转速或量热法测输出，同步采样",
+      "precision": "功率分析仪 0.05 级；效率不确定度按误差传播约 ±0.3 个百分点",
+      "artifact": "变频器谐波、采样不同步、机械损耗归属",
+      "calibration": "标准电阻负载 + 年度校准证书"
+    },
+    {
+      "id": "surface-roughness",
+      "label": "表面粗糙度",
+      "unit": "μm（Ra / Rz）",
+      "how": "触针式轮廓仪，按 ISO 4287 设定 λc 截止与评价长度",
+      "precision": "Ra 重复性 ±5%",
+      "artifact": "截止波长选择可让 Ra 变化 20%",
+      "calibration": "每班次用标准粗糙度样块比对"
+    },
+    {
+      "id": "latency",
+      "label": "延迟 / 时钟同步",
+      "unit": "ms / μs",
+      "how": "硬件时间戳 + 外部触发，端到端打点",
+      "precision": "受采样时钟抖动与调度抖动限制，需报抖动分布而非单值",
+      "artifact": "软件调度、通信协议栈排队",
+      "calibration": "示波器时基校准 + 环回（loopback）测固有延迟"
+    }
+  ],
+  "methods": [
+    {
+      "id": "anova-doe",
+      "label": "方差分析与效应图",
+      "when": "DOE 数据的主效应/交互效应检验",
+      "assumptions": [
+        "残差正态、独立、等方差",
+        "运行顺序已随机化"
+      ],
+      "tool": "R: aov / lm；Python: statsmodels OLS + anova_lm",
+      "pitfall": "未随机化就做 ANOVA，漂移被算进因子效应",
+      "why": "唯一能把总变差拆成因子、交互与误差的标准框架。"
+    },
+    {
+      "id": "rsm",
+      "label": "响应面法（RSM）",
+      "when": "要在多因子空间里找最优点与容差区",
+      "assumptions": [
+        "设计域内二阶模型可近似",
+        "设计点覆盖操作域"
+      ],
+      "tool": "R: rsm；Design-Expert",
+      "pitfall": "把模型外推到设计域之外做优化",
+      "why": "给的是「在什么参数组合下最优」，比单点最优更接近可制造的设计。"
+    },
+    {
+      "id": "grr-anova",
+      "label": "Gauge R&R（ANOVA 法）",
+      "when": "评估测量系统能否分辨过程变差",
+      "assumptions": [
+        "10×3×3 交叉设计",
+        "操作员视为随机因子"
+      ],
+      "tool": "R: SixSigma::ss.rr",
+      "pitfall": "用均值极差法代替 ANOVA 法，丢掉交互项",
+      "why": "测量系统不合格时，所有工艺结论都不可信，这是前置门槛。"
+    },
+    {
+      "id": "tolerance-mc",
+      "label": "蒙特卡洛公差 / 误差累积分析",
+      "when": "多环节误差叠加，需给装配或系统级裕度",
+      "assumptions": [
+        "各环节分布设定有依据",
+        "N ≥ 1e5 保证分位数稳定"
+      ],
+      "tool": "Python: numpy；MATLAB",
+      "pitfall": "把最坏情况法（Worst Case）当统计公差用，过度保守或过度乐观",
+      "why": "统计公差比最坏情况法给出更真实（也更宽）的合格率估计。"
+    },
+    {
+      "id": "bayes-calibration",
+      "label": "贝叶斯模型校准",
+      "when": "仿真与试验存在系统偏差，需要更新模型参数",
+      "assumptions": [
+        "先验有物理依据",
+        "MCMC 收敛（R̂<1.01）"
+      ],
+      "tool": "PyMC、Stan、UQLab",
+      "pitfall": "先验过宽，把模型偏差全吸收进参数",
+      "why": "把「模型不准」量化成参数后验，而不是靠调参掩盖。"
+    },
+    {
+      "id": "weibull",
+      "label": "Weibull 可靠性分析",
+      "when": "寿命数据含删失、需外推 B10/B1 寿命",
+      "assumptions": [
+        "单一失效机理",
+        "加速模型在应力范围内成立"
+      ],
+      "tool": "R: WeibullR、survival；Python: reliability",
+      "pitfall": "混合失效模式合并拟合，β 失真",
+      "why": "删失数据下唯一能同时估形状与尺度的标准方法。"
+    },
+    {
+      "id": "equivalence-test",
+      "label": "等效性 / 非劣检验",
+      "when": "声称「不比现有方案差」或「提升达到工程意义」",
+      "assumptions": [
+        "事前设定最小有意义改进 δ",
+        "配对或独立设计正确"
+      ],
+      "tool": "R: t.test(paired=TRUE)；Python: scipy.stats.ttest_rel",
+      "pitfall": "用「p>0.05」证明无差异（把无证据当证据）",
+      "why": "工程上的「一样好」必须用等效性检验，而不是不显著的 t 检验。"
+    },
+    {
+      "id": "vv-uq",
+      "label": "验证度量与不确定度量化（UQ）",
+      "when": "仿真结果要作为设计依据",
+      "assumptions": [
+        "数值误差与输入不确定度已分离量化"
+      ],
+      "tool": "Python: chaospy、UQLab",
+      "pitfall": "只做单点曲线对比，不给 |E| 与敏感性排序",
+      "why": "验证是带判据的统计判断，不是图形相似性。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "matlab",
+      "label": "MATLAB",
+      "kind": "analysis",
+      "install": "商业授权（学生版可申请）",
+      "minimalScript": "x = fmincon(@(p) (p(1)-2)^2+(p(2)-3)^2, [0 0], [], [], [], [], [0 0], [5 5]); disp(x)",
+      "alt": [
+        "Python scipy",
+        "GNU Octave"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "python-scipy",
+      "label": "Python（numpy / scipy）",
+      "kind": "analysis",
+      "install": "pip install numpy scipy pandas",
+      "minimalScript": "python -c \"import numpy as np; from scipy.optimize import minimize; print(minimize(lambda p: (p[0]-2)**2+(p[1]-3)**2,[0,0]).x)\"",
+      "alt": [
+        "MATLAB",
+        "R"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "r-doe",
+      "label": "R（DoE.base / SixSigma / WeibullR）",
+      "kind": "stats",
+      "install": "install.packages(c('DoE.base','SixSigma','WeibullR'))",
+      "minimalScript": "Rscript -e \"library(DoE.base); print(oa.design(nruns=8, nfactors=4))\"",
+      "alt": [
+        "Minitab",
+        "Design-Expert"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "ansys",
+      "label": "ANSYS",
+      "kind": "simulation",
+      "install": "商业授权",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "COMSOL",
+        "OpenFOAM",
+        "CalculiX"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "labview",
+      "label": "NI LabVIEW",
+      "kind": "daq",
+      "install": "商业授权",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "Python + NI-DAQmx",
+        "Simulink Real-Time"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "minitab",
+      "label": "Minitab",
+      "kind": "stats",
+      "install": "商业授权",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "R",
+        "JMP"
+      ],
+      "offline": true,
+      "license": "commercial"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「『本系统达到 95.2%』——基线是多少？相对最强基线提升了几个百分点，这个提升的置信区间跨不跨零？」",
+      "defense": "给基线复现值、相对提升 Δ 与 95% CI、重复次数与种子/样件清单"
+    },
+    {
+      "attack": "「基线是你自己实现的弱版本吧？原作者的代码和超参跑过吗，预算对齐了吗？」",
+      "defense": "用原作者实现复现并报与原论文的差距，附参数量/算力/功耗/成本对比表"
+    },
+    {
+      "attack": "「n=3 次试验就画误差棒，标准差是怎么算的？95% 区间半宽是多少？」",
+      "defense": "补到 ≥5 次独立重复，报均值±SD 与 t 分布区间，说明重复单元是什么"
+    },
+    {
+      "attack": "「10% 的性能差异，你的测量系统 %GRR 是多少？超过 30% 的话这个差异可能是量具噪声。」",
+      "defense": "提交 10×3×3 Gauge R&R 报告、%GRR 与 ndc，必要时先换量具再谈改进"
+    },
+    {
+      "attack": "「仿真和实验差 18%，你写『趋势一致』——网格无关性、|E| 值和输入不确定度在哪？」",
+      "defense": "给 Richardson 外推的收敛结果、|E| 判定与 UQ 表，逐工况说明是否验证通过"
+    },
+    {
+      "attack": "「测试按哪个标准做的？工况、环境条件、样本量和判定准则写清楚，否则结果不可比。」",
+      "defense": "写明标准编号与版本、条款号、试验条件与判定阈值，附第三方报告编号"
+    },
+    {
+      "attack": "「消融只删了一个模块，其他模块的贡献呢？超参是不是在测试集上调的？」",
+      "defense": "给增量式消融表（每步 Δ 与 CI），说明超参只在验证集上选定，测试集只用一次"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "相对最强基线的提升幅度",
+      "topJournal": "≥5% 且 95% CI 不含 0，基线为已发表最强方法且预算对齐",
+      "field": "1–3%，或只报绝对值无基线",
+      "source": "Henderson et al. 2018, AAAI-18 (Deep Reinforcement Learning That Matters) 对基线与随机种子方差的实证要求"
+    },
+    {
+      "metric": "%GRR（测量系统能力）",
+      "topJournal": "<10% 且 ndc ≥5",
+      "field": "10–30%，常只报重复性",
+      "source": "AIAG 2010 (Measurement Systems Analysis Reference Manual, 4th ed.) 第 III 章判据"
+    },
+    {
+      "metric": "仿真验证度量 |E|",
+      "topJournal": "|E| ≤ 1（随工况逐条给出）",
+      "field": "只给曲线目视对比",
+      "source": "ASME V&V 20-2009 (Standard for Verification and Validation in CFD and Heat Transfer)"
+    },
+    {
+      "metric": "重复次数与不确定度报告",
+      "topJournal": "≥5 次独立重复 + 95% 区间 + 重复单元定义",
+      "field": "n=3 只报均值",
+      "source": "Montgomery 2017 (Design and Analysis of Experiments, 9th ed.) 重复与区组章节"
+    },
+    {
+      "metric": "标准符合性证据",
+      "topJournal": "逐条款对照表 + 判定准则 + 报告编号",
+      "field": "只写「符合相关标准」",
+      "source": "IEC 61400-1:2019 (Wind turbines — Part 1: Design requirements) 第 7 章载荷与验证要求"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "试验台与测量系统能力（含 %GRR）",
+      "基线复现结果",
+      "本方法主结果（相对提升 + 区间）",
+      "消融与参数敏感性",
+      "仿真—实验对照与失效边界"
+    ],
+    "figureBudget": 6,
+    "note": "Results 第一段先证明「测得出」：量具、采样、%GRR；第二段复现基线，第三段才给本方法。所有性能数字必须写成「相对某基线的 Δ（95% CI）」，单摆一个绝对值会被当作宣传。消融表按模块增量排，最后一行是全模型。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

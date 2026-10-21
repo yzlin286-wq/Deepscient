@@ -1,0 +1,570 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "agri-food",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "agri-food",
+  "label": "农业与食品",
+  "questionTypes": [
+    {
+      "id": "yield-response",
+      "label": "处理/品种是否真的增产",
+      "when": "有可随机化的田间处理与可测的产量或品质终点",
+      "needs": [
+        "随机区组与足够重复",
+        "对照（空白或当地主栽品种）",
+        "收获面积与水分基准写清"
+      ]
+    },
+    {
+      "id": "gxe",
+      "label": "基因型 × 环境互作有多大",
+      "when": "同一套基因型/处理要在多个地点或年份推广",
+      "needs": [
+        "≥3 个环境",
+        "品种与年份/地点都进模型",
+        "稳定性统计（BLUP/AMMI/GGE）"
+      ]
+    },
+    {
+      "id": "sensory",
+      "label": "产品感官是否可接受",
+      "when": "配方、工艺或货架期改变后要判断消费者反应",
+      "needs": [
+        "训练小组与消费者小组分开",
+        "盲法与平衡上样顺序",
+        "明确的接受限阈值"
+      ]
+    },
+    {
+      "id": "shelf-life",
+      "label": "货架期有多长",
+      "when": "要标注保质期或比较包装/贮藏条件",
+      "needs": [
+        "多时间点 × 多温度",
+        "独立包装单元作重复",
+        "预先定义的失效判据"
+      ]
+    },
+    {
+      "id": "animal-performance",
+      "label": "饲喂方案对生产性能/健康的影响",
+      "when": "动物试验，结局是增重、料重比、发病率",
+      "needs": [
+        "ARRIVE 关键项",
+        "栏/圈为重复单元",
+        "盲法评估与事前样本量依据"
+      ]
+    },
+    {
+      "id": "composition",
+      "label": "成分与理化特性是否改变",
+      "when": "品种、产地或加工工艺改变后的品质表征",
+      "needs": [
+        "采样代表性（批次内与批次间）",
+        "标准方法编号",
+        "方法间比对"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "rcbd",
+      "label": "随机完全区组设计（RCBD）",
+      "when": "田间存在单向肥力/地形梯度，处理数 4–12，单点单季",
+      "requires": [
+        "区组按梯度方向划分且区组内同质",
+        "每个区组内处理随机排列",
+        "保护区行与边行剔除规则",
+        "收获面积 ≥ 2 个内行 × 3 m"
+      ],
+      "nRule": "重复数 r 由误差自由度定：(r−1)(t−1) ≥ 12。t=6 时 r ≥ 4（误差 df=15）；t=10 时 r ≥ 4 也不足（df=27 但 LSD 精度低），此时改 α=0.05 下的 d 检测力算 r ≥ 5。永远不要用 r=3 做 ≥8 个处理的试验",
+      "threats": [
+        {
+          "risk": "区组方向与肥力梯度垂直，区组内变异反而最大",
+          "mitigation": "先做土壤 EC/有机质网格采样，区组沿等值线划分，并报区组效率（相对效率 RE）"
+        },
+        {
+          "risk": "边行效应与缺株被当作处理效应",
+          "mitigation": "收获时剔除每小区两侧边行，缺株率>10% 的小区单列并做剔除敏感性分析"
+        },
+        {
+          "risk": "单点单季结果被写成广适性结论",
+          "mitigation": "结论句限定到「本生态区当年」，或补第二季/第二点后再谈推广"
+        }
+      ],
+      "reporting": [
+        "general"
+      ],
+      "why": "在单环境内把已知梯度从误差里剥离，是农艺试验最小的可信单元。它的作用域就是它跑过的那个环境。",
+      "source": "Gomez & Gomez 1984, Statistical Procedures for Agricultural Research (2nd ed.), Ch. 3"
+    },
+    {
+      "id": "split-plot",
+      "label": "裂区设计",
+      "when": "处理有嵌套层级（灌溉/耕作做主区，品种/施肥做副区），主区难以大范围随机",
+      "requires": [
+        "主区与副区分别声明随机化",
+        "两套误差项分开（主区误差 = 区组×主区）",
+        "主区效应只用主区误差检验"
+      ],
+      "nRule": "主区重复 r ≥ 4；主区误差 df=(r−1)(a−1)，a=3、r=4 时 df=6，已到下限；副区误差 df=(r−1)(a−1)(b−1)，a=3、b=4、r=4 时 df=18。主区比较的功效天然低于副区，事前按主区误差算功效",
+      "threats": [
+        {
+          "risk": "用副区误差（df 大、MS 小）检验主区效应，p 值被人为压低",
+          "mitigation": "在模型里显式写两个误差项，报两张方差分析表并注明各自误差来源"
+        },
+        {
+          "risk": "主区面积过大导致主区内梯度被误认为主区效应",
+          "mitigation": "主区长度控制在 10 m 内，或改用带状设计并记录主区内梯度"
+        },
+        {
+          "risk": "把裂区当双因素完全随机分析，交互作用被高估",
+          "mitigation": "交互项也必须用副区误差检验，报 df 与 F 的对应关系"
+        }
+      ],
+      "reporting": [
+        "general"
+      ],
+      "why": "当主区处理无法在小区内随机（灌溉、整地），裂区是唯一能保住随机化的排布，代价是主区比较的功效损失。",
+      "source": "Gomez & Gomez 1984, Statistical Procedures for Agricultural Research (2nd ed.), Ch. 4; Federer & King 2007, Variations on Split Plot and Split Block Experiment Designs"
+    },
+    {
+      "id": "multi-environment-trial",
+      "label": "多环境试验与 G×E 建模",
+      "when": "品种/处理要跨地点或跨年份推广，需要区分「广泛适应」与「特定适应」",
+      "requires": [
+        "≥3 个环境（地点×年份组合），每环境 ≥3 区组",
+        "品种与地点/年份作随机效应（或品种固定、环境随机）",
+        "报方差组分与 h²",
+        "稳定性统计与育种值 BLUP 并列"
+      ],
+      "nRule": "环境数 m ≥ 3，且同一品种在 ≥2 年出现。G×E 方差的估计精度约与 m 成正比：m=3 时 G×E 方差组分标准误常达估计值的 50% 以上，m ≥ 6 才稳。混合模型写法：yield ~ gen + (1|env) + (1|env:block) + (1|gen:env)，用 REML 估方差组分",
+      "threats": [
+        {
+          "risk": "把环境当固定效应逐个做 ANOVA，然后手写「平均表现」",
+          "mitigation": "环境进随机效应，用 BLUP 收缩后的品种值排名，并报收缩前后排名变化"
+        },
+        {
+          "risk": "G×E 显著就宣称存在「稳定性差异」，但没做稳定性统计",
+          "mitigation": "补 Finlay-Wilkinson 回归系数 b、AMMI/GGE 双标图，或报 Shukla 稳定性方差"
+        },
+        {
+          "risk": "地点是方便取样（自家试验站），环境域被过度外推",
+          "mitigation": "写明环境抽样的目标域（生态区、土壤类型、年均温区间），并做留一环境交叉验证"
+        }
+      ],
+      "reporting": [
+        "general"
+      ],
+      "why": "作物推荐的本质是对环境域的插值。没有环境维度，品种排名只是某一个点的噪声排序。",
+      "source": "van Eeuwijk, Bustos-Korts & Malosetti 2016, Crop Science 56:2119–2140; Finlay & Wilkinson 1963, Aust. J. Agric. Res. 14:742–754"
+    },
+    {
+      "id": "sensory-panel",
+      "label": "感官评价（训练小组 / 消费者小组）",
+      "when": "配方、工艺或包装改变后要判断差别是否存在或是否可接受",
+      "requires": [
+        "训练小组按 ISO 8586 筛选与监控（8–12 人）",
+        "消费者小组 ≥60 人且非本实验室人员",
+        "盲编码、平衡上样顺序（Williams 拉丁方）",
+        "清水/无盐饼干清口，独立隔间"
+      ],
+      "nRule": "差别检验（三点检验 ISO 4120）：α=.05、β=.20、真实差别 pd=50% 时需 24–36 名评价员；描述性分析训练小组 8–12 人 × 3 次重复；消费者喜好度每样品 ≥60 人，要检测 1 分（9 点刻度）差异时需 ≥100 人",
+      "threats": [
+        {
+          "risk": "顺序效应与遗留效应（第一杯总是被评低）",
+          "mitigation": "Williams 拉丁方平衡呈现顺序，样品间强制 30 s 间隔 + 清口"
+        },
+        {
+          "risk": "实验室人员冒充消费者，喜好度被系统性抬高",
+          "mitigation": "招募外部消费者并报人口学分布；训练小组数据不用于喜好度推断"
+        },
+        {
+          "risk": "把 9 点喜好刻度当等距连续变量做 t 检验",
+          "mitigation": "用序数混合模型（累积链接）或 Friedman + 事后，报中位数与四分位"
+        }
+      ],
+      "reporting": [
+        "general"
+      ],
+      "why": "感官是唯一直接测「人是否接受」的仪器，但它的量具是人，因此筛选、盲法与顺序平衡就是它的校准。",
+      "source": "ISO 8586:2012; ISO 4120:2021 (triangle test); ISO 11136:2014 (hedonic consumer tests)"
+    },
+    {
+      "id": "shelf-life",
+      "label": "贮藏与货架期试验",
+      "when": "要标注保质期，或比较包装/气调/温度条件",
+      "requires": [
+        "≥3 个温度（如 4/10/25 °C）× ≥3 个时间点",
+        "每个时间点取独立包装单元作重复（≥3）",
+        "事前定义的失效判据（感官接受限或微生物限值）",
+        "全程温度记录"
+      ],
+      "nRule": "时间点 ≥3 且覆盖失效前后（不能只测 0 天和终点）；每处理每时间点 ≥3 个独立包装单元。加速试验用 Q10=2–3 外推时，实测温度点 ≥2 个才允许拟合 Arrhenius，单温度外推一律不接受",
+      "threats": [
+        {
+          "risk": "同一包装在不同时间点重复取样，把「放置时间」当重复",
+          "mitigation": "每个时间点开新包装，报包装批号；重复单元 = 包装，不是测量次数"
+        },
+        {
+          "risk": "失效判据是事后看着数据画的线",
+          "mitigation": "在方法里先写接受限（如总体喜好度 <5.0 或 菌落总数 >10^6 CFU/g），再报首次越限时间"
+        },
+        {
+          "risk": "只做单一温度再线性外推到常温",
+          "mitigation": "≥2 个温度拟合 Arrhenius/Q10，报 Ea 与 95% CI，注明外推区间"
+        }
+      ],
+      "reporting": [
+        "general"
+      ],
+      "why": "货架期是时间-事件问题，不是「终点测一次」。判据先定，温度点数决定外推是否成立。",
+      "source": "ISO 16779:2015, Sensory analysis — Assessment and verification of shelf life"
+    },
+    {
+      "id": "animal-feeding-trial",
+      "label": "动物饲喂试验（ARRIVE）",
+      "when": "评估饲料添加剂、饲喂水平或饲养方式对生产性能与健康的影响",
+      "requires": [
+        "随机分组（栏/圈为单位）与分配隐藏",
+        "盲法评估结局（至少饲料配方对评估者盲）",
+        "事前样本量依据",
+        "ARRIVE 2.0 关键 10 项"
+      ],
+      "nRule": "重复单元是栏/圈，不是个体。按效应量算：d=0.8、α=.05、power=.8 需每组 26 个重复单元；若每栏 10 头，则需要 3 栏/处理才能凑到 n=3，此时应报「栏内个体相关 ICC」，实际功效远低于名义值。每组 6 只的惯例在 d=0.8 下功效仅约 0.35",
+      "threats": [
+        {
+          "risk": "同栏动物当独立个体，伪重复导致 p 值虚低",
+          "mitigation": "以栏为随机效应（(1|pen)），报 ICC；统计单位与分析单位必须一致"
+        },
+        {
+          "risk": "饲料配方无法对饲养员盲，采食量记录带预期偏倚",
+          "mitigation": "由不知分组的人员称料与记录，或采用自动采食记录系统"
+        },
+        {
+          "risk": "淘汰/病死个体被静默删除，存活者偏倚抬高增重",
+          "mitigation": "报入栏数与出栏数、淘汰原因；按 ITT 思路保留全部随机化个体"
+        }
+      ],
+      "reporting": [
+        "arrive"
+      ],
+      "why": "动物试验的可重复性危机一半来自样本量、一半来自伪重复。ARRIVE 要的正是这两项。",
+      "source": "Percie du Sert et al. 2020, ARRIVE 2.0, PLOS Biology 18(7):e3000411"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "grain-yield",
+      "label": "产量",
+      "unit": "t/ha（统一折算到 14% 含水率）",
+      "how": "小区内行实收计产，扣除边行；同时报含水量与容重",
+      "precision": "小区秤 0.01 kg；水分仪每次测定前用标准样校准",
+      "artifact": "边行优势、鸟害与倒伏造成的小区差异，被读成处理效应",
+      "calibration": "每年收获前用砝码校秤；水分按 105 °C 烘干法抽验 10% 样品"
+    },
+    {
+      "id": "gxe-blup",
+      "label": "品种效应与稳定性（BLUP/AMMI）",
+      "unit": "无量纲（BLUP 为产量单位，AMMI 为 IPCA 得分）",
+      "how": "REML 混合模型给收缩后育种值；AMMI/GGE 分解 G×E 主成分",
+      "precision": "由环境数与每环境重复数共同决定；m=3 时组分标准误极大",
+      "artifact": "用两个环境估 G×E，第二主成分被噪声主导",
+      "calibration": "留一环境交叉验证，报预测相关系数 r"
+    },
+    {
+      "id": "sensory-hedonic",
+      "label": "消费者喜好度",
+      "unit": "9 点嗜好刻度（1=极不喜欢，9=极喜欢）",
+      "how": "盲编码、Williams 拉丁方上样、独立隔间、强制清口",
+      "precision": "由消费者人数决定：n=60 时 95% CI 半宽约 0.25 分",
+      "artifact": "顺序效应、光环效应（外观拉高风味评分）",
+      "calibration": "每场插入 1 个隐藏参照样（blind control）检查小组偏移"
+    },
+    {
+      "id": "shelf-life-endpoint",
+      "label": "货架期终点",
+      "unit": "天（在指定温度下）",
+      "how": "按预设失效判据（感官接受限或微生物限值）记录首次越限时间",
+      "precision": "受时间点间隔限制，报区间而非单点（如 21–24 天）",
+      "artifact": "单温度外推、把「还没坏」当「保质期至少这么长」",
+      "calibration": "温度记录仪全程记录，微生物计数与感官判定平行进行"
+    },
+    {
+      "id": "adfi",
+      "label": "平均日采食量与料重比",
+      "unit": "g/d；kg/kg",
+      "how": "以栏为单位记录投料与剩料，每周称重；干物质校正",
+      "precision": "称重 0.1 kg 级，剩料需每日清出称量",
+      "artifact": "剩料混入粪污导致采食量高估、料重比虚低",
+      "calibration": "每周饲料干物质测定；称重设备每周校零"
+    },
+    {
+      "id": "composition",
+      "label": "成分与理化指标",
+      "unit": "按指标（g/100 g、mg GAE/100 g 等）",
+      "how": "按标准方法编号检测，同批内做平行样",
+      "precision": "批内 CV ≤5%，批间 CV ≤10%",
+      "artifact": "批次间原料差异被当作处理效应",
+      "calibration": "每批插入有证标准物质（CRM）与空白"
+    }
+  ],
+  "methods": [
+    {
+      "id": "mixed-reml",
+      "label": "多环境混合模型（REML）",
+      "when": "有 ≥3 个环境且有区组结构",
+      "assumptions": [
+        "环境视为来自目标域的随机抽样",
+        "残差方差在各环境内近似齐性（否则用异质残差）",
+        "基因型与环境的交互项需有足够 df"
+      ],
+      "tool": "R: lme4 / asreml；SAS PROC MIXED",
+      "pitfall": "把基因型当固定效应再谈「广泛适应性」，稳定性结论失去收缩保护",
+      "why": "只有随机效应模型才把「环境抽样」这一不确定性算进品种比较里。"
+    },
+    {
+      "id": "blup-stability",
+      "label": "BLUP 与稳定性统计（Finlay-Wilkinson / AMMI / GGE）",
+      "when": "品种推荐、G×E 显著且需解释适应模式",
+      "assumptions": [
+        "环境指数可估（各环境均值）",
+        "G×E 可用低秩结构近似"
+      ],
+      "tool": "R: statgenGxE、agricolae、AMMI 包",
+      "pitfall": "用未收缩的原始均值排名选种，小环境数据把极端值推上榜首",
+      "why": "BLUP 把品种值向均值收缩，等价于对小样本环境做惩罚；稳定性统计给出适应范围而不是单一排名。"
+    },
+    {
+      "id": "anova-multiple-comparison",
+      "label": "方差分析与多重比较（Tukey / 字母标记）",
+      "when": "单环境、处理数适中、主效应显著",
+      "assumptions": [
+        "残差近似正态且方差齐性（否则用对数或 GLMM）",
+        "比较族是全部两两比较"
+      ],
+      "tool": "R: agricolae、emmeans、multcompView",
+      "pitfall": "对 10 个品种做 LSD 全部两两比较（族错误率膨胀到 30% 以上）",
+      "why": "Tukey/字母标记控制族错误率，是审稿人核对「哪些处理真不同」的唯一可读形式。"
+    },
+    {
+      "id": "ordinal-sensory",
+      "label": "感官数据的序数混合模型",
+      "when": "9 点喜好刻度、JAR 量表、评分员重复评分",
+      "assumptions": [
+        "评级阈值在评价员间可不同（随机阈值）",
+        "评价员与样品交叉设计"
+      ],
+      "tool": "R: ordinal::clmm；SensoMineR",
+      "pitfall": "把序数刻度当等距连续变量做 ANOVA/t 检验，均值差无意义",
+      "why": "喜好度是序数判断，累积链接模型保留刻度顺序而不假设等距。"
+    },
+    {
+      "id": "power-agri",
+      "label": "事前功效分析（基于误差均方）",
+      "when": "设计阶段定重复数，或解释不显著结果",
+      "assumptions": [
+        "效应量来自试点或文献，不来自本研究观测值",
+        "误差 MS 可从同田块历史试验估计"
+      ],
+      "tool": "R: pwr、agricolae 的 RCBD 功效函数、SAS PROC POWER",
+      "pitfall": "用本研究观测效应量倒推「事后功效」，那不是功效而是 p 值的变形",
+      "why": "重复数是设计决策，必须在看到数据之前定；审稿人问「为什么 4 个重复」时需要这个数。"
+    },
+    {
+      "id": "shelf-life-kinetics",
+      "label": "货架期动力学拟合（Arrhenius / Q10）",
+      "when": "多温度贮藏数据，需要外推到常温",
+      "assumptions": [
+        "劣变反应级数已知（零级或一级）",
+        "温度范围内机制不变（无相变、无微生物区系切换）"
+      ],
+      "tool": "R: nlstools、drc；SAS PROC NLIN",
+      "pitfall": "两点定一条直线，Ea 无置信区间",
+      "why": "外推的合法性来自拟合质量与温度点数，不是来自一条漂亮的直线。"
+    },
+    {
+      "id": "arrive-randomization",
+      "label": "随机化实施与盲法（ARRIVE 流程）",
+      "when": "任何动物试验",
+      "assumptions": [
+        "分配序列由未参与饲养的人生成",
+        "盲法在数据分析前不被破坏"
+      ],
+      "tool": "random.org 随机序列表 / R sample()，配 ARRIVE checklist",
+      "pitfall": "按体重「配平」分组后称其为随机，实际是准实验",
+      "why": "ARRIVE 的 10 项关键条目里，随机化与盲法是唯一无法事后补救的两项。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "r",
+      "label": "R",
+      "kind": "stats",
+      "install": "https://cran.r-project.org",
+      "minimalScript": "library(lme4); m <- lmer(yield ~ gen + (1|env) + (1|env:block) + (1|gen:env), data = d); ranef(m)$gen",
+      "alt": [
+        "SAS",
+        "ASReml-R",
+        "GenStat"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "sas",
+      "label": "SAS",
+      "kind": "stats",
+      "install": "商业授权（SAS Institute）",
+      "minimalScript": "proc mixed data=d; class env block gen; model yield = gen / ddfm=kr; random env env*block gen*env; run;",
+      "alt": [
+        "R lme4",
+        "ASReml-R"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "asreml",
+      "label": "ASReml-R",
+      "kind": "stats",
+      "install": "商业授权（VSN International）",
+      "minimalScript": "library(asreml); m <- asreml(fixed = yield ~ gen, random = ~ env + env:block + gen:env, data = d); summary(m)$varcomp",
+      "alt": [
+        "R lme4",
+        "SAS PROC MIXED"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "agricolae",
+      "label": "agricolae（R 包）",
+      "kind": "stats",
+      "install": "install.packages(\"agricolae\")",
+      "minimalScript": "library(agricolae); m <- aov(yield ~ block + trt, data = d); print(LSD.test(m, \"trt\"))",
+      "alt": [
+        "emmeans + multcompView",
+        "SAS GLM"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "sensominer",
+      "label": "SensoMineR（R 包）",
+      "kind": "sensory",
+      "install": "install.packages(\"SensoMineR\")",
+      "minimalScript": "library(SensoMineR); res <- AovSum(Pref ~ Product + Panelist, data = d); res$F",
+      "alt": [
+        "XLSTAT Sensory",
+        "FactoMineR"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "genstat",
+      "label": "GenStat",
+      "kind": "stats",
+      "install": "商业授权（VSN International）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "ASReml-R",
+        "R"
+      ],
+      "offline": true,
+      "license": "commercial"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「只有一个地点一个年份，你凭什么说这个品种适应性广？」",
+      "defense": "把结论限定到本生态区当年；或补第二地点第二季并报 G×E 方差组分与留一环境交叉验证"
+    },
+    {
+      "attack": "「4 个重复是怎么定出来的？误差自由度够做多重比较吗？」",
+      "defense": "给事前功效分析：效应量来源、误差 MS 估计、α、power，并列出 (r−1)(t−1) 的实际 df"
+    },
+    {
+      "attack": "「裂区设计里主区效应你是用副区误差检验的吧？」",
+      "defense": "报两张方差分析表，标注主区误差 = 区组×主区、副区误差 = 剩余项，并给各自的 df 与 F"
+    },
+    {
+      "attack": "「感官小组就 9 个人，还是你们实验室自己的人，这能代表消费者吗？」",
+      "defense": "训练小组只用于描述性分析（ISO 8586）；喜好度另招 ≥60 名外部消费者，报招募渠道与人口学分布"
+    },
+    {
+      "attack": "「货架期只测了 0 天和 90 天两个点，中间那段劣变曲线是猜的？」",
+      "defense": "补 ≥3 个时间点覆盖失效前后，并在方法里先写失效判据；单温度数据不外推"
+    },
+    {
+      "attack": "「动物试验每组 6 只，ARRIVE 要的样本量依据在哪里？」",
+      "defense": "报事前功效分析并把栏/圈作重复单元；若确实只有 3 栏，如实报告 ICC 与实际功效，把结论降为 pilot"
+    },
+    {
+      "attack": "「10 个品种做 LSD 全部两两比较，族错误率你算过吗？」",
+      "defense": "改用 Tukey HSD 或 Holm 校正，用 compact letter display 呈现，并说明比较族是预设的还是探索的"
+    },
+    {
+      "attack": "「表里的产量是折干还是鲜重？含水率不同怎么比？」",
+      "defense": "统一折算到 14% 含水率并给折算公式；附各小区实测含水率与容重"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "田间试验重复数",
+      "topJournal": "r ≥ 4 且误差 df ≥ 12；跨环境结论要求 ≥3 地点 × 2 年",
+      "field": "r = 3，单点单年",
+      "source": "Gomez & Gomez 1984, Statistical Procedures for Agricultural Research (2nd ed.) 关于误差自由度的建议"
+    },
+    {
+      "metric": "感官消费者样本量",
+      "topJournal": "每样品 ≥100 名消费者，平衡上样顺序，报隐藏参照样",
+      "field": "30–60 名，多为学生",
+      "source": "ISO 11136:2014, Sensory analysis — Hedonic tests with consumers"
+    },
+    {
+      "metric": "G×E 结论的环境覆盖",
+      "topJournal": "环境数 ≥6 或明确限定目标域 + 留一环境交叉验证",
+      "field": "2–3 个环境即宣称广适性",
+      "source": "van Eeuwijk, Bustos-Korts & Malosetti 2016, Crop Science 56:2119–2140"
+    },
+    {
+      "metric": "动物试验样本量依据",
+      "topJournal": "每组 ≥10 个重复单元且报事前功效分析，栏作重复",
+      "field": "每组 6 只、无依据、个体当重复",
+      "source": "Percie du Sert et al. 2020, ARRIVE 2.0, PLOS Biology 18(7):e3000411"
+    },
+    {
+      "metric": "货架期数据密度",
+      "topJournal": "≥3 温度 × ≥3 时间点，失效判据事前定义",
+      "field": "单温度、两个时间点",
+      "source": "ISO 16779:2015, Assessment and verification of shelf life"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "试验地与气象（土壤、积温、降水）",
+      "方差分析与区组效率",
+      "多环境 G×E 与稳定性（BLUP/GGE 双标图）",
+      "品质与理化",
+      "感官评价（训练小组 → 消费者）",
+      "贮藏与货架期"
+    ],
+    "figureBudget": 5,
+    "note": "Results 第一段必须是试验地与环境描述，不是产量表。审稿人先判断「这些环境代表哪个目标域」，再决定要不要信你的品种排名。Figure 1 建议是 GGE/AMMI 双标图（同时展示品种与环境的相对位置），Figure 2 才是产量与多重比较字母标记。单环境论文不要放双标图，放了等于自证过度外推。"
+  },
+  "reporting": [
+    "arrive"
+  ],
+  "reportingExternal": []
+}

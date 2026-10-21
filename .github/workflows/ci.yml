@@ -1,0 +1,61 @@
+name: 打包面校验
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packaging:
+    name: 校验 · ${{ matrix.os }} · node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['22.x']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # 零依赖：不 npm install，直接用 Node 内置能力跑静态校验
+      - name: 打包面（语法 / files / 技能清单 / .ps1 BOM / 隐私 / 文档链接）
+        run: node tools/verify-packaging.mjs
+
+      - name: 运行时面便携性（78 个文件：无提示词变量、无本机路径、无私有插件痕迹）
+        run: node dsh-science/scripts/verify-portability.mjs
+
+      - name: 技能安装器自检
+        run: node deepscient/scripts/install-skills.mjs --self-test
+
+      - name: 技能安装计划（干跑，不联网写盘）
+        run: node deepscient/scripts/install-skills.mjs --plan
+
+  manifest:
+    name: 技能清单完整性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: 清单 schema 与 commit pin
+        run: node tools/verify-packaging.mjs
+      - name: 清单条目数
+        run: |
+          node -e "
+          const manifest = require('./dsh-science/skills-vendor/manifest.json');
+          const skills = Array.isArray(manifest) ? manifest : manifest.skills;
+          console.log('技能条目:', skills.length);
+          if (skills.length < 80) { console.error('清单条目过少'); process.exit(1) }
+          const repos = new Set(skills.map((s) => s.repo));
+          console.log('来源仓库:', repos.size, [...repos].join(', '));
+          "

@@ -1,0 +1,23 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.ps1]
+# Windows PowerShell 5.1 读 UTF-8 无 BOM 会乱码，这两个文件由 bin/ 下的启动器维护，不要交给编辑器改编码
+charset = utf-8-bom
+end_of_line = crlf
+
+[*.cmd]
+end_of_line = crlf

@@ -1,0 +1,263 @@
+{
+  "$meta": {
+    "id": "workflow",
+    "label": "研究流程（S0–S11）",
+    "note": "每个阶段的 gate 都是可机器检查的条件：能查库、查文件、查方案字段。检查不了的写进 manual，不假装能自动判定。门的意义不是流程表演，而是让「还没做」在系统里有一处显式记录。",
+    "version": 1,
+    "updatedAt": "2026-10-21"
+  },
+  "severityOrder": ["blocking", "warning", "manual"],
+  "stages": [
+    {
+      "id": "S0",
+      "code": "S0",
+      "label": "选题与范围",
+      "goal": "把「想做这个方向」缩成一句可以被否证、且一年内做得完的话。",
+      "entry": [],
+      "gates": [
+        { "id": "project", "label": "课题已建", "check": { "kind": "project" }, "severity": "blocking", "fix": "science_project_open { title, domain, question }" },
+        { "id": "question", "label": "研究问题写成一句", "check": { "kind": "projectField", "field": "question", "minLength": 12 }, "severity": "blocking", "fix": "补 question：对象 + 变量 + 比较 + 时点" },
+        { "id": "domain", "label": "学科已识别", "check": { "kind": "projectField", "field": "domain", "minLength": 2 }, "severity": "blocking", "fix": "给 domain 或 targetJournal，让匹配器定学科" },
+        { "id": "ethics", "label": "伦理与数据许可已登记", "check": { "kind": "ethics" }, "severity": "warning", "fix": "science_project_open 时传 ethics 与 dataLicense；不涉及也要写明「不涉及」" },
+        { "id": "scope", "label": "范围可在一轮研究内完成", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：样本能否招到、设备能否排上、数据能否拿到、时间够不够" }
+      ],
+      "tools": ["science_project_open", "science_discipline_profile"],
+      "artifacts": ["project.json"],
+      "failureModes": [
+        "问题里有两个自变量 → 拆成两个研究",
+        "问题依赖一个拿不到的数据集 → 换数据或换问题，不要先写方案",
+        "「X 与 Y 有关系」→ 改成有方向的假设，否则后面的检验无法定向"
+      ]
+    },
+    {
+      "id": "S1",
+      "code": "S1",
+      "label": "文献与现状",
+      "goal": "知道这个问题被做到哪一步，并留下可核验的检索记录。",
+      "entry": ["S0"],
+      "gates": [
+        { "id": "search", "label": "至少检索过一次", "check": { "kind": "count", "table": "paper", "min": 1 }, "severity": "blocking", "fix": "science_lit_query 或 science_search；检索范围要写进记录" },
+        { "id": "papers", "label": "库内文献 ≥10 条", "check": { "kind": "count", "table": "paper", "min": 10 }, "severity": "warning", "fix": "补充数据库与检索式；只有一个库的结果不算综述" },
+        { "id": "fulltext", "label": "关键文献有全文", "check": { "kind": "count", "table": "paper", "min": 3, "where": "hasFulltext" }, "severity": "warning", "fix": "用 science_fulltext_hunting 的流程找 OA 版本" },
+        { "id": "gap", "label": "缺口已定位", "check": { "kind": "count", "table": "claim", "min": 1 }, "severity": "warning", "fix": "science_gap_matrix：把已有结论与未解决问题列成矩阵" },
+        { "id": "coverage", "label": "检索式与时间窗可复核", "check": { "kind": "manual" }, "severity": "manual", "fix": "记录：数据库、检索式、时间窗、纳入排除标准、检索日期" }
+      ],
+      "tools": ["science_lit_query", "science_search", "science_gap_matrix", "science_novelty"],
+      "artifacts": ["library 记录", "gap matrix"],
+      "failureModes": [
+        "只搜英文库 → 中文本领域可能有直接竞争工作，补 CNKI/万方",
+        "把综述当原始研究引用 → 结论会绕两层，容易失真",
+        "检索式没留档 → 半年后无法复现，也无法在方法段写清"
+      ]
+    },
+    {
+      "id": "S2",
+      "code": "S2",
+      "label": "假设与设计",
+      "goal": "选一个能被审稿人认可的设计，并把它的前置条件逐条落实。",
+      "entry": ["S0", "S1"],
+      "gates": [
+        { "id": "design", "label": "设计已选定", "check": { "kind": "projectField", "field": "designId", "minLength": 2 }, "severity": "blocking", "fix": "science_discipline_profile 看该学科有哪些设计，再 science_exp_plan 指定" },
+        { "id": "hypothesis", "label": "假设可证伪", "check": { "kind": "planField", "field": "hypothesis", "minLength": 12 }, "severity": "blocking", "fix": "写成「X 会导致 Y，因为 Z；看到 ¬Y 就推翻」" },
+        { "id": "outcome", "label": "主结局唯一且已定义", "check": { "kind": "planField", "field": "primaryOutcome", "minLength": 2 }, "severity": "blocking", "fix": "只留一个主结局；其余标为次要或探索性" },
+        { "id": "requires", "label": "设计前置条件逐条落定", "check": { "kind": "planHas", "field": "design.requires" }, "severity": "warning", "fix": "science_exp_plan 返回的 requires 是 checkbox 清单，逐条打勾" },
+        { "id": "threats", "label": "主要威胁有对策", "check": { "kind": "planHas", "field": "threats" }, "severity": "warning", "fix": "威胁表里每一条都要有 mitigation，只写威胁不写对策等于没做" },
+        { "id": "controls", "label": "对照与盲法安排合理", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：对照组的对照物是什么、谁不知道分组、破盲条件是什么" }
+      ],
+      "tools": ["science_discipline_profile", "science_exp_plan", "science_contribution_design"],
+      "artifacts": ["plan.md"],
+      "failureModes": [
+        "先有数据再挑检验 → 事后选择会让 p 值失效",
+        "用相关设计回答因果问题 → 换成 RCT/DiD/IV/RDD，或改问题",
+        "前置条件有一条做不到 → 换设计，不要在讨论段辩解"
+      ]
+    },
+    {
+      "id": "S3",
+      "code": "S3",
+      "label": "样本量与预注册",
+      "goal": "在招第一个被试之前，把样本量、主结局、分析计划锁死并公开登记。",
+      "entry": ["S2"],
+      "gates": [
+        { "id": "sample", "label": "样本量有依据", "check": { "kind": "planField", "field": "sample.ok" }, "severity": "blocking", "fix": "给效应量算 n，或给 n 算 MDE；两条路都要有数字" },
+        { "id": "power", "label": "power 与 alpha 已声明", "check": { "kind": "planField", "field": "sample.power" }, "severity": "warning", "fix": "默认 α=0.05、power=0.80；复制研究用 0.90" },
+        { "id": "cluster", "label": "聚类设计已算设计效应", "check": { "kind": "planConditional", "field": "cluster", "when": "designIsClustered" }, "severity": "warning", "fix": "按班级/村/病区随机时，必须传 clusterSize 与 icc" },
+        { "id": "prereg", "label": "预注册已提交并留号", "check": { "kind": "prereg" }, "severity": "warning", "fix": "把 prereg 草稿贴到 OSF/PROSPERO，把 DOI 填进课题卡" },
+        { "id": "stopping", "label": "停止规则与排除标准事前写定", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：什么时候停招、什么数据作废、谁来决定" }
+      ],
+      "tools": ["science_exp_plan", "science_statistics_choice"],
+      "artifacts": ["plan.md 的样本量段", "prereg 草稿", "prereg_ref"],
+      "failureModes": [
+        "先招 20 人看结果再决定是否继续 → 这是 optional stopping，p 值不可用",
+        "效应量抄自不相关领域 → 用同领域同测量的元分析值，或做 pilot",
+        "预注册写在实验之后 → 登记时间戳会暴露，比不注册更糟"
+      ]
+    },
+    {
+      "id": "S4",
+      "code": "S4",
+      "label": "材料与测量",
+      "goal": "把每个变量落到一个具体的测量动作上，并记录它的精度与校准。",
+      "entry": ["S2"],
+      "gates": [
+        { "id": "measure", "label": "每个变量都有测量定义", "check": { "kind": "planHas", "field": "measurements" }, "severity": "blocking", "fix": "science_discipline_profile 的 measurements 段给了单位、做法、产出物与校准" },
+        { "id": "instruments", "label": "仪器/量表已就位", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：量表授权、仪器预约、耗材到货、软件许可证" },
+        { "id": "calibration", "label": "校准与预试已做", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：校准记录在哪、预试几例、预试数据是否排除" }
+      ],
+      "tools": ["science_discipline_profile"],
+      "artifacts": ["protocols/ 下的测量协议"],
+      "failureModes": [
+        "用未验证的量表 → 信效度无从谈起，审稿人第一问就是它",
+        "测量精度低于预期效应 → 天花板/地板效应，效应量被压平"
+      ]
+    },
+    {
+      "id": "S5",
+      "code": "S5",
+      "label": "数据采集",
+      "goal": "按方案采数据，采集过程本身留下可核查的痕迹。",
+      "entry": ["S3", "S4"],
+      "gates": [
+        { "id": "data", "label": "数据文件已进 data/", "check": { "kind": "dirNonEmpty", "path": "data" }, "severity": "blocking", "fix": "原始数据放 data/，不要放到 code/ 或根目录" },
+        { "id": "run", "label": "至少有一次留痕执行", "check": { "kind": "count", "table": "experiment_run", "min": 1 }, "severity": "blocking", "fix": "science_exp_run：输入输出哈希、环境、seed 一起记" },
+        { "id": "dictionary", "label": "数据字典已写", "check": { "kind": "manual" }, "severity": "warning", "fix": "每个列什么意思、单位、取值域、缺失编码（NA 不能和 0 混）" },
+        { "id": "raw-untouched", "label": "原始数据未被覆盖", "check": { "kind": "manual" }, "severity": "manual", "fix": "清洗结果另存 data/clean/；原始文件只读" }
+      ],
+      "tools": ["science_exp_run"],
+      "artifacts": ["data/*.csv", "experiments/<slug>/<runId>/"],
+      "failureModes": [
+        "在 Excel 里改原始数据 → 无法回到采集状态",
+        "缺失值用 0 填 → 均值、方差、回归系数全偏",
+        "分组信息只存在人脑里 → 半年后无法复原"
+      ]
+    },
+    {
+      "id": "S6",
+      "code": "S6",
+      "label": "数据管理",
+      "goal": "让另一个人在没有你的情况下能把这份数据看懂、跑起来。",
+      "entry": ["S5"],
+      "gates": [
+        { "id": "env", "label": "环境已锁定", "check": { "kind": "dirNonEmpty", "path": "env" }, "severity": "warning", "fix": "science_exp_run 自动写 env.json；再补 requirements/lock" },
+        { "id": "code", "label": "分析代码在 code/ 下", "check": { "kind": "dirNonEmpty", "path": "code" }, "severity": "warning", "fix": "把分析脚本按 run.py 命名放 code/，一个脚本一件事" },
+        { "id": "missing", "label": "缺失数据处理策略已定", "check": { "kind": "manual" }, "severity": "warning", "fix": "先报告缺失比例，再决定删除/插补；插补要做敏感性分析" },
+        { "id": "outlier", "label": "离群点规则事前写定", "check": { "kind": "manual" }, "severity": "manual", "fix": "写清：判定标准、处理方式、处理前后的结果都报" }
+      ],
+      "tools": ["science_exp_run", "science_reproducibility"],
+      "artifacts": ["env/env.json", "code/*.py"],
+      "failureModes": [
+        "只留最终版脚本 → 中间步骤无法追溯",
+        "离群点看着不顺眼就删 → 这是最容易被审稿人抓到的操作"
+      ]
+    },
+    {
+      "id": "S7",
+      "code": "S7",
+      "label": "统计分析",
+      "goal": "用事前定好的方法算，报效应量与区间，把假设检查一并报出。",
+      "entry": ["S6"],
+      "gates": [
+        { "id": "analysis", "label": "主分析已跑", "check": { "kind": "count", "table": "analysis", "min": 1 }, "severity": "blocking", "fix": "science_stats：先看 assumptions，再看 p" },
+        { "id": "effect", "label": "有效应量与置信区间", "check": { "kind": "count", "table": "analysis", "min": 1, "where": "hasEffectSize" }, "severity": "blocking", "fix": "只报 p 的分析算半成品；换带 effectSize 的检验或补算" },
+        { "id": "assumptions", "label": "假设检查无未处理失败项", "check": { "kind": "assumptionClean" }, "severity": "warning", "fix": "假设不满足就用 science_stats 的 warnings 里的备选检验重跑" },
+        { "id": "multiplicity", "label": "多重比较政策已执行", "check": { "kind": "manual" }, "severity": "warning", "fix": "主假设不校正并声明；其余按事前政策校正（holm/BH）" },
+        { "id": "sensitivity", "label": "做了至少一项稳健性检查", "check": { "kind": "count", "table": "analysis", "min": 2 }, "severity": "warning", "fix": "非参数对照、去离群点重跑、换协变量，任选其一并报一致性" }
+      ],
+      "tools": ["science_stats", "science_statistics_choice", "science_discipline_profile"],
+      "artifacts": ["analysis 记录", "结果段草稿"],
+      "failureModes": [
+        "p=0.06 就换检验直到显著 → p 值操纵，属学术不端",
+        "只报显著的结果 → 发表偏倚，可复现性直接崩",
+        "把 CI 解释成「95% 概率真值在区间内」→ 频率派 CI 不是这个意思"
+      ]
+    },
+    {
+      "id": "S8",
+      "code": "S8",
+      "label": "图与表",
+      "goal": "图能独立读懂，尺寸能直接排版，颜色在色盲与黑白打印下都分得开。",
+      "entry": ["S7"],
+      "gates": [
+        { "id": "figure", "label": "至少出过一张图", "check": { "kind": "count", "table": "figure_spec", "min": 1 }, "severity": "blocking", "fix": "science_figure：按期刊毫米尺寸出图" },
+        { "id": "ready", "label": "图通过期刊要求自检", "check": { "kind": "figureReady" }, "severity": "blocking", "fix": "看 checks：字号 ≥6 pt、位图 ≥300 dpi、有矢量格式" },
+        { "id": "errbars", "label": "误差棒含义已声明", "check": { "kind": "manual" }, "severity": "warning", "fix": "SD / SEM / 95% CI 必须写在图注里；三者不能混用" },
+        { "id": "tables", "label": "主表可独立读懂", "check": { "kind": "manual" }, "severity": "manual", "fix": "自查：每列有单位、每组有 n、统计量有 df" }
+      ],
+      "tools": ["science_figure"],
+      "artifacts": ["figures/*.pdf", "figures/*.svg"],
+      "failureModes": [
+        "图在 Word 里被拉伸 → 字号变小，印刷不合规",
+        "用红绿区分两组 → 色盲读者与黑白打印都看不出差别",
+        "误差棒没说明是什么 → 审稿人必问，且往往意味着作者自己也不清楚"
+      ]
+    },
+    {
+      "id": "S9",
+      "code": "S9",
+      "label": "写作",
+      "goal": "按目标刊的结构写，每句结论都指向一个证据或一个结果记录。",
+      "entry": ["S7", "S8"],
+      "gates": [
+        { "id": "manuscript", "label": "稿子已建", "check": { "kind": "count", "table": "manuscript", "min": 1 }, "severity": "blocking", "fix": "science_manuscript_new；模板来自 journals.json" },
+        { "id": "journal", "label": "目标刊已定", "check": { "kind": "projectField", "field": "targetJournal", "minLength": 2 }, "severity": "blocking", "fix": "science_journal_fit 定刊，或直接给 targetJournal" },
+        { "id": "lint", "label": "稿件 lint 无 block 级问题", "check": { "kind": "manuscriptLint" }, "severity": "blocking", "fix": "science_manuscript_lint；block 级问题必须修完再出件" },
+        { "id": "reporting", "label": "报告规范逐条对照", "check": { "kind": "manual" }, "severity": "warning", "fix": "science_reporting_standards：CONSORT/PRISMA/ARRIVE 等按设计选" },
+        { "id": "unverified", "label": "无未标注的未验证结论", "check": { "kind": "manual" }, "severity": "manual", "fix": "把 [unverified] 段落要么补证据，要么降级为限制说明" }
+      ],
+      "tools": ["science_manuscript_new", "science_manuscript_lint", "science_manuscript_build", "science_top_journal_writing"],
+      "artifacts": ["paper.md"],
+      "failureModes": [
+        "先写引言再定刊 → 结构与字数都要重来",
+        "讨论段写成本领域综述 → 主编直接判 off-topic",
+        "引用凭记忆写 → DOI 对不上，desk reject 的常见理由"
+      ]
+    },
+    {
+      "id": "S10",
+      "code": "S10",
+      "label": "内部审稿",
+      "goal": "在投稿前用审稿人的攻击方式打自己一遍。",
+      "entry": ["S9"],
+      "gates": [
+        { "id": "audit", "label": "做过稿件审计", "check": { "kind": "auditsForProject", "min": 1 }, "severity": "warning", "fix": "science_paper_audit：按审稿维度逐条打分" },
+        { "id": "prov", "label": "溯源链校验通过", "check": { "kind": "provenanceOk" }, "severity": "blocking", "fix": "science_provenance；链断了先查清，再写方法段" },
+        { "id": "repro", "label": "可复现清单达标", "check": { "kind": "manual" }, "severity": "warning", "fix": "science_reproducibility 的 L1–L4 分级，至少到 L2 可跑" },
+        { "id": "figs", "label": "图表与正文数字一致", "check": { "kind": "manual" }, "severity": "manual", "fix": "抽查：正文的每个 n、每个 p 都能在 analysis 记录里找到" }
+      ],
+      "tools": ["science_paper_audit", "science_provenance", "science_reproducibility"],
+      "artifacts": ["audit 报告", "provenance 清单"],
+      "failureModes": [
+        "自己审自己只查错别字 → 方法层的攻击一个都没碰",
+        "图表数字与正文不一致 → 一旦被发现，整篇可信度归零"
+      ]
+    },
+    {
+      "id": "S11",
+      "code": "S11",
+      "label": "投稿与返修",
+      "goal": "按刊的要求出件、投出去、并在返修时逐条回应而不是辩解。",
+      "entry": ["S10"],
+      "gates": [
+        { "id": "build", "label": "四件套已出", "check": { "kind": "manuscriptBundle" }, "severity": "blocking", "fix": "science_manuscript_build：PDF + DOCX + JATS + HTML" },
+        { "id": "format", "label": "排版环境检查通过", "check": { "kind": "formatCheck" }, "severity": "warning", "fix": "science_format_check：缺宏包先补装，降级要写进交稿说明" },
+        { "id": "route", "label": "投稿路径已确认", "check": { "kind": "manual" }, "severity": "warning", "fix": "science_submission_route：投稿系统、文件命名、作者顺序、利益声明" },
+        { "id": "cover", "label": "投稿信已写", "check": { "kind": "manual" }, "severity": "manual", "fix": "science_cover_letter：一段说缺口的、两段说发现的、一段说为什么适合这个刊" },
+        { "id": "rebuttal", "label": "返修时逐条回应", "check": { "kind": "manual" }, "severity": "manual", "fix": "science_rebuttal：一条意见一条回应，能改的改，不能改的给理由与替代方案" }
+      ],
+      "tools": ["science_manuscript_build", "science_format_check", "science_submission_route", "science_cover_letter", "science_rebuttal"],
+      "artifacts": ["PDF/DOCX/JATS/HTML", "cover letter", "response to reviewers"],
+      "failureModes": [
+        "只交 PDF → 有的系统要 Word 或 XML，退回重做",
+        "返修时和审稿人争对错 → 编辑只看你有没有解决问题",
+        "把「无法做到」写成「不需要做」→ 审稿人一眼看穿"
+      ]
+    }
+  ],
+  "globalRules": [
+    "缺失即 skip：查不到、跑不了、没数据，一律标 skip 并说明缺什么，不许标 pass。",
+    "先冻结后分析：方案、主结局、样本量、分析计划在看数据之前定下来。看过数据再改计划，必须在稿件里声明为探索性。",
+    "效应量与区间优先：只报 p 值的结果在本应用里算残缺。",
+    "所有数字可回溯：正文里的每个 n 和 p 都要能在 analysis 或 run 记录里找到对应条目。",
+    "不预测录用：这个应用不给中稿概率，也不给期刊分层建议之外的判断。"
+  ]
+}

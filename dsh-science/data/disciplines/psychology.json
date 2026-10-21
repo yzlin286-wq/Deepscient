@@ -1,0 +1,545 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "psychology",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "psychology",
+  "label": "心理学与行为",
+  "questionTypes": [
+    {
+      "id": "group-difference",
+      "label": "两组/多组在某个心理量上的差异",
+      "when": "有可操作的自变量分组",
+      "needs": [
+        "操作性定义",
+        "随机分配或准实验说明",
+        "信效度已知的测量工具"
+      ]
+    },
+    {
+      "id": "association",
+      "label": "两个心理量的关联",
+      "when": "横断面或纵向观测",
+      "needs": [
+        "测量不变性",
+        "共同方法偏差控制",
+        "足够变异范围"
+      ]
+    },
+    {
+      "id": "mediation",
+      "label": "通过某个机制起作用",
+      "when": "有理论上的中介变量",
+      "needs": [
+        "时间顺序",
+        "中介与结局独立测量",
+        "bootstrap 间接效应 CI"
+      ]
+    },
+    {
+      "id": "moderation",
+      "label": "在什么条件下效应更强",
+      "when": "有理论上的调节变量",
+      "needs": [
+        "交互项",
+        "简单斜率分析",
+        "连续变量中心化"
+      ]
+    },
+    {
+      "id": "change",
+      "label": "干预前后是否改变",
+      "when": "有干预或训练",
+      "needs": [
+        "对照组",
+        "前后测",
+        "意向性分析"
+      ]
+    },
+    {
+      "id": "individual-difference",
+      "label": "个体差异的结构",
+      "when": "多指标测量同一构念",
+      "needs": [
+        "因子结构验证",
+        "测量不变性",
+        "信度"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "between-2",
+      "label": "两组间实验设计",
+      "when": "可随机分配、每组只接受一个条件",
+      "requires": [
+        "随机分配",
+        "条件间除自变量外一致",
+        "主假设与主结局事前写定"
+      ],
+      "nRule": "d=0.5、α=.05、power=.8 需 64/组（t 检验）；若预期 d=0.3 则需 176/组。心理学已发表研究的实际中位功效约 .5，不要照抄惯例的「每组 30」",
+      "threats": [
+        {
+          "risk": "需求特征（被试猜到假设并配合）",
+          "mitigation": "覆盖故事 + 事后探测被试对假设的猜测"
+        },
+        {
+          "risk": "实验者期望效应",
+          "mitigation": "双盲或至少对条件编码盲法"
+        },
+        {
+          "risk": "操纵检查失败",
+          "mitigation": "报操纵检查结果；失败要说明，不能悄悄删掉"
+        }
+      ],
+      "reporting": [
+        "consort"
+      ],
+      "why": "因果推断最干净的行为设计。代价是只能回答「有没有差异」，回答不了「为什么」。",
+      "source": "Shadish, Cook & Campbell 2002"
+    },
+    {
+      "id": "within-2x2",
+      "label": "被试内 2×2 设计",
+      "when": "同一批被试在所有条件下测量",
+      "requires": [
+        "条件顺序随机化或拉丁方平衡",
+        "练习/疲劳效应控制",
+        "条件间间隔足够"
+      ],
+      "nRule": "被试内 d=0.4 需 n≈52（配对 t，power=.8）；2×2 交互检验通常需要 2-4 倍于主效应的 n",
+      "threats": [
+        {
+          "risk": "顺序效应",
+          "mitigation": "条件顺序随机化 + 每条件间至少 2 分钟间隔 + 报顺序作为协变量"
+        },
+        {
+          "risk": "跨条件污染（同一被试学了策略）",
+          "mitigation": "用不同材料，或改为被试间设计"
+        },
+        {
+          "risk": "差异延续（carryover）",
+          "mitigation": "加洗脱期，或平衡设计后检验 carryover"
+        }
+      ],
+      "reporting": [
+        "consort"
+      ],
+      "why": "把个体差异从误差项里消掉，同样 n 下检验力显著更高。代价是顺序效应与污染。",
+      "source": "Maxwell, Delaney & Kelley 2017, ch.12"
+    },
+    {
+      "id": "pretest-posttest-control",
+      "label": "前后测对照组设计",
+      "when": "干预研究、无法完全随机（如班级为单位）",
+      "requires": [
+        "对照组",
+        "前后测同工具",
+        "聚类时按簇分析",
+        "意向性分析"
+      ],
+      "nRule": "按簇随机时须做设计效应校正：n_ind × (1+(m-1)ρ)。班级内 ρ≈0.1、每班 30 人时，设计效应约 3.9，样本量要乘以它",
+      "threats": [
+        {
+          "risk": "回归到均值被误读为干预效果",
+          "mitigation": "必须有对照组，且两组基线同样极端"
+        },
+        {
+          "risk": "聚类不校正",
+          "mitigation": "混合模型或按簇稳健 SE"
+        },
+        {
+          "risk": "选择性流失",
+          "mitigation": "报流失率与流失者基线差异"
+        }
+      ],
+      "reporting": [
+        "consort"
+      ],
+      "why": "教育、临床场景的现实选择；但没有对照组的前后测几乎没有因果价值。",
+      "source": "Shadish et al. 2002; Campbell & Stanley 1963"
+    },
+    {
+      "id": "longitudinal-panel",
+      "label": "纵向追踪（≥3 波）",
+      "when": "研究变化轨迹或跨时因果",
+      "requires": [
+        "至少 3 个时间点",
+        "测量不变性检验",
+        "流失分析",
+        "交叉滞后模型设定"
+      ],
+      "nRule": "交叉滞后模型至少 200 人；要检验测量不变性需 300+",
+      "threats": [
+        {
+          "risk": "测量不变性未检验",
+          "mitigation": "报 configural/metric/scalar 三级不变性"
+        },
+        {
+          "risk": "流失非随机",
+          "mitigation": "FIML 或加权，并比较流失者与留存者"
+        },
+        {
+          "risk": "把相关当因果方向",
+          "mitigation": "交叉滞后只能排除部分方向，用交叉滞后面板模型并说明局限"
+        }
+      ],
+      "reporting": [],
+      "why": "能看变化与时间顺序，但仍不是因果识别的充分条件。",
+      "source": "Little 2013; Hamaker, Kuiper & Grasman 2015"
+    },
+    {
+      "id": "replication",
+      "label": "直接复制",
+      "when": "已有结论需要验证",
+      "requires": [
+        "原研究材料可得",
+        "功效≥原研究",
+        "预注册",
+        "多实验室或大样本"
+      ],
+      "nRule": "复制研究的功效应≥.90（而不是 .80），因为要区分「真效应较小」与「无效应」",
+      "threats": [
+        {
+          "risk": "隐藏的调节变量（人群/材料差异）",
+          "mitigation": "多实验室同时复制，报异质性"
+        },
+        {
+          "risk": "只报成功的那次",
+          "mitigation": "预注册全部复制尝试，含失败的"
+        }
+      ],
+      "reporting": [],
+      "why": "心理学复制危机之后，复制本身成为可发表的贡献——前提是预注册且功效足够。",
+      "source": "Open Science Collaboration 2015; Nosek et al. 2022"
+    },
+    {
+      "id": "experience-sampling",
+      "label": "经验取样 / 日记法",
+      "when": "研究日常状态波动",
+      "requires": [
+        "高频重复测量",
+        "依从性监测",
+        "多层模型",
+        "时间间隔设计"
+      ],
+      "nRule": "多层模型的经验法则：簇（人）≥50，每簇观测≥20；要估计随机斜率需更多",
+      "threats": [
+        {
+          "risk": "依从性低且非随机",
+          "mitigation": "时间戳核查 + 报依从率 + 敏感性分析"
+        },
+        {
+          "risk": "反应性（记录本身改变状态）",
+          "mitigation": "最小化条目数，前几波不计入分析"
+        }
+      ],
+      "reporting": [],
+      "why": "把「人与人之间的差异」和「同一个人不同时刻的波动」分开，这是横断面做不到的。",
+      "source": "Bolger, Davis & Rafaeli 2003; Hamaker et al. 2015"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "self-report-scale",
+      "label": "自评量表",
+      "unit": "分量表均分",
+      "how": "用已验证的中文版；报内部一致性（α 或 ω）",
+      "precision": "Likert 5-7 点，实际区分度约 3-4 个有效等级",
+      "artifact": "共同方法偏差、社会赞许性",
+      "calibration": "每次施测都重算信度，不要引用原量表的 α"
+    },
+    {
+      "id": "reaction-time",
+      "label": "反应时",
+      "unit": "ms",
+      "how": "剔除 <200ms 与 >3SD 的试次（规则事前写定）",
+      "precision": "键盘采样抖动 ±8ms；用专用硬件或 PsychoPy 的 timing 检查",
+      "artifact": "速度-准确性权衡",
+      "calibration": "报正确率与 RT 的关系，必要时用逆效率分（RT/正确率）"
+    },
+    {
+      "id": "accuracy-dprime",
+      "label": "正确率 / d'",
+      "unit": "比例或 d'",
+      "how": "信号检测论：d'=z(H)-z(FA)；报 β 或 criterion",
+      "precision": "每条件至少 40 试次才能稳定估计 d'",
+      "artifact": "天花板/地板效应",
+      "calibration": "做难度预试，使正确率落在 60-90%"
+    },
+    {
+      "id": "physiological",
+      "label": "生理指标（皮电、心率、瞳孔）",
+      "unit": "μS / bpm / mm",
+      "how": "基线校正，报采样率与滤波参数",
+      "precision": "采样率≥1000Hz 才能可靠提取",
+      "artifact": "运动伪迹、温湿度影响",
+      "calibration": "每次实验前校准，室温记录"
+    },
+    {
+      "id": "coding-behaviour",
+      "label": "行为编码",
+      "unit": "频次/时长",
+      "how": "编码簿 + 双人独立编码 + 一致性系数",
+      "precision": "编码单位越小，一致性越低",
+      "artifact": "观察者漂移",
+      "calibration": "每 10% 样本重编码检验漂移"
+    }
+  ],
+  "methods": [
+    {
+      "id": "ttest",
+      "label": "t 检验（Welch）",
+      "when": "两组比较，连续结局",
+      "assumptions": [
+        "两组独立",
+        "近似正态或 n≥30/组"
+      ],
+      "tool": "scipy.stats.ttest_ind(equal_var=False)",
+      "pitfall": "先做方差齐性检验再选方法（α 失控）",
+      "why": "两组的基线方法；一律用 Welch。"
+    },
+    {
+      "id": "anova-mixed",
+      "label": "混合设计 ANOVA",
+      "when": "被试间×被试内组合",
+      "assumptions": [
+        "球形性（被试内部分）",
+        "残差正态"
+      ],
+      "tool": "statsmodels AnovaRM / pingouin mixed_anova",
+      "pitfall": "球形性违反不校正",
+      "why": "2×2 混合设计的标准分析。"
+    },
+    {
+      "id": "lmm",
+      "label": "线性混合模型",
+      "when": "重复测量、缺失、多层结构",
+      "assumptions": [
+        "随机效应结构由设计决定",
+        "MAR 缺失"
+      ],
+      "tool": "statsmodels MixedLM / lme4",
+      "pitfall": "随机斜率全开导致不收敛；按 p 值删随机效应",
+      "why": "比 RM-ANOVA 更能处理缺失与不平衡。"
+    },
+    {
+      "id": "mediation-bootstrap",
+      "label": "中介效应（bootstrap）",
+      "when": "检验机制",
+      "assumptions": [
+        "时间顺序合理",
+        "中介与结局独立测量"
+      ],
+      "tool": "R: mediation；Python: 自实现 bootstrap",
+      "pitfall": "用 Sobel 检验（假设间接效应正态，实际偏斜）",
+      "why": "bootstrap 百分位 CI 不依赖正态假设，是当前标准。"
+    },
+    {
+      "id": "sem",
+      "label": "结构方程模型",
+      "when": "潜变量、多指标、复杂路径",
+      "assumptions": [
+        "测量模型拟合可接受",
+        "样本量足够（≥200 或 10×参数数）"
+      ],
+      "tool": "R: lavaan；Python: semopy",
+      "pitfall": "只报 χ² 不报 CFI/RMSEA/SRMR",
+      "why": "能同时处理测量误差与结构关系。"
+    },
+    {
+      "id": "multilevel-diary",
+      "label": "多层模型（日记/ESM）",
+      "when": "嵌套在高频观测里的人",
+      "assumptions": [
+        "簇数≥50",
+        "时间间隔一致"
+      ],
+      "tool": "statsmodels MixedLM / lme4",
+      "pitfall": "把人内效应与人际效应混在一个系数里",
+      "why": "必须区分 within-person 与 between-person 效应，否则结论方向可能相反。"
+    },
+    {
+      "id": "equivalence",
+      "label": "等效性检验（TOST）",
+      "when": "要证明「没有差异」",
+      "assumptions": [
+        "等效界值事前设定"
+      ],
+      "tool": "自实现双单侧 t",
+      "pitfall": "用 p>0.05 宣称等效",
+      "why": "不显著≠等效，必须用 TOST。"
+    },
+    {
+      "id": "reliability",
+      "label": "信度与测量不变性",
+      "when": "使用量表",
+      "assumptions": [
+        "单维性或已知因子结构"
+      ],
+      "tool": "R: psych::alpha / semTools",
+      "pitfall": "引用原量表信度而不重算",
+      "why": "样本不同信度就不同；不报当前样本的信度等于没报测量质量。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "psychopy",
+      "label": "PsychoPy",
+      "kind": "stimulus",
+      "install": "pip install psychopy",
+      "minimalScript": "from psychopy import visual, core; win=visual.Window(); visual.TextStim(win,'hi').draw(); win.flip(); core.wait(1)",
+      "alt": [
+        "jsPsych",
+        "OpenSesame",
+        "E-Prime"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "jspsych",
+      "label": "jsPsych",
+      "kind": "stimulus",
+      "install": "npm install jspsych",
+      "minimalScript": "在线实验，浏览器运行，无需安装客户端",
+      "alt": [
+        "PsychoPy",
+        "lab.js"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "jamovi",
+      "label": "jamovi",
+      "kind": "stats",
+      "install": "https://www.jamovi.org",
+      "minimalScript": "（图形界面，内置 t 检验/ANOVA/混合模型）",
+      "alt": [
+        "JASP",
+        "R"
+      ],
+      "offline": true,
+      "license": "AGPL-3"
+    },
+    {
+      "id": "jasp",
+      "label": "JASP",
+      "kind": "stats",
+      "install": "https://jasp-stats.org",
+      "minimalScript": "（图形界面，内置贝叶斯因子）",
+      "alt": [
+        "jamovi",
+        "R BayesFactor"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "r-psych",
+      "label": "R + psych/lavaan/lme4",
+      "kind": "stats",
+      "install": "install.packages(c('psych','lavaan','lme4','emmeans'))",
+      "minimalScript": "library(lme4); m <- lmer(y ~ cond + (1|subject), data=d); summary(m)",
+      "alt": [
+        "Python statsmodels",
+        "jamovi"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "osf",
+      "label": "OSF（预注册与数据）",
+      "kind": "archive",
+      "install": "https://osf.io",
+      "minimalScript": "（Web，注册预注册模板并生成 DOI）",
+      "alt": [
+        "AsPredicted",
+        "Zenodo"
+      ],
+      "offline": false,
+      "license": "freeware"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「这是预注册的吗？主假设和主结局跟预注册一致吗？」",
+      "defense": "给 OSF 链接与注册日期；不一致的必须标为探索性并说明"
+    },
+    {
+      "attack": "「样本量怎么定的？功效是多少？」",
+      "defense": "报事前功效分析：效应量来源（文献或预试）、α、power、最终 n、实际功效"
+    },
+    {
+      "attack": "「做了多少次比较？校正了吗？」",
+      "defense": "列出全部检验；主假设声明不校正，其余用 Holm 或 FDR"
+    },
+    {
+      "attack": "「这是 HARKing 吧？」",
+      "defense": "区分验证性（预注册）与探索性（明确标注），并给出两者各自的证据强度"
+    },
+    {
+      "attack": "「效应量这么小，有什么实际意义？」",
+      "defense": "对照领域内的最小可觉察差异讨论，不只看 d 的大小标签"
+    },
+    {
+      "attack": "「被试是 WEIRD 样本，能推广吗？」",
+      "defense": "说明抽样框、报人口学分布、把外推限制写进 Limitations"
+    },
+    {
+      "attack": "「操纵检查通过了吗？」",
+      "defense": "报操纵检查的统计结果；未通过要讨论，不能删"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "每组样本量（被试间）",
+      "topJournal": "≥100/组 或功效≥.90",
+      "field": "30–80/组",
+      "source": "心理学已发表研究功效调查：中位约 .50（Bakker et al. 2012, Perspectives on Psych Science）"
+    },
+    {
+      "metric": "预注册",
+      "topJournal": "验证性研究必须有",
+      "field": "越来越多刊要求",
+      "source": "TOP Guidelines Level 2（Nosek et al. 2015, Science）"
+    },
+    {
+      "metric": "数据与材料公开",
+      "topJournal": "全部公开（含分析脚本）",
+      "field": "部分公开",
+      "source": "TOP Guidelines Level 2；Psychological Science 政策"
+    },
+    {
+      "metric": "报告全部变量与全部检验",
+      "topJournal": "含未达显著的",
+      "field": "常只报显著的",
+      "source": "Simmons, Nelson & Simonsohn 2011 (False-Positive Psychology)"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "操纵检查",
+      "主假设检验",
+      "简单效应/事后比较",
+      "稳健性（含离群处理）",
+      "探索性分析（明确标注）"
+    ],
+    "figureBudget": 4,
+    "note": "心理学 Results 先给操纵检查（证明自变量真的起作用），再给主假设。Figure 1 通常是条件均值 + 个体散点 + 95% CI，不要只画柱状图——柱状图会藏掉分布形状。"
+  },
+  "reporting": [
+    "consort",
+    "open-science"
+  ],
+  "reportingExternal": []
+}

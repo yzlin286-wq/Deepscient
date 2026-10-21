@@ -1,0 +1,41 @@
+# DeepScient —— 科研版 Harness 的补丁层
+#
+# 这一层只做四件事：
+#   1. 让开官方的侧栏品牌槽（single 槽只能有一个占用者，不让开就是我们被忽略）；
+#   2. 挂上 @local/deepscient：主机半边改名 + 开 /deepscient/api，客户端半边出界面；
+#   3. 预设花色收敛成一种：`standard` 这个 id 由 @local/dsh-science 的声明提供（名字叫「科研模式」，
+#      内容就是 shipped standard + 科研四处改动），这里只把随包发的那四条原版声明关掉。
+#      为什么关而不用 override：override 会整段替换 config，要复制 ~170 行插件清单，必然漂移；
+#      改声明的 id 是零复制的，而且历史会话里记的 `agentPreset: standard` 继续能解析。
+#   4. 其余一律不动 —— 科研工具、人设、技能由 @local/dsh-science 自己的 patch 提供，
+#      两边各管一段，升级时不会互相踩。
+#
+# 用法（不写进 profile，靠启动器的 --patch 叠加）：
+#   dsh --profile deepscient --patch <science.patch.yml> --patch <本文件> --port 3081
+
+- id: ui-brand-official
+  name: '@deepseek-ai/dsh-client-ui-brand-official'
+  disabled: true
+
+# ── 预设收敛：只留「科研模式」一个 ────────────────────────────────────────────
+# preset-standard 是随包发的原版 standard 声明；它的 config.id 也是 standard，
+# 与 dsh-science 声明的那个 id 冲突，必须让开。
+- id: preset-standard
+  name: '@deepseek-ai/dsh-agent-preset'
+  disabled: true
+
+- id: preset-ptc
+  name: '@deepseek-ai/dsh-agent-preset'
+  disabled: true
+
+- id: preset-minimal
+  name: '@deepseek-ai/dsh-agent-preset'
+  disabled: true
+
+- id: preset-cordis
+  name: '@deepseek-ai/dsh-agent-preset'
+  disabled: true
+
+- insert:
+    - id: deepscient
+      name: '@local/deepscient'

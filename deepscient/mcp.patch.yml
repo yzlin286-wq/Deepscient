@@ -1,0 +1,81 @@
+# MCP 工具层（可选，默认不加载）
+#
+# 为什么不进默认启动：这两个服务器要靠 `npx -y` 现场拉包，第一次需要联网。
+# 「新机器零外设也能跑」是 DeepScient 的底线，所以 MCP 是开关而不是默认件：
+#
+#   $env:DSH_ENABLE_MCP = '1'          # PowerShell
+#   deepscient\bin\deepscient.cmd -NoOpen -Port 3081
+#
+# 关着的时候：这一层根本不叠加，进程不起、启动不变慢、工具列表不变。
+# 开着但没网/没 npx 的时候：`failOnStartupError: false` —— 记一条错、这几个工具缺席，
+# harness 照常启动；/deepscient/api/health 里的 mcp.tools 会说清连上了几个、叫什么。
+#
+# 为什么不直接 `npx -y`：本机实测过一个坑 —— `~/.npmrc` 里留着一条指向没在监听的本地代理
+# （proxy=http://127.0.0.1:7890）时，npx 会在 2ms 内退出，MCP 工具一个都注册不上，而日志
+# 里只留一句「连不上」。所以这里给子进程单独指定一份 npmrc（启动器会生成，已存在就不覆盖）：
+#   <DSH_HOME>/science/mcp-npmrc
+# 里面显式清掉 proxy/https-proxy；如果你的网络**确实**要走代理，改那个文件即可。
+#
+# 冷启动成本：第一次 `npx -y` 要下载包，实测 paper-search-mcp-nodejs 约 34s；
+# 之后走 npm 缓存，2-3s。MCP 层是串在启动里等的，所以第一次开会久一点，属正常。
+#
+# Python 版（本机有 uv 才用，能力更强但依赖更重）：
+#   - id: mcp-arxiv
+#     name: '@deepseek-ai/dsh-mcp-client'
+#     config:
+#       serverName: arxiv
+#       transport: stdio
+#       command: uvx
+#       args: ['arxiv-mcp-server']
+#       toolCallTimeoutMs: 120000
+#       failOnStartupError: false
+#   - id: mcp-zotero
+#     name: '@deepseek-ai/dsh-mcp-client'
+#     config:
+#       serverName: zotero
+#       transport: stdio
+#       command: uvx
+#       args: ['zotero-mcp']
+#       env:
+#         ZOTERO_LOCAL: 'true'
+#       failOnStartupError: false
+#
+# 工具名规则：mcp__<serverName>__<tool>，例如 mcp__papers__search_papers。
+# serverName 只许 [A-Za-z0-9_-]{1,32}，同一个 profile 内不能重名。
+
+- insert:
+    # 多源论文检索/下载：arXiv、PubMed、Semantic Scholar、Crossref、OpenAlex 等
+    - id: mcp-papers
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: papers
+        transport: stdio
+        command: npx
+        args: ['-y', 'paper-search-mcp-nodejs']
+        env:
+          npm_config_userconfig: !!js dshHomePath('science/mcp-npmrc')
+        toolCallTimeoutMs: 90000
+        failOnStartupError: false
+        reconnect:
+          enabled: true
+          maxAttempts: 3
+
+    # PubMed / Europe PMC：检索、取全文（PMC/Unpaywall）、引文、MeSH
+    - id: mcp-pubmed
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: pubmed
+        transport: stdio
+        command: npx
+        args: ['-y', '@cyanheads/pubmed-mcp-server']
+        env:
+          npm_config_userconfig: !!js dshHomePath('science/mcp-npmrc')
+          # 可选：NCBI 给注册用户的限额更高。要设就取消下一行注释并填真 key（本机环境变量不保证存在，
+          # 写成 !!js process.env.NCBI_API_KEY 在没设变量时会得到 undefined，而 env 只收字符串，
+          # 整行配置会校验失败、这行 MCP 根本装不上 —— 实测踩过）。
+          # NCBI_API_KEY: 'your-ncbi-api-key'
+        toolCallTimeoutMs: 90000
+        failOnStartupError: false
+        reconnect:
+          enabled: true
+          maxAttempts: 3

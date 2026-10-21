@@ -1,0 +1,494 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "ml-cs",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "ml-cs",
+  "label": "机器学习与计算机",
+  "questionTypes": [
+    {
+      "id": "sota",
+      "label": "新方法是否优于已有方法",
+      "when": "有可比基线与统一评测协议",
+      "needs": [
+        "强基线",
+        "同一数据与预算",
+        "多个种子"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "label": "为什么有效（消融）",
+      "when": "方法已证明有效",
+      "needs": [
+        "逐组件消融",
+        "与替代设计的对照",
+        "理论或可视化证据"
+      ]
+    },
+    {
+      "id": "scaling",
+      "label": "随规模如何变化",
+      "when": "有关规模/数据量的可调参数",
+      "needs": [
+        "至少 3 个规模点",
+        "拟合幂律",
+        "算力预算披露"
+      ]
+    },
+    {
+      "id": "robustness",
+      "label": "在分布偏移/对抗下是否可靠",
+      "when": "有 OOD 或攻击设定",
+      "needs": [
+        "明确的偏移定义",
+        "多个偏移强度",
+        "最坏情况报告"
+      ]
+    },
+    {
+      "id": "theory",
+      "label": "有没有保证",
+      "when": "能给收敛率/泛化界",
+      "needs": [
+        "明确假设",
+        "与已有界的对比",
+        "常数项可读"
+      ]
+    },
+    {
+      "id": "system",
+      "label": "系统/工程的性能",
+      "when": "有可测的吞吐/延迟/内存指标",
+      "needs": [
+        "硬件规格",
+        "负载描述",
+        "与基线的同条件对比"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "benchmark-comparison",
+      "label": "基准对比实验",
+      "when": "提出新模型/算法，要在公开基准上比",
+      "requires": [
+        "至少 2 个强基线（含当前 SOTA）",
+        "同一数据划分与预处理",
+        "≥3 个随机种子",
+        "同一算力预算或明确说明差异"
+      ],
+      "nRule": "≥3 个种子才能报均值±标准差；要检测 1% 的绝对提升，在种子间 SD 为 0.5% 时需约 8 个种子（配对 t，power=.8）",
+      "threats": [
+        {
+          "risk": "测试集调参（隐性过拟合）",
+          "mitigation": "只用验证集选超参；报测试集只用一次"
+        },
+        {
+          "risk": "基线调参不足",
+          "mitigation": "用官方实现与原论文超参，并说明搜索预算"
+        },
+        {
+          "risk": "单种子偶然性",
+          "mitigation": "≥3 种子，报 mean±sd 与逐种子结果"
+        }
+      ],
+      "reporting": [],
+      "why": "这是本领域的主设计，但也是可重复性最差的设计——差异主要在基线强度与调参预算。",
+      "source": "Dodge et al. 2019 (Show Your Work); Musgrave et al. 2020"
+    },
+    {
+      "id": "ablation",
+      "label": "消融实验",
+      "when": "要论证「哪个组件起作用」",
+      "requires": [
+        "逐个去掉组件",
+        "去除后保持参数量/算力可比",
+        "与替代设计对照（不只是去掉）"
+      ],
+      "nRule": "每个消融点 ≥3 种子；组件数 k 时做 k 次，多重比较用 Holm",
+      "threats": [
+        {
+          "risk": "去掉组件后参数量也变了，效果差异归因错误",
+          "mitigation": "匹配参数量或报告参数差异"
+        },
+        {
+          "risk": "只做 remove 不做 replace",
+          "mitigation": "加 replace-with-simpler 对照，证明不是「少一个模块所以更差」"
+        }
+      ],
+      "reporting": [],
+      "why": "审稿人用消融判断你的贡献是「新想法」还是「更多参数」。",
+      "source": "Meyes et al. 2020 (Ablation Studies in AI)"
+    },
+    {
+      "id": "scaling-law",
+      "label": "规模律拟合",
+      "when": "方法在规模上表现异常",
+      "requires": [
+        "≥3 个规模点（最好 5+）",
+        "每点独立训练",
+        "算力与数据披露",
+        "拟合优度报告"
+      ],
+      "nRule": "至少 3 点才能拟 2 参数幂律，5 点以上才有可信外推；每点至少 2 个种子",
+      "threats": [
+        {
+          "risk": "用不同数据量/算力混淆规模效应",
+          "mitigation": "控制其他变量，报 compute-optimal 分析"
+        },
+        {
+          "risk": "外推超出拟合区间",
+          "mitigation": "明确标出外推区，不外推超过一个数量级"
+        }
+      ],
+      "reporting": [],
+      "why": "规模律是本领域少见的「可预测」结果，但极易因控制变量不严而失效。",
+      "source": "Kaplan et al. 2020; Hoffmann et al. 2022 (Chinchilla)"
+    },
+    {
+      "id": "human-eval",
+      "label": "人类评估",
+      "when": "自动指标不能代表质量（生成、对话、写作）",
+      "requires": [
+        "评估指南与评分细则",
+        "评估者间一致性",
+        "盲法（不知哪个是系统输出）",
+        "足够样本与评估者"
+      ],
+      "nRule": "每条件 ≥100 个样本、≥3 名评估者；一致性用 Krippendorff's α（≥.67 才可接受）",
+      "threats": [
+        {
+          "risk": "评估者偏好长回答/流畅回答",
+          "mitigation": "控制长度，报长度与得分的相关"
+        },
+        {
+          "risk": "评估者知道来源",
+          "mitigation": "双盲随机呈现"
+        },
+        {
+          "risk": "只报平均分不报一致性",
+          "mitigation": "必须报评估者间一致性"
+        }
+      ],
+      "reporting": [],
+      "why": "LLM 时代的必要设计，但比自动指标贵得多也脆得多。",
+      "source": "Clark et al. 2021 (Better Human Evaluation); Zheng et al. 2023 (MT-Bench)"
+    },
+    {
+      "id": "systems-benchmark",
+      "label": "系统性能基准",
+      "when": "工程/系统类贡献（吞吐、延迟、内存）",
+      "requires": [
+        "硬件与软件版本完整披露",
+        "负载与数据规模描述",
+        "与基线同条件",
+        "冷/热启动区分"
+      ],
+      "nRule": "每配置 ≥5 次重复，报中位数与 P99；只报均值会掩盖尾延迟",
+      "threats": [
+        {
+          "risk": "基线配置不当（内存不足/线程数不同）",
+          "mitigation": "披露全部配置，做配置敏感性"
+        },
+        {
+          "risk": "只报最好的那次",
+          "mitigation": "报全部运行或明确说明取中位数"
+        }
+      ],
+      "reporting": [],
+      "why": "系统论文的可信度几乎完全取决于基线配置是否公平。",
+      "source": "Hoefler & Belli 2015 (Scientific Benchmarking of Concurrent Systems)"
+    },
+    {
+      "id": "theoretical-analysis",
+      "label": "理论分析",
+      "when": "能给出收敛率/复杂度/泛化界",
+      "requires": [
+        "明确假设（光滑性、有界性、噪声）",
+        "与已有界的逐一对比",
+        "证明可核查"
+      ],
+      "nRule": "不适用；但必须配 ≥1 个数值实验验证界是紧的",
+      "threats": [
+        {
+          "risk": "假设比前人强却声称改进",
+          "mitigation": "逐条列出与前人的假设差异表"
+        },
+        {
+          "risk": "只给上界不给下界",
+          "mitigation": "给匹配的下界或明确说明只给上界"
+        }
+      ],
+      "reporting": [],
+      "why": "理论贡献的评审核心是「假设是否更弱、界是否更紧」，不是证明长度。",
+      "source": "Bubeck 2015 (Convex Optimization survey); Bottou & Bousquet 2008"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "accuracy",
+      "label": "准确率 / top-1",
+      "unit": "%",
+      "how": "固定测试集，一次性评估",
+      "precision": "报 mean±sd（≥3 种子）与 95% CI",
+      "artifact": "测试集泄露、重复评估挑最好",
+      "calibration": "用官方 eval 脚本，报告 commit hash"
+    },
+    {
+      "id": "loss-perplexity",
+      "label": "损失 / 困惑度",
+      "unit": "nats 或 PPL",
+      "how": "同一 tokenizer 与同一评测脚本",
+      "precision": "PPL 差异 <2% 通常在种子噪声内",
+      "artifact": "tokenizer 不同导致不可比",
+      "calibration": "报每 token 的 bits，而不是 PPL"
+    },
+    {
+      "id": "throughput-latency",
+      "label": "吞吐 / 延迟",
+      "unit": "samples/s, ms",
+      "how": "固定 batch、固定硬件、冷热启动分开",
+      "precision": "报中位数与 P99，不只均值",
+      "artifact": "GPU 频率漂移、共享集群干扰",
+      "calibration": "同一节点连续跑，记录 GPU 型号与驱动"
+    },
+    {
+      "id": "compute-budget",
+      "label": "算力开销",
+      "unit": "GPU-hours / FLOPs",
+      "how": "训练与推理分开计",
+      "precision": "按实际墙钟与利用率算",
+      "artifact": "只报最优 run 的算力",
+      "calibration": "报总算力（含失败的 run）"
+    },
+    {
+      "id": "human-rating",
+      "label": "人类评分",
+      "unit": "1-5 或 pairwise 胜率",
+      "how": "盲法成对比较优先于绝对打分",
+      "precision": "每条件 ≥100 样本",
+      "artifact": "长度偏倚、评估者疲劳",
+      "calibration": "插入黄金标准样本检测评估者质量"
+    }
+  ],
+  "methods": [
+    {
+      "id": "paired-seed-test",
+      "label": "配对种子比较",
+      "when": "比较两个方法",
+      "assumptions": [
+        "同种子下训练随机性可比"
+      ],
+      "tool": "scipy.stats.ttest_rel",
+      "pitfall": "用独立样本检验分析配对种子（丢掉相关性，功效大降）",
+      "why": "同种子配对能消掉数据顺序带来的方差。"
+    },
+    {
+      "id": "bootstrap-ci",
+      "label": "Bootstrap 置信区间",
+      "when": "指标非线性或分布未知",
+      "assumptions": [
+        "样本代表总体"
+      ],
+      "tool": "numpy 手写 5000 次重采样",
+      "pitfall": "用正态近似给准确率的 CI（会越界）",
+      "why": "准确率、F1、AUC 的 CI 都该用 bootstrap。"
+    },
+    {
+      "id": "multiple-comparison",
+      "label": "多重比较校正",
+      "when": "多数据集/多指标",
+      "assumptions": [
+        "检验间独立或可估依赖"
+      ],
+      "tool": "statsmodels multipletests",
+      "pitfall": "在 10 个数据集上挑显著的报",
+      "why": "跨数据集报告必须校正，否则等于挑樱桃。"
+    },
+    {
+      "id": "power-law-fit",
+      "label": "幂律拟合",
+      "when": "规模律",
+      "assumptions": [
+        "幂律形式正确",
+        "无饱和"
+      ],
+      "tool": "scipy.optimize.curve_fit（对数空间）",
+      "pitfall": "在饱和区拟合",
+      "why": "规模律只在未饱和区间成立。"
+    },
+    {
+      "id": "significance-vs-practical",
+      "label": "显著性 vs 实际提升",
+      "when": "报告提升幅度",
+      "assumptions": [],
+      "tool": "—",
+      "pitfall": "0.3% 的提升报 p<.001 就说「显著优于」",
+      "why": "审稿人看的是相对提升幅度与是否超出种子噪声，不是 p 值。"
+    },
+    {
+      "id": "error-analysis",
+      "label": "错误分析",
+      "when": "任何实证论文",
+      "assumptions": [],
+      "tool": "人工标注 ≥100 个错误样本",
+      "pitfall": "只给聚合指标不做错误分析",
+      "why": "顶会审稿人常问「你的方法在什么情况下失败」。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "pytorch",
+      "label": "PyTorch",
+      "kind": "framework",
+      "install": "pip install torch",
+      "minimalScript": "import torch; m=torch.nn.Linear(10,2); print(m(torch.randn(3,10)).shape)",
+      "alt": [
+        "JAX",
+        "TensorFlow"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "jax",
+      "label": "JAX",
+      "kind": "framework",
+      "install": "pip install jax jaxlib",
+      "minimalScript": "import jax.numpy as jnp; print(jnp.ones((2,3)) @ jnp.ones((3,1)))",
+      "alt": [
+        "PyTorch"
+      ],
+      "offline": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "wandb",
+      "label": "Weights & Biases",
+      "kind": "tracking",
+      "install": "pip install wandb",
+      "minimalScript": "import wandb; wandb.init(project='p'); wandb.log({'loss':0.1})",
+      "alt": [
+        "MLflow",
+        "TensorBoard"
+      ],
+      "offline": false,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "mlflow",
+      "label": "MLflow",
+      "kind": "tracking",
+      "install": "pip install mlflow",
+      "minimalScript": "mlflow.start_run(); mlflow.log_metric('acc', 0.9)",
+      "alt": [
+        "W&B",
+        "自建 CSV"
+      ],
+      "offline": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "hydra",
+      "label": "Hydra",
+      "kind": "config",
+      "install": "pip install hydra-core",
+      "minimalScript": "@hydra.main(config_path='conf'); def main(cfg): ...",
+      "alt": [
+        "argparse",
+        "gin"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "scipy-stats",
+      "label": "SciPy stats",
+      "kind": "stats",
+      "install": "pip install scipy",
+      "minimalScript": "from scipy import stats; print(stats.ttest_rel(a, b))",
+      "alt": [
+        "statsmodels"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "fdr_bh",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「基线调过参吗？搜索预算和你的方法一样吗？」",
+      "defense": "给基线超参搜索空间、预算、所用实现 commit；不同则说明并做等预算对照"
+    },
+    {
+      "attack": "「只跑了一个种子吧？」",
+      "defense": "≥3 种子，报 mean±sd 与逐种子结果；差异是否超出种子噪声要明说"
+    },
+    {
+      "attack": "「这个提升在实际中重要吗？」",
+      "defense": "报相对提升、绝对提升、与种子 SD 的比值，不只看 p"
+    },
+    {
+      "attack": "「为什么没有跟 X 比？」",
+      "defense": "给选择理由（同预算/同数据可得），并说明 X 不可比的具体原因"
+    },
+    {
+      "attack": "「算力多少？能不能复现？」",
+      "defense": "报 GPU 型号、数量、小时数、随机种子、环境版本、代码链接"
+    },
+    {
+      "attack": "「测试集调过参吗？」",
+      "defense": "明确说明只用了验证集，测试集一次性评估，给评测脚本"
+    },
+    {
+      "attack": "「消融只做了 remove，没做 replace」",
+      "defense": "补 replace-with-simpler 对照，证明不是「参数少了所以差」"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "种子数",
+      "topJournal": "≥5（NeurIPS/ICML 强论文常见）",
+      "field": "3",
+      "source": "NeurIPS 2023 Repro Checklist；Dodge et al. 2019"
+    },
+    {
+      "metric": "基线强度",
+      "topJournal": "含当前 SOTA 且调过参",
+      "field": "1-2 个常见基线",
+      "source": "Musgrave et al. 2020 (A Metric Learning Reality Check)"
+    },
+    {
+      "metric": "代码与超参公开",
+      "topJournal": "全部公开 + 训练脚本",
+      "field": "部分公开",
+      "source": "NeurIPS/ICML Reproducibility Checklist"
+    },
+    {
+      "metric": "算力披露",
+      "topJournal": "GPU 型号×数量×小时 + 总能耗",
+      "field": "只报 GPU 数",
+      "source": "Strubell et al. 2019 (Energy and Policy Considerations)"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "主实验（vs 基线，多数据集）",
+      "消融",
+      "规模/效率分析",
+      "稳健性或错误分析",
+      "定性示例"
+    ],
+    "figureBudget": 6,
+    "note": "Results 第一张表永远是主结果表（方法×数据集），并标注均值±标准差与显著性标记。定性示例放最后，不能代替定量结果。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

@@ -1,0 +1,42 @@
+{
+  "name": "sleep-wm",
+  "design": "within-2x2",
+  "domain": "neuroscience",
+  "testId": "ttest-rel",
+  "columns": {
+    "a": "well_rested",
+    "b": "sleep_deprived"
+  },
+  "csv": "data.csv",
+  "howToCall": {
+    "tool": "science_stats",
+    "args": {
+      "projectId": "<你的课题 id>",
+      "testId": "ttest-rel",
+      "csvPath": "data/exp1.csv",
+      "columns": {
+        "a": "well_rested",
+        "b": "sleep_deprived"
+      }
+    },
+    "note": "宽表格式：一人一行，两列就是两个条件；行序必须一一对应，配对检验依赖这一点"
+  },
+  "expected": {
+    "n": {
+      "pairs": 22
+    },
+    "statistic": 5.2858,
+    "df": 21,
+    "p": 3.1e-05,
+    "effectSize": {
+      "kind": "cohens-dz",
+      "value": 1.1269
+    },
+    "fallbackP": 0.000273
+  },
+  "whatToLookAt": [
+    "被试内设计的关键是差值列的正态性，不是两列各自的正态性",
+    "dz 与独立样本 d 不能直接比大小，量纲不同",
+    "画图用 paired 图：每人的两条线，比两个柱状图信息量大得多"
+  ]
+}

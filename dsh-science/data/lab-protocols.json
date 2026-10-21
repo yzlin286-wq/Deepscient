@@ -1,0 +1,192 @@
+{
+  "$meta": {
+    "schema": "lab-protocols/1",
+    "note": "实验卫生规程：与学科无关的通用正确做法。每条都要能回答「什么时候必须做」「怎么做」「不做会怎样」。science_exp_plan 用这些生成预注册草稿与威胁清单。",
+    "updatedAt": "2026-10-21",
+    "ironRule": "这些不是建议，是投稿前的检查项。不做就必须在方法里写明「没做，理由是什么」。"
+  },
+  "protocols": [
+    {
+      "id": "randomization",
+      "label": "随机化",
+      "when": "任何有对照的干预研究",
+      "how": [
+        "随机序列用计算机生成，不用「交替分配」或「按入院顺序」",
+        "分配隐藏：中心随机、密封不透明信封、或第三方持有表",
+        "随机化单位（个体/簇）必须与统计推断层级一致",
+        "分层随机（按已知强预测因子）可提高功效，但分层因子要事前写定且数量有限"
+      ],
+      "counterExample": "按「周一到周三入组用 A，周四到周六用 B」分组——这不是随机化，是准实验，且与时间完全混淆。",
+      "why": "随机化是唯一能同时平衡已知与未知混杂的机制。",
+      "source": "Schulz & Grimes 2002 (Lancet)"
+    },
+    {
+      "id": "blinding",
+      "label": "盲法",
+      "when": "结局测量可能受主观影响时（几乎总是）",
+      "how": [
+        "至少对结局评估者盲（最容易被忽略也最有效）",
+        "能双盲就双盲（受试者 + 评估者）",
+        "盲法失败要记录并报告（不能假装没发生）",
+        "数据分析者盲（条件编码为 A/B，分析完再解盲）"
+      ],
+      "counterExample": "开放标签试验 + 自报结局 + 无评估者盲：效应量普遍被高估约 0.3-0.5 SD。",
+      "why": "缺盲法的研究系统性高估效应，这不是假说而是元证据。",
+      "source": "Hróbjartsson et al. 2012 (Cochrane Methods)"
+    },
+    {
+      "id": "control-arm",
+      "label": "对照设置",
+      "when": "任何要归因于干预的研究",
+      "how": [
+        "安慰剂对照：控制期望效应（药物、心理干预）",
+        "阳性对照：控制非特异效应（伦理不允许安慰剂时）",
+        "等待名单对照：注意「等待期效应」与流失",
+        "历史对照：最弱，只在无法同时对照时使用，且必须讨论时间趋势"
+      ],
+      "counterExample": "单组前后测：改善可能来自自然恢复、回归到均值、季节效应、或仅仅是重复测量。",
+      "why": "没有对照就没有反事实，效应无法归因。",
+      "source": "Shadish, Cook & Campbell 2002, ch.4"
+    },
+    {
+      "id": "sample-size",
+      "label": "样本量依据",
+      "when": "设计阶段（必须事前）",
+      "how": [
+        "先定「最小有意义的效应量」（不是文献里最大的那个）",
+        "用功效分析算 n：α、power、效应量、脱落率、设计效应",
+        "聚类设计乘设计效应 1+(m-1)ρ",
+        "算不出时用资源约束下的 MDE：给定 n，能检测到多大效应",
+        "事后算功效没有意义（observed power 是 p 的单调变换）"
+      ],
+      "counterExample": "「每组 30 例（依据惯例）」——惯例没有依据。多数领域的研究实际功效不足 50%。",
+      "why": "功效不足的研究不仅浪费资源，还会把真效应判为阴性，污染文献。",
+      "source": "Button et al. 2013 (Nature Reviews Neuroscience); Lakens 2022"
+    },
+    {
+      "id": "preregistration",
+      "label": "预注册",
+      "when": "验证性研究；探索性研究可选但要声明",
+      "how": [
+        "写清：假设、主结局、样本量依据、分析计划、排除标准",
+        "注册到可查的库（OSF / PROSPERO / AEA RCT / ClinicalTrials.gov）并取 DOI",
+        "与预注册的偏离必须在正文明确列出并说明理由",
+        "探索性分析单独成节，标明「未预注册」"
+      ],
+      "counterExample": "先跑完分析，再写一份「预注册」倒填日期——这是学术不端，不是灰色地带。",
+      "why": "预注册把「验证」与「发现」分开，是解决 p-hacking 与 HARKing 的结构性办法。",
+      "source": "Nosek et al. 2018 (PNAS); Simmons et al. 2011"
+    },
+    {
+      "id": "data-dictionary",
+      "label": "数据字典",
+      "when": "数据采集开始时",
+      "how": [
+        "每个变量：名称、类型、单位、取值范围、缺失编码、采集方式、采集时点",
+        "原始数据只读，清洗产生新文件并保留清洗脚本",
+        "缺失值编码统一（不要混用 0 / NA / 空字符串 / -999）",
+        "版本用 git 或 DOI（Zenodo）标识"
+      ],
+      "counterExample": "三个月后回来看 `var7` 不知道是什么，只能重跑整个实验。",
+      "why": "数据字典是可复现的最低门槛，也是自己三个月后还能读懂的唯一保障。",
+      "source": "Wilkinson et al. 2016 (FAIR Principles)"
+    },
+    {
+      "id": "version-control",
+      "label": "版本控制",
+      "when": "从第一天起",
+      "how": [
+        "原始数据进 git-lfs 或单独归档，代码进 git",
+        "每次分析运行都记录 commit hash",
+        "不做「final_v2_真的final.R」这类命名",
+        "发布时打 tag 并归档到 Zenodo 取 DOI"
+      ],
+      "counterExample": "只有一份 Excel，且被覆盖过三次——复现不可能，撤稿风险。",
+      "why": "没有版本就没有「当时到底跑了什么」这个问题的答案。",
+      "source": "Wilson et al. 2014 (Best Practices for Scientific Computing)"
+    },
+    {
+      "id": "environment-lock",
+      "label": "环境锁定",
+      "when": "任何用了代码的分析",
+      "how": [
+        "Python：`pip freeze > requirements.txt` 或 `conda env export`",
+        "R：`renv::snapshot()` 或 `sessionInfo()` 全文附上",
+        "记录操作系统、编译器、BLAS 库、GPU 驱动",
+        "随机性：固定 seed 并写明 seed 值；说明哪些步骤仍有不可控随机性"
+      ],
+      "counterExample": "「我们用了 Python 3」——两年后同样的代码在新版本 numpy 上给出不同的默认行为。",
+      "why": "环境差异是复现失败的最常见原因，比代码错误更常见。",
+      "source": "NeurIPS 2021 Reproducibility Checklist; ACM Artifact Evaluation"
+    },
+    {
+      "id": "outlier-policy",
+      "label": "离群值与排除标准",
+      "when": "分析前（规则必须事前写定）",
+      "how": [
+        "写定规则：如「RT <200ms 或 >3SD 剔除」「漏答>20% 整份剔除」",
+        "报剔除数量与剔除前后的结果（敏感性分析）",
+        "绝不因为「去掉后不显著」而改规则",
+        "多重规则时报告全部组合"
+      ],
+      "counterExample": "看到结果不显著，回头调剔除标准——这是 p-hacking 的常见变体。",
+      "why": "排除标准的事前性决定了它是方法还是操纵。",
+      "source": "Simmons et al. 2011; Leys et al. 2013 (How to detect outliers)"
+    },
+    {
+      "id": "missing-data",
+      "label": "缺失数据",
+      "when": "缺失 >5%",
+      "how": [
+        "先描述缺失模式（是否与已观测变量相关）",
+        "MAR 可信时用多重插补（≥20 次插补）或 FIML，不要用均值填补",
+        "MNAR 需敏感性分析（如 delta adjustment）",
+        "报每个变量的缺失比例"
+      ],
+      "counterExample": "完整案例分析（删掉有缺失的行）在 MAR 下产生偏倚，且浪费一半样本。",
+      "why": "缺失机制决定方法，选错方法结论就偏。",
+      "source": "Little & Rubin 2019; Sterne et al. 2009 (BMJ)"
+    },
+    {
+      "id": "multiple-comparison-policy",
+      "label": "多重比较政策",
+      "when": "有任何一次以上的检验",
+      "how": [
+        "区分主假设（不校正，但必须只有一个或极少数）与次要/探索（必须校正）",
+        "校正方法事前写定：Holm（FWER）或 BH（FDR）",
+        "报未校正 p、校正后 p、以及用的方法",
+        "不要「挑一个能过校正的结局当主结局」"
+      ],
+      "counterExample": "测了 12 个指标，只报 p<.05 的 3 个，不说测了 12 个。",
+      "why": "不校正的多重检验让「显著」变成必然事件。",
+      "source": "Benjamini & Hochberg 1995; Holm 1979"
+    },
+    {
+      "id": "negative-control",
+      "label": "阴性/安慰剂对照检验",
+      "when": "观察性因果推断、以及任何有「假阳性风险」的设计",
+      "how": [
+        "选一个理论上不该受处理影响的结局（阴性对照结局）",
+        "选一个理论上不该有处理效应的子群体（阴性对照暴露）",
+        "若阴性对照也显著，说明存在残余混杂"
+      ],
+      "counterExample": "DID 里所有结局都显著改善，包括不该受影响的那个——这不是效果好，是识别策略有问题。",
+      "why": "阴性对照能抓住识别策略的系统性失败，是低成本高价值的自检。",
+      "source": "Lipsitch, Tchetgen Tchetgen & Cohen 2010 (Epidemiology)"
+    },
+    {
+      "id": "reporting-completeness",
+      "label": "报告完整性",
+      "when": "写作阶段",
+      "how": [
+        "对照本学科的报告规范逐条打勾（CONSORT/PRISMA/STROBE/ARRIVE/TOP）",
+        "报全部预设结局，不只显著的",
+        "报全部排除、流失、偏离方案的情况",
+        "给数据与代码的可获取方式（哪怕写「应要求提供」也要说明理由）"
+      ],
+      "counterExample": "只报显著结局 = 选择性报告，是撤稿的常见原因之一。",
+      "why": "读者只能看到你写下的东西；不写等于不存在。",
+      "source": "EQUATOR Network 各规范"
+    }
+  ]
+}

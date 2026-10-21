@@ -1,0 +1,506 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "economics",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "economics",
+  "label": "经济学与社会科学",
+  "questionTypes": [
+    {
+      "id": "causal-effect",
+      "label": "某项政策/事件造成了什么影响",
+      "when": "有政策变动或外生冲击",
+      "needs": [
+        "识别策略",
+        "处理组与对照组可比性论证",
+        "平行趋势或连续性检验"
+      ]
+    },
+    {
+      "id": "elasticity",
+      "label": "一个量对另一个量的弹性",
+      "when": "有价格/收入/规模变异",
+      "needs": [
+        "外生变异或工具变量",
+        "函数形式说明",
+        "聚类稳健 SE"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "label": "通过什么渠道起作用",
+      "when": "效应已识别",
+      "needs": [
+        "中介变量的独立变异",
+        "排除竞争性解释"
+      ]
+    },
+    {
+      "id": "heterogeneity",
+      "label": "对谁影响更大",
+      "when": "有预设的分组维度",
+      "needs": [
+        "事前的分组依据",
+        "交互项",
+        "多重比较校正"
+      ]
+    },
+    {
+      "id": "prediction",
+      "label": "预测与模型选择",
+      "when": "目标是样本外预测",
+      "needs": [
+        "样本外验证",
+        "交叉验证方案",
+        "与朴素基线对比"
+      ]
+    },
+    {
+      "id": "welfare",
+      "label": "福利/成本收益",
+      "when": "政策评估",
+      "needs": [
+        "效应估计",
+        "弹性或影子价格",
+        "外推假设明示"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "did",
+      "label": "双重差分（DID）",
+      "when": "有政策实施时点差异，且有前后数据",
+      "requires": [
+        "处理组与对照组事前的趋势平行",
+        "处理时点外生",
+        "无预期效应（anticipation）",
+        "聚类到处理层级"
+      ],
+      "nRule": "按簇算：处理簇 ≥30 才可做大样本推断，否则用 wild cluster bootstrap 或随机化推断",
+      "threats": [
+        {
+          "risk": "平行趋势不成立",
+          "mitigation": "事件研究图（逐期系数）+ 事前联合检验 + 安慰剂检验"
+        },
+        {
+          "risk": "处理时点内生于结果",
+          "mitigation": "用政策外生性论证，或改用 IV/断点"
+        },
+        {
+          "risk": "交错处理下的负权重（goodman-bacon）",
+          "mitigation": "用 Callaway-Sant'Anna 或 Sun-Abraham 估计量"
+        }
+      ],
+      "reporting": [],
+      "why": "政策评估的主力设计。核心不是回归，是平行趋势的可信性论证。",
+      "source": "Card & Krueger 1994; Goodman-Bacon 2021; Callaway & Sant'Anna 2021"
+    },
+    {
+      "id": "rdd",
+      "label": "断点回归（RDD）",
+      "when": "处理由某个连续变量是否越过阈值决定",
+      "requires": [
+        "阈值规则严格执行",
+        "断点附近无操纵",
+        "带宽选择规则事前定",
+        "协变量在断点连续"
+      ],
+      "nRule": "有效样本是断点附近的一个带宽内的观测；带宽用 IK/CCT 最优带宽，并报 0.5×/2× 带宽的稳健性",
+      "threats": [
+        {
+          "risk": "running variable 被操纵（人為跨过阈值）",
+          "mitigation": "McCrary 密度检验 + 断点附近协变量平衡"
+        },
+        {
+          "risk": "带宽挑选",
+          "mitigation": "报多个带宽的结果，不挑最好看的"
+        },
+        {
+          "risk": "把模糊断点当清晰断点",
+          "mitigation": "用 fuzzy RDD（IV 形式）并报第一阶段"
+        }
+      ],
+      "reporting": [],
+      "why": "最接近随机实验的观察性设计，但只在断点附近有效——外推要格外小心。",
+      "source": "Thistlethwaite & Campbell 1960; Lee & Lemieux 2010; Cattaneo et al. 2020"
+    },
+    {
+      "id": "iv",
+      "label": "工具变量（IV / 2SLS）",
+      "when": "有内生解释变量，且能找到只通过它影响结果的外生变异",
+      "requires": [
+        "相关性（第一阶段强）",
+        "排他性（只能通过内生变量影响结果）",
+        "单调性（LATE 解释）"
+      ],
+      "nRule": "第一阶段 F>10 才算强工具（Stock-Yogo）；F<10 时用弱工具稳健推断（Anderson-Rubin）",
+      "threats": [
+        {
+          "risk": "弱工具偏误",
+          "mitigation": "报第一阶段 F、用 AR 置信集"
+        },
+        {
+          "risk": "排他性不成立",
+          "mitigation": "给制度性论证 + 过度识别检验（若工具数>内生变量数）"
+        },
+        {
+          "risk": "把 LATE 当 ATE",
+          "mitigation": "明确说估计的是「受工具影响的那部分人」的效应"
+        }
+      ],
+      "reporting": [],
+      "why": "观察性数据里识别因果的主要工具，但排他性永远无法用数据检验。",
+      "source": "Angrist, Imbens & Rubin 1996; Stock & Yogo 2005"
+    },
+    {
+      "id": "event-study",
+      "label": "事件研究",
+      "when": "有明确事件时点，要看动态效应",
+      "requires": [
+        "事件时点外生",
+        "无同期其他冲击",
+        "基期选择说明",
+        "聚类到处理层级"
+      ],
+      "nRule": "事件窗口前后各 ≥4 期才有形状可言；每期样本量要够（<30 的期合并）",
+      "threats": [
+        {
+          "risk": "基期选择改变结论",
+          "mitigation": "报更换基期的稳健性"
+        },
+        {
+          "risk": "预期效应污染事前系数",
+          "mitigation": "检查事前系数是否显著异于零"
+        },
+        {
+          "risk": "同期政策叠加",
+          "mitigation": "控制同期政策或做排除性讨论"
+        }
+      ],
+      "reporting": [],
+      "why": "能看效应的动态形状（立即/渐强/衰减），比单一 DID 系数信息量大得多。",
+      "source": "Fama et al. 1969; Freyaldenhoven et al. 2021"
+    },
+    {
+      "id": "rct-field",
+      "label": "田野实验",
+      "when": "可随机化干预（优惠券、提醒短信、教学法）",
+      "requires": [
+        "随机化单位与推断层级一致",
+        "依从性记录",
+        "预注册",
+        "伦理审查"
+      ],
+      "nRule": "MDE 计算：n = 16σ²/Δ²（双侧 α=.05, power=.8）；Δ 要事先说清「最小有经济意义的效应」",
+      "threats": [
+        {
+          "risk": "不依从（没接受处理）",
+          "mitigation": "报 ITT 与 LATE（用分配作工具变量）"
+        },
+        {
+          "risk": "Spillover 到对照组",
+          "mitigation": "设计时按地理/社群分组随机化"
+        },
+        {
+          "risk": "多重结局挑显著的",
+          "mitigation": "预注册主结局 + 其他结局做 FDR"
+        }
+      ],
+      "reporting": [],
+      "why": "发展经济学与行为经济学的黄金标准，但成本高、外推窄。",
+      "source": "Duflo, Glennerster & Kremer 2007 (Handbook of Development Economics)"
+    },
+    {
+      "id": "synthetic-control",
+      "label": "合成控制法",
+      "when": "只有一个处理单位（一个城市/国家），但有多个未处理单位",
+      "requires": [
+        "处理前拟合优度足够",
+        "捐赠池不含受同一冲击影响的单位",
+        "安慰剂检验"
+      ],
+      "nRule": "捐赠池至少 10 个单位；处理前时期 ≥10 期",
+      "threats": [
+        {
+          "risk": "捐赠池被同一冲击污染",
+          "mitigation": "剔除受影响单位，报剔除前后两版"
+        },
+        {
+          "risk": "拟合过好（用过拟合判断效果）",
+          "mitigation": "用处理前 RMSPE 与事后 RMSPE 比值做推断（placebo test）"
+        }
+      ],
+      "reporting": [],
+      "why": "单一处理单位的唯一可信设计；推断靠安慰剂分布，不靠标准误。",
+      "source": "Abadie, Diamond & Hainmueller 2010"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "outcome-continuous",
+      "label": "连续结局（收入、消费、分数）",
+      "unit": "货币/分",
+      "how": "统一口径与通胀调整，报 winsorize 规则",
+      "precision": "自报收入有测量误差与取整",
+      "artifact": "极端值主导均值",
+      "calibration": "报中位数与均值两版"
+    },
+    {
+      "id": "outcome-binary",
+      "label": "二分类结局（就业、入学）",
+      "unit": "比例",
+      "how": "定义要可核查（如「过去 4 周是否找工作」）",
+      "precision": "自报 vs 行政记录差异显著",
+      "artifact": "社会赞许性偏倚",
+      "calibration": "尽量用行政数据交叉验证"
+    },
+    {
+      "id": "treatment-intensity",
+      "label": "处理强度",
+      "unit": "次数/金额/时长",
+      "how": "记录实际接受量，不只记录分配",
+      "precision": "系统日志优于自报",
+      "artifact": "部分接受（partial compliance）",
+      "calibration": "对比分配记录与实际使用记录"
+    },
+    {
+      "id": "price-quantity",
+      "label": "价格与数量",
+      "unit": "元/单位",
+      "how": "同一时点同一市场；注意含税与折扣",
+      "precision": "扫描数据精度高，调查数据粗",
+      "artifact": "促销价与标价混用",
+      "calibration": "明确用哪种价格，并说明理由"
+    }
+  ],
+  "methods": [
+    {
+      "id": "ols-cluster",
+      "label": "OLS + 聚类稳健标准误",
+      "when": "截面/面板回归的默认",
+      "assumptions": [
+        "聚类层级与处理层级一致",
+        "簇数≥30"
+      ],
+      "tool": "statsmodels OLS(cov_type='cluster')",
+      "pitfall": "聚类层级选错（按个人聚类而处理在村一级）",
+      "why": "Moulton 问题会让 SE 严重低估，聚类层级必须与处理层级一致。"
+    },
+    {
+      "id": "fe",
+      "label": "固定效应模型",
+      "when": "面板数据，控制不可观测的个体/时间异质性",
+      "assumptions": [
+        "处理变异在个体内存在",
+        "严格外生性"
+      ],
+      "tool": "statsmodels PanelOLS / linearmodels",
+      "pitfall": "加了双向固定效应后处理变异被吸收殆尽",
+      "why": "FE 是面板因果识别的起点，但要检查残余变异。"
+    },
+    {
+      "id": "wild-bootstrap",
+      "label": "Wild cluster bootstrap",
+      "when": "聚类数少（<30）",
+      "assumptions": [
+        "处理在簇层面"
+      ],
+      "tool": "R: fwildclusterboot",
+      "pitfall": "簇数少还用渐近 SE",
+      "why": "少簇时渐近推断严重过度拒绝，bootstrap 是标准补救。"
+    },
+    {
+      "id": "event-study-plot",
+      "label": "事件研究图",
+      "when": "DID 的平行趋势论证",
+      "assumptions": [
+        "基期无预期效应"
+      ],
+      "tool": "statsmodels + matplotlib",
+      "pitfall": "只报一个系数不画逐期图",
+      "why": "审稿人要看逐期系数与 CI，而不是一个汇总数。"
+    },
+    {
+      "id": "multiple-testing",
+      "label": "多重假设校正",
+      "when": "多个结局或多个亚组",
+      "assumptions": [],
+      "tool": "statsmodels multipletests（Romano-Wolf 更严格）",
+      "pitfall": "在 8 个结局里挑显著的那个报",
+      "why": "预注册 + 校正，否则等于数据挖掘。"
+    },
+    {
+      "id": "power-mde",
+      "label": "最小可检测效应（MDE）",
+      "when": "设计阶段",
+      "assumptions": [
+        "方差可估"
+      ],
+      "tool": "statsmodels.stats.power",
+      "pitfall": "事后算功效（post-hoc power）",
+      "why": "功效必须事前算；事后算出来的「observed power」是 p 值的单调变换，没有信息。"
+    },
+    {
+      "id": "robustness-table",
+      "label": "稳健性表",
+      "when": "任何因果主张",
+      "assumptions": [],
+      "tool": "—",
+      "pitfall": "只做一个设定",
+      "why": "顶刊要求主结果在多种设定下稳定，且要报不稳定的那些。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "stata",
+      "label": "Stata",
+      "kind": "stats",
+      "install": "商业授权",
+      "minimalScript": "reghdfe y treated, absorb(id year) vce(cluster id)",
+      "alt": [
+        "R fixest",
+        "Python linearmodels"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "r-fixest",
+      "label": "R + fixest",
+      "kind": "stats",
+      "install": "install.packages('fixest')",
+      "minimalScript": "library(fixest); feols(y ~ treated | id + year, data=d, cluster=~id)",
+      "alt": [
+        "Stata reghdfe"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "python-linearmodels",
+      "label": "Python linearmodels",
+      "kind": "stats",
+      "install": "pip install linearmodels",
+      "minimalScript": "from linearmodels import PanelOLS; PanelOLS(y, X, entity_effects=True).fit(cov_type='clustered')",
+      "alt": [
+        "R fixest"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "r-did",
+      "label": "R + did / didimputation",
+      "kind": "stats",
+      "install": "install.packages(c('did','didimputation'))",
+      "minimalScript": "library(did); att_gt(yname='y', tname='t', idname='i', gname='g', data=d)",
+      "alt": [
+        "Stata csdid"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "r-rdrobust",
+      "label": "R + rdrobust",
+      "kind": "stats",
+      "install": "install.packages('rdrobust')",
+      "minimalScript": "library(rdrobust); rdrobust(y, x, c=0)",
+      "alt": [
+        "Stata rdrobust"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "latex",
+      "label": "LaTeX + booktabs",
+      "kind": "writing",
+      "install": "TeX Live / MiKTeX",
+      "minimalScript": "\\begin{tabular}{lccc} \\toprule ... \\bottomrule \\end{tabular}",
+      "alt": [
+        "Word（不推荐）"
+      ],
+      "offline": true,
+      "license": "LPPL"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「平行趋势检验呢？」",
+      "defense": "给事件研究图 + 事前系数联合检验 + 安慰剂检验（假的处理时点）"
+    },
+    {
+      "attack": "「标准误聚类层级对吗？」",
+      "defense": "聚类到处理分配层级；簇数 <30 时用 wild bootstrap，并报两种结果"
+    },
+    {
+      "attack": "「这个识别策略的排他性怎么保证？」",
+      "defense": "给制度细节 + 竞争性解释逐一排除 + 过度识别检验"
+    },
+    {
+      "attack": "「结果对设定敏感吗？」",
+      "defense": "给稳健性表：不同控制变量集、不同样本、不同带宽/窗口、不同估计量"
+    },
+    {
+      "attack": "「你只报了显著的那个结局」",
+      "defense": "预注册主结局 + 全部结局列表（含不显著的）+ FDR 校正"
+    },
+    {
+      "attack": "「外推性如何？」",
+      "defense": "明确 LATE/局部效应，说明样本与总体差异，不外推到未覆盖人群"
+    },
+    {
+      "attack": "「样本量小，推断可信吗？」",
+      "defense": "用随机化推断或 bootstrap，报最小可检测效应"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "识别策略的可信性论证",
+      "topJournal": "事件研究图 + 安慰剂 + 稳健性表（≥5 种设定）",
+      "field": "1-2 种稳健性",
+      "source": "AER/QJE 实证论文的通行结构"
+    },
+    {
+      "metric": "聚类层级",
+      "topJournal": "与处理层级一致 + 少簇时 bootstrap",
+      "field": "常按个体聚类",
+      "source": "Bertrand, Duflo & Mullainathan 2004 (QJE)"
+    },
+    {
+      "metric": "预注册",
+      "topJournal": "田野实验必须有",
+      "field": "逐步普及",
+      "source": "AEA RCT Registry 政策"
+    },
+    {
+      "metric": "数据与代码公开",
+      "topJournal": "AEA Data Editor 复现通过",
+      "field": "部分公开",
+      "source": "AEA Data and Code Availability Policy"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "描述统计与平衡性",
+      "主结果",
+      "事件研究/动态效应",
+      "稳健性（多种设定）",
+      "异质性（预设分组）",
+      "机制"
+    ],
+    "figureBudget": 4,
+    "note": "第一张表是描述统计与处理/对照组的基线平衡。Figure 1 通常是事件研究图，不是主回归系数的柱状图。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

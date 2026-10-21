@@ -1,0 +1,579 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "physics",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "physics",
+  "label": "物理与天文",
+  "questionTypes": [
+    {
+      "id": "measure",
+      "label": "某个物理量的值是多少",
+      "when": "有可复现的测量装置，且主要误差来源已识别",
+      "needs": [
+        "量值溯源链到 SI 或公认基准",
+        "统计（A 类）与系统（B 类）不确定度分项",
+        "盲分析或独立复核方案"
+      ]
+    },
+    {
+      "id": "discovery",
+      "label": "是否存在新信号",
+      "when": "本底可用数据侧带或模拟约束，信号形态可参数化",
+      "needs": [
+        "本底模型与拟合优度检验",
+        "信号效率的 MC 估计",
+        "试验因子（look-elsewhere）校正"
+      ]
+    },
+    {
+      "id": "limit",
+      "label": "效应的上限是多少",
+      "when": "信号不显著，或需要排除一段参数空间",
+      "needs": [
+        "上限方法声明（CLs / 贝叶斯）",
+        "置信水平与包含因子",
+        "系统项作为 nuisance 参数并入"
+      ]
+    },
+    {
+      "id": "test-theory",
+      "label": "理论预言是否成立",
+      "when": "理论给出定量、可证伪的数值预言",
+      "needs": [
+        "理论不确定度预算（高阶项、截断）",
+        "同量级精度的实验",
+        "盲分析"
+      ]
+    },
+    {
+      "id": "simulate",
+      "label": "模拟能否复现观测",
+      "when": "过程可由第一性原理或有效场论描述",
+      "needs": [
+        "代码验证与基准算例",
+        "收敛性/网格与步长无关性",
+        "参数敏感性扫描"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "label": "机制是什么",
+      "when": "凝聚态、光学、等离子体等多体或强关联体系",
+      "needs": [
+        "多手段交叉表征",
+        "单变量隔离实验",
+        "可被否证的定量预言"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "precision-measurement",
+      "label": "精密测量（不确定度预算驱动）",
+      "when": "目标是把一个量的相对不确定度压到 1e-3 以下，或要与理论/前人结果做显著性比较",
+      "requires": [
+        "A 类与 B 类分项清单，每项给分布假设",
+        "相关系统项的相关矩阵或相关组标注",
+        "溯源到 SI 或公认基准的校准链",
+        "盲分析或至少独立分析者复核"
+      ],
+      "nRule": "统计项按 1/√N 缩小，系统项不随 N 缩小：若系统项已占总不确定度 50% 以上，把取样数增到 4 倍只能把总不确定度降到约 0.87 倍——先把力气花在压系统项上；反之统计项主导时，N 增到 4 倍总不确定度减半",
+      "threats": [
+        {
+          "risk": "同一物理来源的系统误差被拆成两个「独立」项后平方相加（如探测器效率与其标定不确定度）",
+          "mitigation": "建相关矩阵，用带协方差的 χ² 拟合，正文列相关组并给去相关后的对比结果"
+        },
+        {
+          "risk": "标定数据与定值数据同源，误差被自我抵消后低估",
+          "mitigation": "标定样本与测量样本分离，或用留出法/交叉验证重估该项"
+        },
+        {
+          "risk": "多个小系统项默认高斯独立，分布尾部被低估，1σ 区间的覆盖率名不副实",
+          "mitigation": "对非高斯项按 GUM Supplement 1 做 MC 传播，同时报 95% 区间"
+        },
+        {
+          "risk": "只给 1σ，读者判断不了与理论偏离的显著性",
+          "mitigation": "1σ 与 95% 区间并列，并写明区间构造方法（frequentist 覆盖 / Bayesian 可信）"
+        }
+      ],
+      "reporting": [],
+      "why": "物理里的「结果」是数值加不确定度，缺任何一项都不是结果。审稿人先看不确定度预算表，再看结论。",
+      "source": "JCGM 2008 (GUM, JCGM 100:2008)"
+    },
+    {
+      "id": "blind-search",
+      "label": "盲分析搜索（计数实验 / 显著性检验）",
+      "when": "要在已知本底上找一个小信号，或对可能的系统偏差做无偏估计",
+      "requires": [
+        "信号区、本底区、选择条件在 unblinding 前固化",
+        "blinding 方案（信号区加未知偏移或 s-signal/s-background）",
+        "本底由侧带或控制样本估计，信号效率由 MC 给出",
+        "扫描区间与步长事前声明，用于试验因子校正"
+      ],
+      "nRule": "预期本底 B 下 5σ 发现需 S ≳ 5√B：B=100 事例时需 S≈50；CLs 上限灵敏度近似 ∝ √B，本底压到 1/4 则上限改善 2 倍。若扫 M 个独立窗口，全局 p ≈ 1−(1−p_local)^M，M=200、p_local=1e-4 时全局 p 升到约 2e-2",
+      "threats": [
+        {
+          "risk": "看过数据后微调信号窗或选择条件（analysis hacking）",
+          "mitigation": "unblinding 前把选择条件、窗口、拟合模型签字固化，存 git commit 与时间戳，正文附方案文件"
+        },
+        {
+          "risk": "本底用含信号的数据自身拟合，信号被本底吸收",
+          "mitigation": "本底取自侧带/控制区，并做信号注入（spike-in）检验回收率 1.0±0.1"
+        },
+        {
+          "risk": "look-elsewhere：扫了上百个质量点只报最显著的一个",
+          "mitigation": "报全局 p 值并给扫描区间、步长、试验因子；或改用固定窗口的确认性分析"
+        },
+        {
+          "risk": "盲法形同虚设（分析者能看到加偏移前的原始直方图）",
+          "mitigation": "偏移量由未参与分析者保管，只交加偏移后的数据集，留 unblinding 记录"
+        }
+      ],
+      "reporting": [],
+      "why": "小信号搜索的全部可信度来自「在看到答案之前就把规则定死」。盲分析是唯一能防住无意识调参的手段。",
+      "source": "Klein & Roodman 2005, Annual Review of Nuclear and Particle Science 55:141 (Blind Analysis in Nuclear and Particle Physics)"
+    },
+    {
+      "id": "monte-carlo-sensitivity",
+      "label": "蒙特卡洛模拟与灵敏度研究",
+      "when": "实验成本高、参数空间大，或需要给出探测器/装置设计的预期灵敏度",
+      "requires": [
+        "参数扫描范围与先验来自理论或文献，不是手调",
+        "代码验证：与解析解或基准算例对照",
+        "伪实验数满足尾部精度要求",
+        "方差缩减或分层抽样以提高尾部效率"
+      ],
+      "nRule": "伪实验数 N_mc 的自身统计误差约 1/√N_mc：要把 95% 分位数的相对误差压到 1%，需 N_mc ≳ 1e4；若同时扫 5 个参数点，总预算按 5×1e4 起算，尾部（>3σ）需再乘 10",
+      "threats": [
+        {
+          "risk": "只跑 1e2–1e3 个伪实验就报 95% 上限，上限本身抖动 20% 以上",
+          "mitigation": "≥1e4 伪实验，并对上限做 bootstrap 报其不确定度带"
+        },
+        {
+          "risk": "模拟代码与理论不一致（单位、截面、分支比错误）",
+          "mitigation": "设基准算例：解析可解情形误差须 <1e-3，未通过不进入生产"
+        },
+        {
+          "risk": "探测器响应用理想高斯替代，尾部响应失真",
+          "mitigation": "用数据驱动的响应模板（tag & probe / 控制样本）替代理想化模型"
+        },
+        {
+          "risk": "参数扫描用网格但报告时当作连续区间",
+          "mitigation": "声明网格步长，并在步长加密 2 倍后验证结论不变"
+        }
+      ],
+      "reporting": [],
+      "why": "模拟是物理分析的「计算实验」，它的可信度靠验证（verification）而不是靠代码量。",
+      "source": "James 2006 (Statistical Methods in Experimental Physics, 2nd ed., World Scientific)"
+    },
+    {
+      "id": "calibration-chain",
+      "label": "量值溯源与校准链",
+      "when": "测量结果要与他人的结果可比，或要被标准/计量体系接受",
+      "requires": [
+        "从工作标准到国家/国际基准的不间断溯源链",
+        "每级校准的量程、不确定度、有效期台账",
+        "环境量（温度、湿度、振动、气压）同步记录与修正",
+        "期间核查用的核查标准与控制图"
+      ],
+      "nRule": "校准不确定度 u_cal 应 ≤ 被测允差 T 的 1/3（ISO 14253-1 的 1:3 判据；高要求场合取 1:10）；若 u_cal 已达 T 的 1/2，判定区必须按 guard band 收缩，否则合格判定错误率可达 5% 以上",
+      "threats": [
+        {
+          "risk": "长期只用出厂证书，中间无期间核查，漂移无人发现",
+          "mitigation": "每月用核查标准测一次并画 X̄-R 控制图，连续 7 点同侧即判失控"
+        },
+        {
+          "risk": "溯源链中间级证书过期，或量程不覆盖实际使用点",
+          "mitigation": "台账逐条登记量程、有效期、覆盖点；超范围即视为无溯源，结果降级为相对比较"
+        },
+        {
+          "risk": "环境修正系数照抄手册默认值",
+          "mitigation": "实测环境量并按灵敏度系数修正，把修正量自身的不确定度计入预算"
+        },
+        {
+          "risk": "校准与使用之间的装夹/姿态差异引入未计入偏差",
+          "mitigation": "做装夹重复性实验（≥10 次拆装），把标准差作为独立 B 类项"
+        }
+      ],
+      "reporting": [],
+      "why": "没有溯源链的数值只是「某台仪器的读数」，不是物理量。这条决定结果能否进入合并与比对。",
+      "source": "ISO/IEC 17025:2017 (General requirements for the competence of testing and calibration laboratories)"
+    },
+    {
+      "id": "interlab-comparison",
+      "label": "多实验室 / 多方法比对",
+      "when": "结果有争议，或需要证明方法间一致性与可复现性",
+      "requires": [
+        "同一批样品或同一物理目标",
+        "统一的不确定度口径与包含因子",
+        "盲样编码与随机化测量顺序",
+        "一致性统计量（Birge ratio、z-score、En 数）"
+      ],
+      "nRule": "k 个实验室各报 xᵢ±uᵢ 时，加权均值 χ² = Σ(xᵢ−x̄_w)²/uᵢ²，Birge ratio R_w = √(χ²/(k−1))；R_w > 1.5 说明存在未计入的系统差异，此时不应直接加权平均，须乘标度因子 √R_w 或改用中位数",
+      "threats": [
+        {
+          "risk": "各实验室不确定度口径不同（k=1 与 k=2 混报）",
+          "mitigation": "统一换算到 k=2 并声明包含因子与分布假设，附换算表"
+        },
+        {
+          "risk": "共用同一标准物质/同一溯源路径，制造假一致",
+          "mitigation": "要求至少两条独立溯源路径，或用不同测量原理的方法交叉"
+        },
+        {
+          "risk": "只报与方法学一致的实验室（cherry-picking）",
+          "mitigation": "参与实验室清单事前登记，全部纳入并单列离群者及原因"
+        },
+        {
+          "risk": "样品不均匀性被算进实验室间方差",
+          "mitigation": "先做均匀性检验（重复测定 ANOVA），把样品项与实验室项分离"
+        }
+      ],
+      "reporting": [],
+      "why": "单个实验室的内部一致性证明不了正确性，只有跨方法、跨实验室的独立复现能。",
+      "source": "ISO 5725-2:2019 (Accuracy of measurement methods and results — Part 2: Basic method for the determination of repeatability and reproducibility)"
+    },
+    {
+      "id": "open-data-reanalysis",
+      "label": "公开数据再分析",
+      "when": "原始数据或似然已公开，需要独立检验或合并已有结果",
+      "requires": [
+        "锁定原始分析计划与数据版本（DOI、release 号）",
+        "复现原始结果作为基线，报差异",
+        "新增的探索性自由度计入多重比较",
+        "代码与中间产物公开"
+      ],
+      "nRule": "先复现原文数值，偏差须 <1 个原始标准差才可继续；每增加 1 个探索性拟合参数，有效检验数 +1 并按 Bonferroni/BH 校正；已知系统项按原文协方差矩阵并入，不重复计入",
+      "threats": [
+        {
+          "risk": "只挑支持的子集或子区间报告",
+          "mitigation": "预注册再分析方案，报全部预设子集及未通过的子集"
+        },
+        {
+          "risk": "数据版本升级后结果变化未被注意",
+          "mitigation": "钉住 DOI 与下载日期，附校验和；升级版本重跑并报差异"
+        },
+        {
+          "risk": "把原文的系统误差当成独立项重新平方相加",
+          "mitigation": "直接复用原文协方差，或在正文说明重新分组的依据"
+        }
+      ],
+      "reporting": [],
+      "why": "再分析的价值在于独立性与可复现性，不在于得出更漂亮的值。复现不出原文就必须先解释差异。",
+      "source": "Buckheit & Donoho 1995 (Wavelab and Reproducible Research, in Wavelets and Statistics, Springer Lecture Notes 103)"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "value-with-uncertainty",
+      "label": "物理量最佳估计与不确定度",
+      "unit": "SI 导出单位",
+      "how": "多次测量后按加权均值合成，A 类由重复测量的标准差给出，B 类由证书/分布假设给出",
+      "precision": "同时报 k=1 与 k=2；有效数字与不确定度末位对齐，相对不确定度给 2 位有效数字",
+      "artifact": "探测器非线性、温漂、装夹重复性",
+      "calibration": "经校准链接到 SI 基准，每级给证书号与有效期"
+    },
+    {
+      "id": "counting-rate",
+      "label": "计数率 / 反应截面",
+      "unit": "s⁻¹、barn",
+      "how": "原始计数经死时间、本底、效率、接受度修正后归一化到积分亮度或通量",
+      "precision": "泊松统计 √N；N<100 时用 Garwood 精确区间，不用正态近似",
+      "artifact": "死时间与堆积、本底估计的统计涨落",
+      "calibration": "用已知活度源或已知截面反应标定效率曲线"
+    },
+    {
+      "id": "noise-floor",
+      "label": "噪声本底 / 灵敏度",
+      "unit": "nV/√Hz、事件·keV⁻¹·kg⁻¹·d⁻¹",
+      "how": "长时程功率谱密度做对数平均，扣除电子学噪声与微音效应",
+      "precision": "按对数平均给置信带，报分辨率与积分时间",
+      "artifact": "1/f 漂移、电磁干扰、宇宙线μ子",
+      "calibration": "注入已知幅度的校准脉冲测增益与线性"
+    },
+    {
+      "id": "frequency-stability",
+      "label": "频率 / 时间稳定度",
+      "unit": "无量纲（Allan deviation σ_y(τ)）",
+      "how": "相邻平均频率的 Allan 方差，τ 从 1 s 覆盖到 1 d，区分白频、闪频与随机游走段",
+      "precision": "受参考钟自身稳定度限制，报比对链路的不确定度",
+      "artifact": "温度系数、老化率、电缆相位漂移",
+      "calibration": "与一级/二级频率标准做共视或卫星比对"
+    },
+    {
+      "id": "temperature-scale",
+      "label": "温度 / 长度等基准量",
+      "unit": "K、m",
+      "how": "固定点法（ITS-90）或气体测温、激光干涉测长，按定义复现单位",
+      "precision": "mK 以下须修正静水压、同位素纯度与热辐射",
+      "artifact": "固定点容器杂质、干涉仪折射率",
+      "calibration": "参加 BIPM 关键比对并采用 KCRV 作为参照值"
+    }
+  ],
+  "methods": [
+    {
+      "id": "gum-propagation",
+      "label": "GUM 不确定度传播",
+      "when": "测量方程近似线性、输入量独立或相关性已知",
+      "assumptions": [
+        "一阶泰勒展开有效（非线性 <10%）",
+        "输入量协方差矩阵已知"
+      ],
+      "tool": "Python: uncertainties；R: metRology",
+      "pitfall": "相关系数非零时仍按平方和相加",
+      "why": "计量体系的标准做法，让不同实验室的不确定度可以互相比较。"
+    },
+    {
+      "id": "mc-uncertainty",
+      "label": "蒙特卡洛不确定度传播（GUM S1）",
+      "when": "模型非线性强、输入分布非高斯、或需给 95% 覆盖区间",
+      "assumptions": [
+        "输入量的分布可由证书与经验设定",
+        "N ≥ 1e6 以保证 95% 分位数稳定"
+      ],
+      "tool": "Python: numpy；R: mc2d",
+      "pitfall": "对所有未知量一律用均匀分布，系统性低估尾部",
+      "why": "线性近似失效时唯一可靠的办法，也是尾部区间的来源。"
+    },
+    {
+      "id": "chi2-fit",
+      "label": "带协方差的 χ² / 似然拟合",
+      "when": "多参数同时估计，且存在相关系统项",
+      "assumptions": [
+        "残差分布已知（高斯或泊松）",
+        "系统项写成协方差矩阵或 nuisance 参数"
+      ],
+      "tool": "Python: scipy.optimize、iminuit；C++: ROOT",
+      "pitfall": "忽略相关系统项，参数误差被低估 2 倍以上",
+      "why": "把统计与系统两类误差放进同一个目标函数，是唯一自洽的估计方式。"
+    },
+    {
+      "id": "profile-likelihood",
+      "label": "剖面似然与区间构造",
+      "when": "参数非线性、接近物理边界、或需与 Feldman-Cousins 对照",
+      "assumptions": [
+        "似然模型正确设定",
+        "nuisance 参数已剖面临界化"
+      ],
+      "tool": "iminuit MINOS；RooFit/RooStats",
+      "pitfall": "用对称的 ±σ 近似代替真实区间，跨边界时区间失真",
+      "why": "近边界与非线性情形下，只有剖面似然给出覆盖率正确的区间。"
+    },
+    {
+      "id": "cls-limit",
+      "label": "CLs 上限设置",
+      "when": "信号不显著，需要给出排除上限",
+      "assumptions": [
+        "本底模型通过拟合优度检验",
+        "系统项作为 nuisance 参数并入并剖面临界化"
+      ],
+      "tool": "pyhf；ROOT RooStats",
+      "pitfall": "把 CLs 当作置信区间解释，或漏报扫描网格与插值方式",
+      "why": "高能物理事实上的上限标准，可避免在灵敏度不足时宣称排除。"
+    },
+    {
+      "id": "mcmc",
+      "label": "MCMC 贝叶斯后验",
+      "when": "高维参数、需要边缘后验与可信区间",
+      "assumptions": [
+        "收敛判据 R̂ < 1.01、有效样本 >1e3",
+        "先验敏感性已做检验"
+      ],
+      "tool": "emcee、PyMC、Stan",
+      "pitfall": "未收敛就报后验分位数",
+      "why": "给出参数空间的完整信息，且天然处理 nuisance 参数边缘化。"
+    },
+    {
+      "id": "look-elsewhere",
+      "label": "试验因子与全局 p 值校正",
+      "when": "在多个质量点、多个通道或多个模型间取最显著者",
+      "assumptions": [
+        "扫描区间、步长、窗口宽度事前固定",
+        "窗口间相关性由模拟估计"
+      ],
+      "tool": "pyhf toy MC；自写 bootstrap",
+      "pitfall": "只报局部 p 值，把 3σ 说成发现",
+      "why": "搜索类结果的显著性只有在扣除「试了多少次」之后才有意义。"
+    },
+    {
+      "id": "unfolding",
+      "label": "反卷积 / 展开（unfolding）",
+      "when": "探测器分辨率与接受度扭曲了真实分布，需还原微分分布",
+      "assumptions": [
+        "响应矩阵由 MC 给出且经数据校验",
+        "正则化强度由数据自定（如 L-curve）"
+      ],
+      "tool": "RooUnfold；Python: SVD 实现",
+      "pitfall": "过正则化抹平真实结构，弱正则化放大统计涨落",
+      "why": "微分分布与理论比较前必须去掉探测器效应，且要把展开的不确定度传下去。"
+    },
+    {
+      "id": "bootstrap",
+      "label": "Bootstrap 重采样",
+      "when": "分布未知、样本有限，需要给统计量的区间",
+      "assumptions": [
+        "样本在给定模型下可交换",
+        "重采样单元与独立单元一致"
+      ],
+      "tool": "scipy.stats.bootstrap；R: boot",
+      "pitfall": "对相关样本按 iid 重采样，区间偏窄",
+      "why": "不依赖分布假设就能给区间，但重采样单元必须等于真正的独立单元。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "python-uncertainties",
+      "label": "Python + uncertainties",
+      "kind": "analysis",
+      "install": "pip install uncertainties numpy scipy",
+      "minimalScript": "python -c \"from uncertainties import ufloat; L=ufloat(1.2340,0.0045); print(2*L, (2*L).relativize())\"",
+      "alt": [
+        "R metRology",
+        "GUM Workbench"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "root",
+      "label": "ROOT",
+      "kind": "analysis",
+      "install": "conda install -c conda-forge root",
+      "minimalScript": "root -l -b -q -e 'TH1F h(\"h\",\"\",50,0,10); h.FillRandom(\"gaus\",10000); std::cout << h.GetMean() << \" +- \" << h.GetRMS()/std::sqrt(h.GetEntries()) << std::endl;'",
+      "alt": [
+        "Python uproot + hist",
+        "Julia"
+      ],
+      "offline": true,
+      "license": "LGPL-2.1"
+    },
+    {
+      "id": "iminuit",
+      "label": "iminuit",
+      "kind": "fitting",
+      "install": "pip install iminuit numpy",
+      "minimalScript": "python -c \"from iminuit import Minuit; import numpy as np; x=np.array([1.,2.,3.]); y=np.array([2.1,3.9,6.2]); m=Minuit(lambda a,b: float(np.sum((y-(a*x+b))**2)), a=1., b=0.); m.migrad(); print(m.values, m.errors)\"",
+      "alt": [
+        "scipy.optimize.curve_fit",
+        "ROOT RooFit"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "pyhf",
+      "label": "pyhf",
+      "kind": "statistics",
+      "install": "pip install pyhf",
+      "minimalScript": "python -c \"import pyhf; m=pyhf.simplemodels.uncorrelated_background([5.0],[50.0],[7.0]); print(pyhf.infer.hypotest(1.0,[51.0,48.0],m))\"",
+      "alt": [
+        "ROOT RooStats",
+        "HistFactory"
+      ],
+      "offline": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "comsol",
+      "label": "COMSOL Multiphysics",
+      "kind": "simulation",
+      "install": "商业授权",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "ANSYS",
+        "Elmer (开源)"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "matlab",
+      "label": "MATLAB",
+      "kind": "analysis",
+      "install": "商业授权",
+      "minimalScript": "x = fminsearch(@(p) (p(1)-1)^2 + (p(2)-2)^2, [0 0])",
+      "alt": [
+        "Python scipy",
+        "Octave"
+      ],
+      "offline": true,
+      "license": "commercial"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "none",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「统计误差和系统误差为什么直接平方相加？探测效率标定和本底归一化用的是同一批数据，相关性呢？」",
+      "defense": "给相关组清单与协方差矩阵，重做带相关的拟合，并列出「忽略相关」与「含相关」两个结果的差别"
+    },
+    {
+      "attack": "「这个 95% 上限用的是 CLs 还是贝叶斯可信区间？包含因子 k 写在哪？」",
+      "defense": "正文首句写明方法与置信水平，给 k 值与分布假设，并附另一种方法的结果作对照"
+    },
+    {
+      "attack": "「你在 200 个质量点里报了最显著的那一个，全局 p 值是多少？」",
+      "defense": "报扫描区间、步长、试验因子 M，给全局 p 或 5σ 的全局等价阈值"
+    },
+    {
+      "attack": "「置信区间为什么跨到负值？物理上非负的量为什么不设边界？」",
+      "defense": "改用 Feldman-Cousins 或带正先验的贝叶斯区间，并同时报无边界结果说明差异来源"
+    },
+    {
+      "attack": "「盲分析具体怎么盲的？unblinding 之后有没有改过选择条件，谁审的？」",
+      "defense": "提交盲分析方案文件、时间戳与签字记录，列出 unblinding 前后的所有改动"
+    },
+    {
+      "attack": "「蒙特卡洛只跑了 1e3 个伪实验，95% 分位数自己的统计误差有多大？」",
+      "defense": "补到 1e4–1e5 伪实验，并用 bootstrap 给出上限自身的不确定度带"
+    },
+    {
+      "attack": "「你的结果和上一版测量差 3σ，是新物理还是系统误差没找全？」",
+      "defense": "报两者差异与合并 χ²、Birge ratio，逐项拆解差异来源，并给独立的第三方比对"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "不确定度预算完整度",
+      "topJournal": "A 类/B 类逐项列表 + 相关性处理 + 溯源证书号",
+      "field": "只报一个总不确定度",
+      "source": "JCGM 100:2008 (GUM) 第 5 章与第 8 章的分项要求"
+    },
+    {
+      "metric": "宣称发现的显著性阈值",
+      "topJournal": "5σ 且为全局显著性（含试验因子校正）",
+      "field": "3σ 常被称作 evidence",
+      "source": "Particle Data Group 2024, Review of Particle Physics, Statistics 章节"
+    },
+    {
+      "metric": "系统不确定度占总不确定度比例",
+      "topJournal": "<50% 且每项可独立核查、给相关处理方式",
+      "field": "60–80% 且只有合并值",
+      "source": "Cowan, Cranmer, Gross & Vitells 2011, Eur. Phys. J. C 71:1554 (Asymptotic formulae for likelihood-based tests)"
+    },
+    {
+      "metric": "数据与代码可复现性",
+      "topJournal": "似然/协方差 + 分析脚本公开，第三方能重跑出同一数值",
+      "field": "仅公开数据表",
+      "source": "Wilkinson et al. 2016, Scientific Data 3:160018 (FAIR Guiding Principles)"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "装置与校准状态",
+      "数据选择与本底估计",
+      "主观测量及不确定度预算表",
+      "系统误差逐项与相关性",
+      "与理论/前人结果的区间对比"
+    ],
+    "figureBudget": 4,
+    "note": "Results 的第一张图是装置或数据选择流程，不是最终结果；第二张才开始给分布与拟合。不确定度预算必须做成表，逐项列「来源 / 数值 / 分布 / 相关性 / 如何估计」。任何数字第一次出现时就带单位与不确定度，后文不再补。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

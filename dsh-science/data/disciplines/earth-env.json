@@ -1,0 +1,577 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "earth-env",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "earth-env",
+  "label": "地球与环境科学",
+  "questionTypes": [
+    {
+      "id": "trend",
+      "label": "某个量在变化吗，速率多少",
+      "when": "有多年重复观测或长时序遥感/再分析序列",
+      "needs": [
+        "去季节与去趋势预处理",
+        "自相关结构估计",
+        "趋势检验与速率的不确定度"
+      ]
+    },
+    {
+      "id": "spatial-pattern",
+      "label": "空间格局与驱动因子",
+      "when": "有空间显式的采样点或栅格，需解释变量",
+      "needs": [
+        "抽样/栅格分辨率说明",
+        "空间自相关诊断",
+        "空间回归或地统计模型"
+      ]
+    },
+    {
+      "id": "retrieval",
+      "label": "遥感反演准不准",
+      "when": "有卫星/航空产品要与地面真值对比",
+      "needs": [
+        "地面站与像元的尺度匹配",
+        "训练集与验证集空间分离",
+        "误差分解（随机 vs 系统偏差）"
+      ]
+    },
+    {
+      "id": "model-obs",
+      "label": "模型与观测是否一致",
+      "when": "有过程模型、气候模式或再分析产品要评估",
+      "needs": [
+        "时空尺度对齐与重采样",
+        "多指标（bias/RMSE/R²/KGE）",
+        "观测代表性误差与产品不确定度"
+      ]
+    },
+    {
+      "id": "attribution",
+      "label": "极端事件归因",
+      "when": "要判断某次事件中人为强迫的贡献",
+      "needs": [
+        "大样本集合或伪实验",
+        "事件定义与阈值事前固定",
+        "风险比与其置信区间"
+      ]
+    },
+    {
+      "id": "budget",
+      "label": "通量/收支是否闭合",
+      "when": "碳、水、能量或营养盐收支有独立通道",
+      "needs": [
+        "各通道不确定度",
+        "闭合残差与可能的遗漏项",
+        "时空代表性检验"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "stratified-field-sampling",
+      "label": "分层随机野外采样",
+      "when": "要估计区域均值或储量，且景观异质性明显",
+      "requires": [
+        "抽样框（边界、分辨率）与分层依据（地形/土地利用/母质）",
+        "每层样本量与权重可追溯",
+        "GPS 坐标、采样深度、时间戳",
+        "现场空白、平行样与运输空白"
+      ],
+      "nRule": "按层内方差做 Neyman 分配 n_h = n·N_h·s_h / Σ(N_h·s_h)；层内 CV=30%、要区域均值达到 10% 相对精度时每层约需 9 个点，异质性大的层按 s_h 加权可到 3 倍；总样本 n ≥ 30 才能给区域均值的 95% 区间",
+      "threats": [
+        {
+          "risk": "采样点沿道路与河岸布设（可达性偏倚），高值和低值区都被系统性漏掉",
+          "mitigation": "用分层随机或广义随机 tessellation 抽样，报可达性造成的偏移量"
+        },
+        {
+          "risk": "分层权重用了错误的面积比例，区域均值系统性偏移",
+          "mitigation": "用独立土地覆盖产品算层面积权重，并在正文给出权重表"
+        },
+        {
+          "risk": "同一剖面多点取样当作重复（伪重复）",
+          "mitigation": "以独立样点为统计单元，剖面内多点只算 1 个样点"
+        },
+        {
+          "risk": "单次采样代表多年状态",
+          "mitigation": "至少两个季节或两年，报季节内变异与年际差异"
+        }
+      ],
+      "reporting": [],
+      "why": "地学的「样本」几乎从不是随机抽的，抽样设计写不清，后面所有统计都在给一个不可推广的样本做推断。",
+      "source": "de Gruijter, Brus, Bierkens & Knotters 2006 (Sampling for Natural Resource Monitoring, Springer)"
+    },
+    {
+      "id": "nested-monitoring-network",
+      "label": "嵌套监测网 / 梯度站设计",
+      "when": "要分离空间梯度与时间变化，站点昂贵且数量有限",
+      "requires": [
+        "站点沿明确的环境梯度布设（海拔、纬度、干湿）",
+        "统一仪器与观测规程",
+        "站点元数据（下垫面、仪器高度、维护记录）",
+        "缺测与质控规则事前写明"
+      ],
+      "nRule": "k 个站点 × T 个时间点并不等于 k·T 个独立样本：有效样本 ≈ k·T/(1+(T−1)·ρ_t)，ρ_t=0.6、T=36 时有效率只有独立假设的 1/22；站点数建议 ≥8 且覆盖梯度两端，少于 5 个站时只能做描述，不做区域推断",
+      "threats": [
+        {
+          "risk": "站点沿公路与城镇分布，代表的是「可达区域」而不是梯度",
+          "mitigation": "补设远端站点或用遥感做代表性加权，报站点代表性检验"
+        },
+        {
+          "risk": "仪器更换或高度改动未记录，序列出现人为台阶",
+          "mitigation": "建元数据台账，用平行观测（≥1 年重叠）做交接订正"
+        },
+        {
+          "risk": "把时间序列的点数当独立样本算自由度",
+          "mitigation": "按有效样本量 n_eff 校正，并用块 bootstrap 给区间"
+        },
+        {
+          "risk": "缺测按插值补齐后当作实测",
+          "mitigation": "缺测率 >20% 的时段单列，插值结果单独标注并做敏感性分析"
+        }
+      ],
+      "reporting": [],
+      "why": "监测网的证据力来自梯度覆盖与元数据完整度，而不是站点数量堆砌。",
+      "source": "Legendre & Legendre 2012 (Numerical Ecology, 3rd ed., Elsevier)"
+    },
+    {
+      "id": "rs-retrieval-validation",
+      "label": "遥感反演与地面验证",
+      "when": "有卫星/航空产品，需要给出精度指标或与地面观测对比",
+      "requires": [
+        "地面站与像元的尺度匹配（footprint、点扩散函数、观测时间窗）",
+        "训练/验证集空间分离（分块或留一站）",
+        "反演算法与先验分布写明",
+        "误差分解为随机误差与系统偏差"
+      ],
+      "nRule": "验证独立单元 ≥30 个站点（或 ≥100 个独立像元）才能把 RMSE 的相对不确定度压到约 13%；空间分块交叉验证折数 ≥5，块尺寸 ≥ 变程的 1.5 倍，否则 R² 虚高 0.2–0.4",
+      "threats": [
+        {
+          "risk": "地面站落在异质像元内，尺度不匹配被当成算法误差",
+          "mitigation": "用像元内高分辨率影像算纯度，只保留纯度 >80% 的站，或做 footprint 加权"
+        },
+        {
+          "risk": "训练与验证样本空间相邻，精度被空间泄漏抬高",
+          "mitigation": "用块交叉验证/留一站法，报随机 CV 与空间 CV 的差值"
+        },
+        {
+          "risk": "只报 R² 不报偏差，系统性低估被掩盖",
+          "mitigation": "同时报 bias、RMSE、MAE 与 1:1 线斜率，附 Bland-Altman 图"
+        },
+        {
+          "risk": "验证只用晴空、生长季数据",
+          "mitigation": "验证样本覆盖全部季节与云覆盖条件，报告分层精度"
+        }
+      ],
+      "reporting": [],
+      "why": "遥感产品的精度是「在什么条件下、对哪类地表」的精度，脱离验证设计谈 RMSE 没有意义。",
+      "source": "Olofsson et al. 2014, Remote Sensing of Environment 148:42 (Good practices for estimating area and assessing accuracy of land change)"
+    },
+    {
+      "id": "model-obs-comparison",
+      "label": "模型—观测对比与评估",
+      "when": "有过程模型、气候模式或再分析产品，要判断其可信度",
+      "requires": [
+        "统一时空尺度（重采样、时间聚合方式写明）",
+        "多指标评估：bias、RMSE、R²、KGE 或 Taylor 图",
+        "观测的代表性误差与产品不确定度",
+        "单模式与多模式集合对照"
+      ],
+      "nRule": "相关显著性用有效样本：n_eff = n·(1−ρ)/(1+ρ)；日尺度 ρ₁=0.7 时 n_eff ≈ 0.18n，n=1000 的序列有效样本只有约 180，r=0.2 在 n_eff=180 下 p≈0.007 而在 n=1000 下被高估一个量级",
+      "threats": [
+        {
+          "risk": "用不同时间聚合（日值 vs 月均）比较，噪声被平均掉后相关性虚高",
+          "mitigation": "在同一聚合尺度上比较，并同时报日、月、年三个尺度"
+        },
+        {
+          "risk": "站点观测的空间代表性误差被算成模型误差",
+          "mitigation": "用模式格点内多点平均或谱匹配（spectral nudging 类似处理）降低代表性误差"
+        },
+        {
+          "risk": "只挑表现好的区域或季节作图",
+          "mitigation": "报全球/全域指标图与分区域、分季节指标表，含表现差的区域"
+        },
+        {
+          "risk": "再分析产品版本与分辨率未写，结果复现不出来",
+          "mitigation": "注明产品名、版本号、网格分辨率、下载日期与变量短名"
+        }
+      ],
+      "reporting": [],
+      "why": "模型评估的结论对尺度、指标和区域高度敏感，三者不同时给全，比较就没有意义。",
+      "source": "Taylor 2001, Journal of Geophysical Research 106:7183 (Summarizing multiple aspects of model performance in a single diagram)"
+    },
+    {
+      "id": "trend-detection",
+      "label": "长时序趋势检测（自相关校正）",
+      "when": "有 ≥20–30 年的年际或季节序列，要判断趋势是否显著",
+      "requires": [
+        "缺失值与异常值处理规则事前写明",
+        "季节分解或去季节",
+        "自相关结构估计（预白化或方差修正）",
+        "突变点检验与多站点的多重比较校正"
+      ],
+      "nRule": "Mann-Kendall 必须用修正方差：Var*(S) = Var(S)·n/n_s*（Hamed & Rao 1998 有效样本修正）；年序列 n=30、ρ₁=0.4 时未修正的 p 值偏小 3–5 倍。趋势速率用 Theil-Sen 斜率并给 95% 区间；序列长度 <20 年时只报方向，不报速率",
+      "threats": [
+        {
+          "risk": "直接跑 Mann-Kendall 报 p，忽略序列自相关",
+          "mitigation": "用 Hamed-Rao 修正方差或预白化，正文并列原始与修正后的 p"
+        },
+        {
+          "risk": "序列中途换仪器或迁站造成台阶，被读成趋势",
+          "mitigation": "先做 Pettitt 突变点检验，分段分析或做交接订正"
+        },
+        {
+          "risk": "起止年份挑选（endpoint sensitivity）放大趋势",
+          "mitigation": "用滑动窗口检验趋势稳健性，报不同起止年份的斜率分布"
+        },
+        {
+          "risk": "几十个站点各自检验后只讲显著的几个",
+          "mitigation": "全局 BH-FDR 校正，或事前指定主区域并只报该区域"
+        }
+      ],
+      "reporting": [],
+      "why": "地学序列几乎总是自相关的，未校正的 p 值只是把「样本多」误当成「证据多」。",
+      "source": "Hamed & Rao 1998, Journal of Hydrology 204:182 (A modified Mann-Kendall trend test for autocorrelated data)"
+    },
+    {
+      "id": "mesocosm-experiment",
+      "label": "控制实验 / 中宇宙实验",
+      "when": "要识别驱动机制，野外相关性不足以定因果",
+      "requires": [
+        "处理与对照同时设，随机分配单元",
+        "真重复（独立容器/围隔，非同一单元多点取样）",
+        "处理强度与野外条件的对应关系",
+        "交叉处理或剂量梯度以识别非线性"
+      ],
+      "nRule": "每个处理 ≥4 个独立实验单元；要检出 20% 效应、单元间 CV=25%、power=.8 时每组约需 12 个单元。多因子设计按 2×2 起步，单因子梯度至少 4 个水平才能拟合剂量-响应",
+      "threats": [
+        {
+          "risk": "围隔/容器效应本身改变了过程速率",
+          "mitigation": "设容器对照与野外原位对照，报两者差异"
+        },
+        {
+          "risk": "单元位置在光照/水流梯度上未随机化",
+          "mitigation": "随机化布置并在模型中把位置作区组因子"
+        },
+        {
+          "risk": "实验时长不足以让慢过程显现",
+          "mitigation": "时长覆盖至少一个完整周期，或明确声明测的是瞬时响应"
+        },
+        {
+          "risk": "处理强度远离野外真实范围，结论外推不成立",
+          "mitigation": "至少一个处理水平对应野外实测范围，正文给外推边界"
+        }
+      ],
+      "reporting": [],
+      "why": "机制需要扰动，但扰动一旦离开真实环境条件，结论就只能停在「可能性」层面。",
+      "source": "Underwood 1997 (Experiments in Ecology: Their Logical Design and Interpretation Using Analysis of Variance, Cambridge University Press)"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "concentration",
+      "label": "浓度 / 含量",
+      "unit": "mg/L、μg/m³、g/kg",
+      "how": "现场过滤与保存，实验室按标准方法分析，每批插空白、平行与加标样",
+      "precision": "报方法检出限 MDL 与定量限 LOQ；结果给 ±u（k=2）并注明是否低于 LOQ",
+      "artifact": "容器吸附、光解、微生物降解",
+      "calibration": "≥5 点标准曲线，R²>0.999；CRM 或加标回收 70–130%"
+    },
+    {
+      "id": "eddy-flux",
+      "label": "湍流通量（CO₂/H₂O/能量）",
+      "unit": "μmol m⁻² s⁻¹、W m⁻²",
+      "how": "10–30 Hz 原始数据做 30 min 平均、坐标旋转、谱校正与 WPL 密度修正",
+      "precision": "随机误差典型 15–20%，夜间低湍流时更大；报 u* 过滤阈值与数据覆盖率",
+      "artifact": "夜间泄流、平流条件、传感器漂移",
+      "calibration": "标准气体每月零/跨度检查，年度厂校"
+    },
+    {
+      "id": "surface-reflectance",
+      "label": "地表反射率 / 光谱指数",
+      "unit": "无量纲（sr⁻¹）",
+      "how": "辐射定标 + 大气校正 + BRDF 归一化到统一观测几何",
+      "precision": "反射率典型不确定度 5%，NDVI 对气溶胶与薄云极敏感",
+      "artifact": "薄云、气溶胶、地形阴影、混合像元",
+      "calibration": "PICS/沙漠场地替代定标 + 与同类传感器交叉定标"
+    },
+    {
+      "id": "soil-property",
+      "label": "土壤理化属性",
+      "unit": "% / g kg⁻¹ / pH / cmol(+) kg⁻¹",
+      "how": "按发生层或固定深度取样，风干过 2 mm 筛后按标准方法测定",
+      "precision": "平行样相对偏差 <10%；空间变异通常远大于分析误差",
+      "artifact": "采样深度不一致、石砾未扣除",
+      "calibration": "每批插入有证标准物质（CRM）并报回收率"
+    },
+    {
+      "id": "stable-isotope",
+      "label": "稳定同位素组成",
+      "unit": "δ‰（VSMOW / VPDB / AIR）",
+      "how": "IRMS 或 CRDS 测定，双点或多点归一化到国际标尺",
+      "precision": "δ¹³C 典型 ±0.1–0.3‰，δ¹⁸O 受盐分与记忆效应影响更大",
+      "artifact": "记忆效应、盐分基质效应、样品保存分馏",
+      "calibration": "≥2 个国际标准物质做两点校正，每 10 个样插 1 个质控"
+    }
+  ],
+  "methods": [
+    {
+      "id": "morans-i",
+      "label": "全局/局部空间自相关（Moran's I）",
+      "when": "检验残差或观测值是否空间独立",
+      "assumptions": [
+        "空间权重矩阵 W（邻接或距离带）事前定义",
+        "置换检验 ≥999 次"
+      ],
+      "tool": "R: spdep::moran.test / localmoran",
+      "pitfall": "只报全局 Moran's I，不查局部热点与模型残差",
+      "why": "它是后续一切空间统计的前提检查：残差有自相关，OLS 的 p 值就失效。"
+    },
+    {
+      "id": "spatial-regression",
+      "label": "空间回归（SAR / SEM / SDM）",
+      "when": "残差存在空间自相关，或要估计空间溢出效应",
+      "assumptions": [
+        "W 与真实交互结构匹配",
+        "用 LM 检验在滞后与误差模型间选择"
+      ],
+      "tool": "R: spatialreg::lagsarlm / errorsarlm",
+      "pitfall": "照旧用 OLS 报 p，把空间结构当噪声",
+      "why": "把自相关显式建模后，系数的标准误才可信。"
+    },
+    {
+      "id": "effective-n",
+      "label": "有效样本量校正",
+      "when": "时间或空间自相关存在，却要做显著性检验",
+      "assumptions": [
+        "自相关结构可由 ρ₁ 或变程估计"
+      ],
+      "tool": "R: 自写 n_eff 公式 + nlme::gls(corExp)",
+      "pitfall": "用原始 n 算 t 检验与相关检验的自由度",
+      "why": "地学里「样本量」几乎总是被高估，n_eff 是把 p 值拉回现实的最短路径。"
+    },
+    {
+      "id": "block-cv",
+      "label": "空间分块交叉验证",
+      "when": "评估空间预测模型或遥感反演精度",
+      "assumptions": [
+        "块尺寸大于变程",
+        "块间近似独立"
+      ],
+      "tool": "R: blockCV；Python: sklearn GroupKFold",
+      "pitfall": "随机 10 折 CV 造成空间泄漏，精度虚高",
+      "why": "只有留出整块区域，才是「预测没见过的地点」的诚实估计。"
+    },
+    {
+      "id": "kriging",
+      "label": "地统计插值（克里金 / 回归克里金）",
+      "when": "需要空间插值并附带插值不确定度",
+      "assumptions": [
+        "半变异函数可拟合（球状/指数模型）",
+        "二阶平稳或内蕴假设成立"
+      ],
+      "tool": "R: gstat::vgm + fit.variogram + krige",
+      "pitfall": "各向异性未处理、变程用软件默认值",
+      "why": "唯一能同时给出预测值与预测方差的插值方法，也是采样设计优化的基础。"
+    },
+    {
+      "id": "hamed-rao",
+      "label": "自相关修正的趋势检验",
+      "when": "年际或季节序列的趋势显著性检验",
+      "assumptions": [
+        "去季节后残差近似 AR(1)",
+        "序列长度 ≥20"
+      ],
+      "tool": "R: modifiedmk::mmkh / wql",
+      "pitfall": "直接跑 Mann-Kendall 就用输出 p 值",
+      "why": "同一序列在修正前后可以得出相反结论，不修正等于自选答案。"
+    },
+    {
+      "id": "data-assimilation",
+      "label": "数据同化（EnKF / 4D-Var）",
+      "when": "观测稀疏，需要生成时空连续的再分析场",
+      "assumptions": [
+        "背景误差协方差设定合理",
+        "观测算子与代表性误差已量化"
+      ],
+      "tool": "Python: DART、OpenDA；ECMWF OpenIFS",
+      "pitfall": "协方差膨胀系数随手设定，观测被背景完全压制",
+      "why": "再分析产品的可信度取决于同化系统的误差设定，用之前必须核对。"
+    },
+    {
+      "id": "mixed-effects",
+      "label": "混合效应模型（站点/年份随机效应）",
+      "when": "多站点多年重复观测，存在分组结构",
+      "assumptions": [
+        "随机效应近似正态",
+        "分组数 ≥5–8"
+      ],
+      "tool": "R: lme4::lmer；Python: statsmodels MixedLM",
+      "pitfall": "把伪重复当独立样本，标准误被压缩",
+      "why": "正确分配方差来源，是处理嵌套监测数据的标准做法。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "r-spatial",
+      "label": "R 空间统计栈（sf / terra / spdep / gstat）",
+      "kind": "stats",
+      "install": "install.packages(c('sf','terra','spdep','gstat','blockCV'))",
+      "minimalScript": "Rscript -e \"library(sf); library(spdep); p <- st_read('pts.gpkg'); nb <- knn2nb(knearneigh(st_coordinates(p), k=6)); print(moran.test(st_drop_geometry(p)[,1], nb2listw(nb)))\"",
+      "alt": [
+        "Python geopandas + libpysal",
+        "GeoDa"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "python-geo",
+      "label": "Python 地理栅格栈（xarray / rioxarray / geopandas）",
+      "kind": "analysis",
+      "install": "pip install xarray rioxarray geopandas rasterio",
+      "minimalScript": "python -c \"import rioxarray as rxr; da=rxr.open_rasterio('ndvi.tif').squeeze(); print(float(da.mean()), da.shape)\"",
+      "alt": [
+        "R terra",
+        "GDAL CLI"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "qgis",
+      "label": "QGIS",
+      "kind": "gis",
+      "install": "https://qgis.org/download/",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "ArcGIS Pro",
+        "GRASS GIS"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "gdal",
+      "label": "GDAL 命令行",
+      "kind": "gis",
+      "install": "conda install -c conda-forge gdal",
+      "minimalScript": "gdalwarp -t_srs EPSG:4326 -tr 0.01 0.01 -r bilinear in.tif out.tif",
+      "alt": [
+        "rasterio",
+        "QGIS 批处理"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "earth-engine",
+      "label": "Google Earth Engine",
+      "kind": "remote-sensing",
+      "install": "pip install earthengine-api（需注册账号并 ee.Authenticate()）",
+      "minimalScript": "python -c \"import ee; ee.Initialize(); print(ee.Image('MODIS/061/MOD13A2').first().get('system:time_start').getInfo())\"",
+      "alt": [
+        "本地 MODIS/VIIRS 处理",
+        "OpenEO"
+      ],
+      "offline": false,
+      "license": "freeware"
+    },
+    {
+      "id": "cesm",
+      "label": "CESM / WRF（地球系统与区域模式）",
+      "kind": "model",
+      "install": "https://www.cesm.ucar.edu（源码编译，需 HPC 环境）",
+      "minimalScript": "./create_newcase --case test01 --compset F2000 --res f19_g17 && ./case.setup && ./case.build",
+      "alt": [
+        "OpenIFS",
+        "MPAS",
+        "WRF-Chem"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "fdr_bh",
+    "effect": "cohen_d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「你的相关分析用的是 120 个采样点，可最近的两点相距 200 m，全局 Moran's I 显著为正——有效样本量到底是多少，p 值重算了吗？」",
+      "defense": "报 Moran's I、自相关结构与 n_eff，用置换检验或空间回归重算 p，并给出原始与校正后的对照"
+    },
+    {
+      "attack": "「交叉验证是随机分折，训练点和验证点空间上贴着，R² 0.85 里有多少是空间泄漏带来的？」",
+      "defense": "补空间分块 CV 与留一站法，报两种 CV 的差值，并在方法里写清块尺寸与变程的关系"
+    },
+    {
+      "attack": "「地面验证站只有 12 个，你凭什么给出区域尺度 RMSE 0.05 这样的精度？」",
+      "defense": "报站点数、footprint 与像元纯度筛选、RMSE 的 bootstrap 区间，并把区域代表性写进限制段"
+    },
+    {
+      "attack": "「你用的是 ERA5 还是 MERRA-2？版本、分辨率、以及该产品在本区域已知的偏差核对了吗？」",
+      "defense": "写明产品名/版本/网格/变量短名/下载日期，做多产品一致性对比与偏差订正，报再分析不确定度"
+    },
+    {
+      "attack": "「趋势检验直接跑 Mann-Kendall 得 p=0.01，可序列一阶自相关 0.6，修正后的 p 是多少？」",
+      "defense": "用 Hamed-Rao 修正方差与预白化各算一次，并列报告并说明取舍依据"
+    },
+    {
+      "attack": "「30 个站点里挑了 5 个显著的讲，多重比较校正了吗？」",
+      "defense": "全局 BH-FDR 校正后报全部站点，或事前指定主区域/主季节作为确认性分析"
+    },
+    {
+      "attack": "「模拟和观测的相关系数 0.9，但 bias 是 −40%，这也叫一致？」",
+      "defense": "同时报 bias、RMSE、KGE 与 Taylor 图，说明各指标回答的是不同问题，不以单一指标下结论"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "空间 CV 与随机 CV 的 R² 差",
+      "topJournal": "两者都报，差距 >0.1 时必须解释为空间泄漏",
+      "field": "只报随机 CV",
+      "source": "Roberts et al. 2017, Ecography 40:913 (Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure)"
+    },
+    {
+      "metric": "地面验证独立单元数",
+      "topJournal": "≥30 独立站点或 ≥100 独立像元，且空间分离",
+      "field": "10–20 站且未做空间分离",
+      "source": "Olofsson et al. 2014, Remote Sensing of Environment 148:42 (Good practices for estimating area and assessing accuracy of land change)"
+    },
+    {
+      "metric": "有效样本量报告",
+      "topJournal": "给 n_eff 或自相关结构（Moran's I、ρ₁、变程）并用于检验",
+      "field": "直接用原始 n",
+      "source": "Dutilleul 1993, Biometrics 49:305 (Modifying the t test for assessing the correlation between two spatial processes)"
+    },
+    {
+      "metric": "数据与产品可追溯性",
+      "topJournal": "产品版本/网格/下载日期 + 处理脚本公开，第三方可复现",
+      "field": "只写产品名",
+      "source": "Wilkinson et al. 2016, Scientific Data 3:160018 (FAIR Guiding Principles for scientific data management and stewardship)"
+    },
+    {
+      "metric": "趋势速率的不确定度",
+      "topJournal": "Theil-Sen 斜率 + 95% 区间 + 起止年份敏感性",
+      "field": "只给一个斜率数字",
+      "source": "Hamed & Rao 1998, Journal of Hydrology 204:182"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "研究区与数据源（含自相关结构）",
+      "数据质控与验证样本匹配",
+      "主要格局或趋势（含 n_eff 与校正后 p）",
+      "模型—观测对比与误差分解",
+      "不确定度与敏感性分析"
+    ],
+    "figureBudget": 5,
+    "note": "Results 第一段先交代研究区、数据源与版本，第二段给质控与样本代表性；趋势或格局的结果必须和「校正前/校正后」的统计量并排出现。地图类图要带比例尺、投影与坐标参考系，插值图要带预测方差图，不要只给一张漂亮的均值场。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

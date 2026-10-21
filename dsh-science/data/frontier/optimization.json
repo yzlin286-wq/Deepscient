@@ -1,0 +1,170 @@
+{
+  "$meta": {
+    "seedVersion": 1,
+    "builtAt": "2026-10-20",
+    "source": "github-api (api.github.com/search/repositories + /repos/*)",
+    "note": "锚点是实测值，会过期。过期不阻塞使用，只作为首次运行的起点与查询词提示；重抓请跑 scripts/build-frontier-seed.mjs。",
+    "warnings": [
+      "禁用 topic: 过滤：实测 topic:optimization 返回 ray / czkawka（去重工具）/ svgo（SVG 优化器），语义污染严重。",
+      "search/repositories 未认证 10 次/分钟，一次扫描最多 8 个 query。",
+      "search/code 需认证（401），本层不做代码级检索，只读 README。"
+    ]
+  },
+  "domains": {
+    "optimization": {
+      "label": "优化理论 / 优化器",
+      "aliases": ["optimizer", "optimization", "optimisation", "training dynamics", "convergence analysis"],
+      "querySeeds": [
+        "muon",
+        "shampoo",
+        "soap",
+        "lion optimizer",
+        "sophia optimizer",
+        "adam-mini",
+        "adafactor",
+        "prodigy optimizer",
+        "schedule-free",
+        "galore",
+        "relora",
+        "cautious optimizer",
+        "lookahead optimizer",
+        "madgrad",
+        "lamb optimizer",
+        "apollo optimizer",
+        "kfac",
+        "natural gradient",
+        "muon clip",
+        "newton-muon"
+      ],
+      "theorySignals": [
+        "convergence rate",
+        "regret bound",
+        "lower bound",
+        "edge of stability",
+        "spectral norm",
+        "preconditioner",
+        "second-order",
+        "implicit bias",
+        "scaling law"
+      ],
+      "contributionHints": {
+        "theory": "缺收敛率或下界：证明「该类更新在何种假设下有 O(1/T) 或更好，且下界匹配」",
+        "scale": "缺大规模验证：同一超参在 ≥3 个量级、≥2 个模态上一致",
+        "transfer": "缺跨域迁移：把一个域的条件数优势搬到另一个域并给出失效边界",
+        "reproduction": "缺可复现对照：独立复现并解释与原文的分歧",
+        "benchmark": "缺统一评测：现有 repo 各自报数，无可比协议"
+      },
+      "venueLadder": {
+        "3": ["jmlr"],
+        "4": ["neurips", "icml", "prx", "pnas", "nature-machine-intelligence"],
+        "5": ["nature", "science", "prl"]
+      }
+    }
+  },
+  "anchors": [
+    {
+      "domain": "optimization",
+      "fullName": "KellerJordan/Muon",
+      "url": "https://github.com/KellerJordan/Muon",
+      "description": "Muon is an optimizer for hidden layers in neural networks",
+      "stars": 2888,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": "2026-05-24",
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "该方法族的源头仓库；先有代码后有系统论文，是本层最典型的对象"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "kozistr/pytorch_optimizer",
+      "url": "https://github.com/kozistr/pytorch_optimizer",
+      "description": "optimizer & lr scheduler & loss function collections in PyTorch",
+      "stars": 432,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": "2026-10-19",
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "优化器集合库，活跃度最高（近期推送 + 有 release），适合作为对照实现来源"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "jettify/pytorch-optimizer",
+      "url": "https://github.com/jettify/pytorch-optimizer",
+      "description": "torch-optimizer -- collection of optimizers for Pytorch",
+      "stars": 3172,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": null,
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "老牌集合库，星数高但需查是否还在维护"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "nil0x9/flash-muon",
+      "url": "https://github.com/nil0x9/flash-muon",
+      "description": "Flash-Muon: An Efficient Implementation of Muon Optimizer",
+      "stars": 263,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": "2025-06-15",
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "同一方法的工程优化实现——通常指向「效率」这个可发表的缺口"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "zhehangdu/Newton-Muon",
+      "url": "https://github.com/zhehangdu/Newton-Muon",
+      "description": "The Newton-Muon optimizer",
+      "stars": 35,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": null,
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "把二阶信息接进一阶框架的尝试，典型的「理论缺口」候选"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "vukrosic/muon-optimizer-guide",
+      "url": "https://github.com/vukrosic/muon-optimizer-guide",
+      "description": "Use Muon optimizer instead of AdamW.",
+      "stars": 50,
+      "forks": 0,
+      "language": null,
+      "pushedAt": "2026-03-02",
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "纯教程向仓库——用来演示「营销式表述」在 distill 里应被判低可信度"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "GAD-cell/muon-clip",
+      "url": "https://github.com/GAD-cell/muon-clip",
+      "description": "An implementation of the Muon optimizer in pytorch featuring gradient clipping",
+      "stars": 14,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": null,
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "小仓库，用来演示 stars 阈值该把什么筛掉"
+    },
+    {
+      "domain": "optimization",
+      "fullName": "NVIDIA/Model-Optimizer",
+      "url": "https://github.com/NVIDIA/Model-Optimizer",
+      "description": "A unified library of SOTA model optimization techniques",
+      "stars": 5382,
+      "forks": 0,
+      "language": "Python",
+      "pushedAt": null,
+      "topics": [],
+      "observedAt": "2026-10-20",
+      "why": "注意：这里的 optimizer 指「模型压缩」，是搜索噪声的反例，distill 应识别领域偏移"
+    }
+  ]
+}

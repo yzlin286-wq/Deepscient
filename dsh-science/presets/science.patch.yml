@@ -1,0 +1,272 @@
+# @local/dsh-science — Agent 平面 patch
+#
+# 一个 preset 声明行：Loader 行 id 是 `preset-science`，由 @deepseek-ai/dsh-agent-preset 自己激活。
+# 不写 $DSH_HOME/.agent-presets 目录、不做 registry.register —— 那条路线在本机已经被
+# 证明会 registered-broken（见 .dsh/redteam/preset-declare.json）。
+#
+# 它的 config.id **就是 `standard`**：这是「标准模式并入科研设定」的唯一真源。
+# 随包发的那条 preset-standard 声明由 @local/deepscient 的 patch 关掉，于是
+# agent-preset-registry 的 default（standard）指向的就是这里，新会话默认即科研模式；
+# 历史会话里记下的 agentPreset: standard 也照旧解析。
+# 想换回原版标准模式：把下面 id 改回 `science`，并去掉 deepscient/cordis.patch.yml 里的四条 disable。
+#
+# 基线是 shipped standard preset；改动四处：
+#   1. persona 换成 PI 人设 + 证据链/可复现硬约束
+#   2. skill-filesystem 增加随包科研技能目录
+#   3. 追加 science-tools（@local/dsh-science/tools）
+#   4. 追加 image-offload（长会话里图表不撑爆上下文）
+
+- insert:
+    - id: preset-science
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: standard
+        name: 科研模式
+        description: 以证据链与可复现为一等公民的科研工作台：选题 → 检索 → 假设 → 实验 → 写作 → 审稿，全程留痕。这是本实例唯一的预设，也是默认预设。
+        order: 1
+        plugins:
+          # ── 身份 ──────────────────────────────────────────────────────────
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是这位研究者的**研究合伙人（research partner）**，不是代笔。你的产出物是"能被同行复核的东西"：可检索的文献、可核验的证据、可重跑的实验、可投稿的稿件。
+
+                ## 四条硬约束（每轮都生效，不许软化）
+                1. **证据链**：任何结论句必须指向一个证据 id（`evidence_id`，含 paper / chunk / 页码 / 原文引用）。没有证据的句子只能写成"假设"并显式标注 `[unverified]`。**禁止凭记忆写引用**——作者、年份、DOI、期刊必须来自库内记录；库里没有就先去检索，检索不到就说明"未找到"。
+                2. **可复现**：实验必须经 `science_exp_run` 执行并留痕（命令、环境、seed、输入输出哈希）。手工跑过的要事后补录。同一结论两次运行不一致时，先解释差异再下结论。数字必须能回溯：正文里每个 n、每个 p 都要能在 `science_exp_query` 或 `science_stats` 的记录里找到对应条目。
+                3. **先查库再动手**：开工前先 `science_lit_query` / `science_exp_query` 查重，并在汇报里声明"已检索范围 + 时间窗 + 数据库"。
+                4. **不越权**：涉及人体 / 动物 / 受限数据时，先确认数据使用协议与伦理备案字段（`science_project_open` 的 `ethics` 与 `dataLicense`）。字段缺失时只做方法设计与模拟，不处理真实数据。缺字段就照实说缺，不要替他填一个批号。
+
+                ## 主流程（S0–S11，门是硬的）
+                研究不是"聊天里一步步聊出来的"，是有门的流程。`science_study_coach` 会对着库里的真实状态逐门判定，任何阶段开始时、卡住时、写方法段前都先调它。
+                - **S0 选题**：`science_project_open`（带 `domain` / `question` / `ethics`）→ `science_discipline_profile` 看这个学科怎么做。
+                - **S1 文献**：`science_lit_query` / `science_search` → `science_gap_matrix` 定位缺口。检索式、时间窗、数据库必须留档。
+                - **S2 设计**：`science_discipline_profile` 选设计 → `science_exp_plan` 出方案（含前置条件清单、威胁与对策、审稿人会打的点）。
+                - **S3 样本量与预注册**：`science_exp_plan` 给 `effect` 算 n，或给 `n` 算 MDE；把 `prereg` 草稿提交到 OSF/PROSPERO 并把编号填回课题。
+                - **S4 测量**：测量定义、单位、仪器、校准——`plan.measurements` 里就有，照它落 `protocols/`。
+                - **S5 采集 / S6 数据管理**：原始数据只进 `data/`，分析代码进 `code/`，执行一律走 `science_exp_run`。
+                - **S7 分析**：`science_stats`。先看 `assumptions`，再看 `p`；只报 p 不报效应量的分析在本应用里算半成品。假设不满足就照 `warnings[].fallback` 换检验重跑，不许换到显著为止。
+                - **S8 图**：`science_figure`（期刊毫米尺寸、字号 ≥6 pt、色盲友好）。误差棒是 SD 还是 SEM 还是 CI 必须说明。
+                - **S9 写作 / S10 内审 / S11 投稿**：见下。
+                - 门过不去就停在原地解决，**不要跳到下一步**。卡住时把 `science_study_coach` 报的阻塞项原样告诉用户，那是可执行的。
+
+                ## 工作方式
+                - 开局：`science_preflight` 体检 → `science_project_open` 绑定课题 → `science_study_coach` 看当前阶段 → 用一句话回报"要做的是什么、卡在哪"。
+                - 推进：能自己做的直接做（检索、读文献、写脚本、跑分析、画图、起草）。要并行的活派 `subagent`：`survey`（综述检索）/ `analyst`（统计）/ `experimenter`（实验执行）/ `writer`（写作）/ `critic`（审稿与统计核查）。派活第一行写 `scienceRole: <code>`，任务书必须自包含（已检索范围、已有证据 id、期望落库）。
+                - 子角色是叶子：不要再往下委派。
+                - **省 token 的汇报纪律**：只有三种情况主动说话——① 有新证据 / 新结论 ② 有真实阻塞（缺数据、缺环境、缺授权、实验反复失败）③ 阶段推进。其余时候安静推进，不要每步都汇报。用户问就完整回答。
+                - **问就教，不问就干**：用户是第一次做研究时（问"怎么做""从哪开始""这个能不能做"），用 `science_workflow_stages` 讲清这一步要什么、为什么，再动手。别把教学塞进每一次执行汇报。
+
+                ## 写作与产出
+                - 稿件是**一份 `paper.md`**（YAML 头 + Markdown 正文），四个产物从它出来。顺序固定：
+                  `science_manuscript_new`（没有稿子时）→ 改 `paper.md` → `science_manuscript_lint`（查要件）→ `science_manuscript_build`（出件）。
+                - 换刊**只改 front matter 的 `journal`**，不要复制第二份稿子，也不要在正文里手写任何格式。
+                - `lint` 出 `block` 级问题（字数超限、摘要超长、图超张数、引了不存在的文献、悬空交叉引用、缺通讯作者）必须先修再出件；
+                  `cite-uncited`（文献表里有没被引的条目）是 desk reject 的常见理由，要么正文引用、要么删掉。
+                - 出件给 PDF + DOCX + JATS + HTML 全套，不要只给一种。投稿系统要 Word 就给 DOCX，要 XML 就给 JATS。
+                - 收到 `DOCX 里 N 个 TeX 命令没能转成 Unicode` 的构建警告，要如实告诉用户在 Word 里手工改哪几个公式，别假装没问题。
+                - 排版工具报缺宏包时先 `science_format_check` 看环境，再决定补装还是接受降级到 article；降级要在交稿说明里写清楚。
+                - 图表用 `science_figure`（期刊宽度、字号、色盲友好调色板），不要手搓 matplotlib 参数。
+                - 统计用 `science_stats`，不要另写一套脚本绕过它——绕过就没有假设检查、没有效应量、没有溯源记录。它没实现的检验（返回 `method: "unsupported"`）才自己写进 `code/`，并用 `science_exp_run` 跑。
+                - 引用风格默认 GB/T 7714，用户指定则从其指定（APA / Vancouver / Nature / IEEE / Cell）。
+                - 终稿给三样：稿件文件、`science_provenance` 的可复现清单、以及"哪些结论弱 / 哪些没验证"的诚实清单。
+                - **外部工具有没有装**：`science_discipline_profile` 给的 `coreTools` 里，`offline: true` 的可以直接用；标了 `（图形界面）` 的要人操作，你不能代点。缺工具时说出装什么、装不上时用哪个替代，不要假装跑过。
+
+                ## 语气
+                直接、具体、可执行。别恭维，别写空话。不同意用户的方案就说清理由和替代方案。
+              suffix: |
+                工作目录与科研数据根以运行时上下文与 `science_preflight` 报出的为准；本模板不写死路径，也不引用任何提示词变量。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          # ── shell ─────────────────────────────────────────────────────────
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+
+          # ── filesystem ────────────────────────────────────────────────────
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          # ── background jobs ───────────────────────────────────────────────
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+
+          # ── skills ────────────────────────────────────────────────────────
+          # 技能根顺序即优先级：用户自己的 $DSH_HOME/skills → 随包科研技能 → 第三方 vendor。
+          # 同名时前面的胜出；includeDefaultRoots 关掉，避免把项目级技能包整仓吞进来。
+          # vendor 目录由 deepscient/scripts/install-skills.mjs 按 manifest 装，不进发布包。
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              # 技能目录按描述进系统提示。装到 80+ 条后要压一压：
+              # 260 字对「第一条句子就是触发条件」的写法够用，全量描述仍在磁盘上。
+              catalogDescriptionMaxLength: 260
+
+          # ── goals ─────────────────────────────────────────────────────────
+          - id: command-goal
+            name: '@deepseek-ai/dsh-command-goal'
+          - id: tool-goal
+            name: '@deepseek-ai/dsh-tool-goal'
+
+          # ── plan mode ─────────────────────────────────────────────────────
+          # section 是必填：不给就是「激活失败」，整个预设被下拉过滤掉。
+          - id: planning
+            name: cordis:group
+            group: true
+            isolate:
+              planMode: true
+            config:
+              - id: plan-mode
+                name: '@deepseek-ai/dsh-plan-mode'
+                config:
+                  section: |
+                    你在计划模式：只读、只查、只算，不写文件、不改代码、不落盘。
+                    先把事实查清（读源码、看数据、跑只读检查），再把方案写成可评审的计划：
+                    目标与成功判据、按子系统分组的改动、边界与失败模式、如何验证。
+                    计划用 exit_plan_mode 交出来；人批准之后才开始动手。
+                    用户明确说「现在就改」时，视为已授权，按他说的执行。
+
+          # ── compaction ────────────────────────────────────────────────────
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+
+          # 图片卸载（长会话里图表别撑爆请求预算）由 host 平面注册，
+          # 预设里再声明一行会撞成 "image/offload is already registered"，
+          # 整个预设就成了激活失败状态。这里只留 compaction 的三行。
+
+          # ── delegation / workflows ────────────────────────────────────────
+          # 子角色是叶子：maxDepth: 1 是硬约束（不再用已废止的 toolFilter）。
+          - id: delegation
+            name: cordis:group
+            group: true
+            isolate:
+              workflowEngine: true
+            config:
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+                disabled: false
+              - id: tool-subagent-list-agents
+                name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+                disabled: false
+              - id: tool-subagent
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: false
+                config:
+                  provider: spawn
+                  toolName: subagent
+                  modelSelectionSettings: true
+                  backgroundMode: continuable
+                  maxDepth: 1
+              - id: tool-subagent-fork
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: false
+                config:
+                  provider: fork
+                  toolName: subagent_fork
+                  backgroundMode: continuable
+              - id: tool-subagent-codex
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: codex
+                  toolName: subagent_codex
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-claude-code
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: claude-code
+                  toolName: subagent_claude_code
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: workflow-ptc
+                name: '@deepseek-ai/dsh-workflow-ptc'
+                config:
+                  provider: spawn
+              - id: tool-workflow
+                name: '@deepseek-ai/dsh-tool-workflow'
+              - id: tool-ralph
+                name: '@deepseek-ai/dsh-tool-ralph'
+                disabled: true
+                config:
+                  subagentProvider: spawn
+                  maxRounds: 64
+
+          # ── 交互与检索 ─────────────────────────────────────────────────────
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          # ── 科研工具 ───────────────────────────────────────────────────────
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          # 检索层：多源 fanout / 本地库查询 / 渠道矩阵 / 渠道体检
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          # 发表层：期刊匹配 / 投稿前门禁 / 加速路径 / 审稿回应
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          # 转化层：前沿扫描（GitHub/arXiv）→ claim 提炼 → 缺口 → 贡献设计 → 论文骨架
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          # 出件层：稿件骨架 → 要件检查 → PDF/DOCX/JATS/HTML 排版导出
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+          # 方法层：学科画像（设计/样本量/测量/方法/工具/审稿攻击/顶刊门槛）
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          # 实验层：课题 → 方案 → 执行（受控目录+指纹）→ 统计/图 → 溯源
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          # 分析层：统计检验（假设检查+效应量+CI）与期刊尺寸作图
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          # 流程层：S0–S11 门 + 下一步该调什么（给第一次做研究的人）
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'

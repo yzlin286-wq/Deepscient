@@ -1,0 +1,66 @@
+name: Bug 报告
+description: 有东西不对：报错、界面错乱、验证不过
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这个项目的规矩是「声称的每件事都要有命令能对上」，所以请尽量把**命令 + 输出**贴进来，
+        比「它不工作」有用得多。安全相关问题不要在这里发，见 SECURITY.md。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 你期望什么、实际是什么。
+      placeholder: 点「新建课题」后页面空白，控制台报 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. deepscient\bin\deepscient.cmd -NoOpen
+        2. 打开 http://127.0.0.1:3081
+        3. 点 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: health
+    attributes:
+      label: /deepscient/api/health 输出
+      description: 把 `version`、`skills`、`mcp` 三个字段贴上来（**不要**贴 token）
+      render: json
+    validations:
+      required: false
+
+  - type: textarea
+    id: verify
+    attributes:
+      label: 你跑过的验证命令与输出
+      description: 至少 `node tools/verify-packaging.mjs`；动了界面再加 `verify-deepscient.mjs`
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: 版本
+      description: 实例版本、Node 版本、Windows 版本
+      placeholder: DeepScient 0.4.0 / Node 22.17.0 / Windows 11 26100
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 确认
+      options:
+        - label: 我贴的内容里没有 API key、token 或凭据文件
+          required: true
+        - label: 我已读过 docs/ 里的相关文档与「已知边界」
+          required: false

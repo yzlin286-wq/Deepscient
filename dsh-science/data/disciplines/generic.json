@@ -1,0 +1,111 @@
+{
+  "$meta": { "schema": "discipline/1", "id": "generic", "updatedAt": "2026-10-21" },
+  "id": "generic",
+  "label": "通用（未匹配到学科）",
+  "questionTypes": [
+    { "id": "describe", "label": "描述一个总体的状态", "when": "只想说清「有多少、多大、多久」", "needs": ["抽样框", "测量工具", "应答率"] },
+    { "id": "compare", "label": "两组或多组有什么不同", "when": "有可操作的分组变量", "needs": ["分组定义", "结局测量", "混杂识别"] },
+    { "id": "relate", "label": "两个量之间有什么关系", "when": "两个变量在同一批对象上测量", "needs": ["测量信度", "变异范围", "共同方法偏差控制"] },
+    { "id": "explore", "label": "这个想法值不值得继续做", "when": "还没有明确假设，先做可行性", "needs": ["明确的可行性判据", "小样本可接受的理由", "下一步决策规则"] }
+  ],
+  "designs": [
+    {
+      "id": "cross-sectional",
+      "label": "横断面调查",
+      "when": "在一个时点上测量多个变量",
+      "requires": ["明确的抽样框与抽样方法", "测量工具信度已验", "应答率与无应答分析", "横断面不能推因果——设计里就写死这条"],
+      "nRule": "估计比例时 n = 1.96²·p(1-p)/e²；p=0.5、误差 5% 需 384；估计相关 r=0.3、power=.8 需 84",
+      "threats": [
+        { "risk": "便利抽样被当成代表样本", "mitigation": "说明抽样框限制，报样本与总体的关键分布对比" },
+        { "risk": "共同方法偏差（自报解释自报）", "mitigation": "多来源测量、时间分离、Harman 单因子检验" },
+        { "risk": "无应答偏倚", "mitigation": "比较应答者与无应答者的可得特征" }
+      ],
+      "reporting": ["strobe"],
+      "why": "最便宜的设计，也最容易被误用成因果证据。它的合法产出是相关与患病率，不是效应。",
+      "source": "von Elm et al. 2007 (STROBE)"
+    },
+    {
+      "id": "single-group-pre-post",
+      "label": "单组前后测",
+      "when": "没有对照组可用（资源或伦理），只想看变化",
+      "requires": ["明确声明无对照", "变化量与其 CI", "讨论自然恢复/回归到均值/季节效应"],
+      "nRule": "配对 d=0.5、power=.8 需 n≈34；但无对照时 n 再大也不能排除时间效应",
+      "threats": [
+        { "risk": "把时间效应当干预效应", "mitigation": "加历史对照或多基线设计；正文明确写这条局限" },
+        { "risk": "回归到均值（因极端值入组）", "mitigation": "报基线分布，做回归到均值的敏感性分析" },
+        { "risk": "重复测量本身的效应", "mitigation": "加一个未干预的同期组，哪怕很小" }
+      ],
+      "reporting": ["general"],
+      "why": "证据等级最低的设计之一。可以做，但结论只能写「干预后发生了变化」，不能写「干预导致了变化」。",
+      "source": "Shadish, Cook & Campbell 2002, ch.5"
+    },
+    {
+      "id": "case-study",
+      "label": "个案 / 小样本深入分析",
+      "when": "现象罕见、机制不清、或需要产生假设",
+      "requires": ["案例选择理由（为什么是这个案例）", "多来源证据三角验证", "明确的分析单位与边界", "不主张统计推广"],
+      "nRule": "不适用统计样本量；判据是证据饱和：经验上 4–10 个案例，且连续 2 个新案例不再产生新主题即停（Guest et al. 2006 的饱和经验值为 12 次访谈后主题出现率低于 5%）",
+      "threats": [
+        { "risk": "挑选最能支持结论的案例", "mitigation": "事前写清选择标准，并报告被排除的案例" },
+        { "risk": "只用一个信息源", "mitigation": "至少两类独立来源（文件、访谈、观察）交叉验证" }
+      ],
+      "reporting": ["general"],
+      "why": "产出是机制假设与边界条件，不是效应量。把它当效应研究来评审必然失败。",
+      "source": "Yin 2018 (Case Study Research and Applications, 6th ed.)"
+    },
+    {
+      "id": "pilot-feasibility",
+      "label": "可行性预试验",
+      "when": "正式研究前的探路",
+      "requires": ["预设可行性指标（招募率、依从率、脱落率、数据完整性）", "明确不做疗效检验", "为正式研究提供参数估计"],
+      "nRule": "每组 12–25 人足以估计招募率与脱落率的粗略范围；预试验不是用来检验疗效的，不要报疗效 p 值",
+      "threats": [
+        { "risk": "把预试验的效果当成疗效结论", "mitigation": "所有疗效相关结果标为「探索性、不用于推断」" },
+        { "risk": "用预试验数据算正式研究的效应量", "mitigation": "用预试验估参数（方差、脱落率），效应量仍取文献或最小有意义值" }
+      ],
+      "reporting": ["general"],
+      "why": "预试验的价值在参数与流程，不在显著性。混淆这两者是常见的方法学错误。",
+      "source": "Leon, Davis & Kraemer 2011 (Journal of Psychiatric Research)"
+    }
+  ],
+  "measurements": [
+    { "id": "primary-outcome", "label": "主结局", "unit": "按指标", "how": "事前唯一定义，含测量时点与工具", "precision": "写明可检测的最小差异", "artifact": "不同测量者/设备的系统偏差", "calibration": "交叉校准或双人独立测量" },
+    { "id": "demographics", "label": "人口学与协变量", "unit": "按变量", "how": "用标准分类（年龄分段、教育程度分级）", "precision": "分段会损失信息，连续变量优先", "artifact": "自报误差", "calibration": "关键变量用客观记录核对" },
+    { "id": "process-measure", "label": "过程指标（依从、招募、脱落）", "unit": "%", "how": "系统记录，不靠回忆", "precision": "分母必须写清（入组数 vs 完成数）", "artifact": "分母不一致导致率不可比", "calibration": "统一分母定义并在方法里写死" },
+    { "id": "text-evidence", "label": "文本/质性材料", "unit": "片段/文档数", "how": "按统一的转录与匿名化规则处理，编码单位事前定义", "precision": "编码单位越小一致性越低", "artifact": "选择性引用最生动的引文", "calibration": "双人独立编码后计算一致性，分歧记录在案" }
+  ],
+  "methods": [
+    { "id": "descriptive-ci", "label": "描述统计 + 置信区间", "when": "任何研究的第 0 步", "assumptions": ["样本代表目标总体"], "tool": "numpy / pandas / scipy.stats", "pitfall": "只报均值不报分布（掩盖双峰与离群）", "why": "在跑任何检验之前，先看清数据长什么样。" },
+    { "id": "effect-ci", "label": "效应量及其置信区间", "when": "报告任何组间差异或关联", "assumptions": ["与所用检验配套"], "tool": "scipy.stats + 手算", "pitfall": "只报 p 不报效应量", "why": "p 值随 n 变大而变小，效应量才告诉你差异有多大。" },
+    { "id": "assumption-check", "label": "假设检查", "when": "使用任何参数检验前", "assumptions": [], "tool": "scipy.stats.shapiro / levene", "pitfall": "先检验再选方法导致 α 失控", "why": "假设不满足时，检验给出的 p 值是无效的，不是「稍弱」。" },
+    { "id": "sensitivity", "label": "敏感性分析", "when": "有离群、缺失、或关键假设存疑", "assumptions": [], "tool": "多套设定重跑", "pitfall": "只报最好看的那一套", "why": "结论在多种合理设定下稳定，才值得相信。" },
+    { "id": "power", "label": "功效分析", "when": "设计阶段（必须事前）", "assumptions": ["方差可估", "效应量有依据"], "tool": "statsmodels.stats.power", "pitfall": "事后算功效", "why": "功效不足的研究会把真效应判成阴性。" }
+  ],
+  "tools": [
+    { "id": "python", "label": "Python", "kind": "language", "domain": ["*"], "install": "https://www.python.org", "minimalScript": "python -c \"import numpy, scipy, pandas; print('ok')\"", "alt": ["R"], "offline": true, "license": "PSF-2.0" },
+    { "id": "r", "label": "R", "kind": "language", "domain": ["*"], "install": "https://cran.r-project.org", "minimalScript": "Rscript -e 'print(summary(rnorm(100)))'", "alt": ["Python"], "offline": true, "license": "GPL-2" },
+    { "id": "jamovi", "label": "jamovi", "kind": "stats", "domain": ["*"], "install": "https://www.jamovi.org", "minimalScript": "（图形界面，免费，内置常用检验与效应量）", "alt": ["JASP", "R"], "offline": true, "license": "AGPL-3" },
+    { "id": "latex", "label": "LaTeX", "kind": "writing", "domain": ["*"], "install": "https://miktex.org", "minimalScript": "xelatex -interaction=nonstopmode main.tex", "alt": ["Word"], "offline": true, "license": "LPPL" }
+  ],
+  "statsDefaults": { "alpha": 0.05, "correction": "holm", "effect": "cohen_d", "tails": 2 },
+  "reviewerAttacks": [
+    { "attack": "「你的研究问题到底是什么？一句话说不清。」", "defense": "把问题写成可被数据回答的形式：对象 + 变量 + 比较 + 时点" },
+    { "attack": "「这个设计能支持这个结论吗？」", "defense": "结论强度不超过设计强度：横断面只写相关，单组前后测只写变化" },
+    { "attack": "「样本量依据呢？」", "defense": "给事前功效分析或最小可检测效应，不用「每组 30」的惯例" },
+    { "attack": "「这和已有研究有什么不同？」", "defense": "明确指出增量（人群/方法/机制/尺度），并说明为什么这个增量重要" },
+    { "attack": "「为什么不用标准的方法/量表？」", "defense": "用了就引用；没用就说明为什么现有工具不适用，并报自制工具的信效度" },
+    { "attack": "「结论外推得太远。」", "defense": "在 Limitations 里写清样本边界与不可外推的方向" }
+  ],
+  "benchmarks": [
+    { "metric": "研究问题的可回答性", "topJournal": "问题、设计、分析、结论四者一致", "field": "常出现设计与结论错配", "source": "Shadish, Cook & Campbell 2002" },
+    { "metric": "样本量依据", "topJournal": "有事前功效分析或 MDE", "field": "常写「便利样本」", "source": "Lakens 2022 (Sample Size Justification)" },
+    { "metric": "报告完整性", "topJournal": "全部预设结局 + 全部排除情况", "field": "常只报显著的", "source": "EQUATOR Network 报告规范" }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": ["样本描述与数据质量", "主结局", "次要结局", "稳健性", "局限相关的补充分析"],
+    "figureBudget": 3,
+    "note": "没匹配到学科时，按「描述 → 主结局 → 稳健性」的通用骨架写，但一定要在 Methods 里说清设计类型——审稿人靠这个判断结论能有多强。"
+  },
+  "reporting": ["general"],
+  "reportingExternal": []
+}

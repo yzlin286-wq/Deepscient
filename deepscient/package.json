@@ -1,0 +1,51 @@
+{
+  "name": "@local/deepscient",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "DeepScient：科研版 Harness 的品牌、工作台界面、token 计费与文献 API 接入",
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "science",
+    "research"
+  ],
+  "exports": {
+    ".": "./host/index.js",
+    "./client": "./client/index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "host/index.js",
+    "host/api.js",
+    "host/science.js",
+    "host/settings.js",
+    "host/content.js",
+    "host/usage.js",
+    "host/sources.js",
+    "client/index.js",
+    "locale/*.json",
+    "docs/*.md",
+    "scripts/*.mjs",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "mcp.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-chat"
+      ]
+    }
+  }
+}

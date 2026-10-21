@@ -1,0 +1,612 @@
+{
+  "$meta": {
+    "schema": "disciplines-index/1",
+    "note": "12 个学科包的索引。science_discipline_profile 与 science_study_coach 先用别名/期刊族/关键词把用户的问题匹配到 domain，再加载 data/disciplines/<id>.json。匹配不中时返回 generic 兜底，不报错。",
+    "updatedAt": "2026-10-21"
+  },
+  "disciplines": [
+    {
+      "id": "biomed",
+      "label": "生物医学与临床",
+      "aliases": [
+        "医学",
+        "临床",
+        "生物医学",
+        "biomedicine",
+        "clinical",
+        "medicine",
+        "流行病学",
+        "epidemiology",
+        "护理",
+        "nursing",
+        "药理",
+        "pharmacology",
+        "biomedical",
+        "rct",
+        "随机对照",
+        "系统综述",
+        "meta分析",
+        "临床研究",
+        "队列研究"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "nejm",
+        "springer-nature",
+        "plos",
+        "bmc",
+        "wiley",
+        "science"
+      ],
+      "defaultReporting": [
+        "consort",
+        "prisma",
+        "strobe",
+        "arrive"
+      ],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "odds-ratio",
+        "tails": 2
+      },
+      "coreTools": [
+        "r",
+        "stata",
+        "spss",
+        "prism",
+        "revman"
+      ],
+      "headline": "证据等级由设计决定：RCT > 前瞻队列 > 病例对照 > 横断面 > 病例报告。写之前先说清你手里是第几级。"
+    },
+    {
+      "id": "neuroscience",
+      "label": "神经科学",
+      "aliases": [
+        "神经",
+        "脑",
+        "neuroscience",
+        "fmri",
+        "eeg",
+        "erp",
+        "electrophysiology",
+        "认知神经",
+        "cognitive neuroscience",
+        "神经影像",
+        "neuroimaging",
+        "行为神经"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "springer-nature",
+        "cell",
+        "science",
+        "plos"
+      ],
+      "defaultReporting": [
+        "arrive"
+      ],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "fdr_bh",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "spm",
+        "fsl",
+        "eeglab",
+        "mne",
+        "psychopy",
+        "neuropixels"
+      ],
+      "headline": "脑影像的多重比较是审稿第一杀手。校正方式、平滑核、簇阈值必须事前写定并给敏感性分析。"
+    },
+    {
+      "id": "psychology",
+      "label": "心理学与行为",
+      "aliases": [
+        "心理",
+        "行为",
+        "psychology",
+        "behavioural",
+        "behavioral",
+        "认知",
+        "cognitive",
+        "社会心理",
+        "social psychology",
+        "发展心理",
+        "developmental",
+        "教育学",
+        "education",
+        "预注册",
+        "信效度",
+        "量表",
+        "结构性方程"
+      ],
+      "journalFamilies": [
+        "apa",
+        "elsevier",
+        "springer-nature",
+        "wiley",
+        "plos"
+      ],
+      "defaultReporting": [
+        "consort",
+        "open-science"
+      ],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "psychopy",
+        "jspsych",
+        "opensesame",
+        "r",
+        "jamovi",
+        "jasp"
+      ],
+      "headline": "心理学现在默认要预注册 + 功效分析 + 全部变量公开。没有预注册的验证性研究，编辑部会先问「这是不是 HARKing」。"
+    },
+    {
+      "id": "economics",
+      "label": "经济学与社会科学",
+      "aliases": [
+        "经济",
+        "economics",
+        "计量",
+        "econometrics",
+        "社会学",
+        "sociology",
+        "公共政策",
+        "public policy",
+        "政治学",
+        "political science",
+        "金融",
+        "finance",
+        "管理",
+        "management",
+        "双重差分",
+        "did",
+        "断点回归",
+        "rdd",
+        "工具变量",
+        "合成控制",
+        "面板数据",
+        "政策评估",
+        "双重差分法"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "wiley",
+        "springer-nature",
+        "oup",
+        "cup"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "stata",
+        "r",
+        "python",
+        "latex"
+      ],
+      "headline": "识别策略比数据量重要。DID 要检验平行趋势，RDD 要检验断点连续性，IV 要报第一阶段 F。审稿人先打这里。"
+    },
+    {
+      "id": "ml-cs",
+      "label": "机器学习与计算机",
+      "aliases": [
+        "机器学习",
+        "深度学习",
+        "machine learning",
+        "deep learning",
+        "ml",
+        "ai",
+        "人工智能",
+        "计算机",
+        "computer science",
+        "nlp",
+        "cv",
+        "系统",
+        "systems",
+        "算法",
+        "消融",
+        "基线",
+        "benchmark",
+        "复现"
+      ],
+      "journalFamilies": [
+        "acm",
+        "ieee",
+        "elsevier",
+        "springer-nature",
+        "science"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "fdr_bh",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "pytorch",
+        "jax",
+        "wandb",
+        "mlflow",
+        "hydra",
+        "latex"
+      ],
+      "headline": "至少要 3 个种子、报均值±标准差、给算力账单。单次 run 的 SOTA 不构成证据。"
+    },
+    {
+      "id": "chemistry",
+      "label": "化学",
+      "aliases": [
+        "化学",
+        "chemistry",
+        "有机",
+        "organic",
+        "无机",
+        "inorganic",
+        "分析化学",
+        "analytical",
+        "物化",
+        "physical chemistry",
+        "催化",
+        "catalysis",
+        "高分子",
+        "polymer",
+        "合成",
+        "表征",
+        "产率"
+      ],
+      "journalFamilies": [
+        "acs",
+        "elsevier",
+        "wiley",
+        "springer-nature",
+        "science"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "none",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "rdkit",
+        "avogadro",
+        "gaussian",
+        "orca",
+        "chemdraw",
+        "origin"
+      ],
+      "headline": "表征是证据：NMR 要给完整谱图与积分，HRMS 要理论值/实测值并列，纯度要有两条独立证据。"
+    },
+    {
+      "id": "materials",
+      "label": "材料与器件",
+      "aliases": [
+        "材料",
+        "materials",
+        "材料科学",
+        "materials science",
+        "纳米",
+        "nanomaterials",
+        "器件",
+        "device",
+        "电池",
+        "battery",
+        "半导体",
+        "semiconductor",
+        "催化材料",
+        "表征",
+        "循环性能"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "acs",
+        "wiley",
+        "springer-nature",
+        "science"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "none",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "ase",
+        "vesta",
+        "origin",
+        "gatan",
+        "keysight"
+      ],
+      "headline": "性能数字要可追溯：至少 3 个独立样品、给批次间方差、报测试标准（如 IEC/ASTM 编号）。"
+    },
+    {
+      "id": "physics",
+      "label": "物理与天文",
+      "aliases": [
+        "物理",
+        "physics",
+        "天文",
+        "astronomy",
+        "天体物理",
+        "astrophysics",
+        "凝聚态",
+        "condensed matter",
+        "量子",
+        "quantum",
+        "光学",
+        "optics",
+        "粒子",
+        "不确定度",
+        "误差传播",
+        "置信区间"
+      ],
+      "journalFamilies": [
+        "aps",
+        "elsevier",
+        "springer-nature",
+        "science",
+        "iop"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "none",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "python",
+        "matlab",
+        "root",
+        "astropy",
+        "cern-root",
+        "comsol"
+      ],
+      "headline": "每个数字都要带不确定度，并说明是统计误差还是系统误差。置信区间不写「约」，要写区间。"
+    },
+    {
+      "id": "earth-env",
+      "label": "地球与环境",
+      "aliases": [
+        "地球",
+        "地学",
+        "earth",
+        "geoscience",
+        "环境",
+        "environment",
+        "environmental",
+        "生态",
+        "ecology",
+        "气候",
+        "climate",
+        "海洋",
+        "ocean",
+        "大气",
+        "atmosphere",
+        "遥感",
+        "remote sensing",
+        "地理",
+        "空间自相关",
+        "遥感反演",
+        "土地利用"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "wiley",
+        "springer-nature",
+        "science",
+        "copernicus"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "fdr_bh",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "qgis",
+        "gdal",
+        "r",
+        "python",
+        "google-earth-engine",
+        "cesm"
+      ],
+      "headline": "时空自相关是默认存在的。不校正空间自相关就报 p，等于没做统计。"
+    },
+    {
+      "id": "engineering",
+      "label": "工程与技术",
+      "aliases": [
+        "工程",
+        "engineering",
+        "机械",
+        "mechanical",
+        "电子",
+        "electrical",
+        "土木",
+        "civil",
+        "控制",
+        "control",
+        "机器人",
+        "robotics",
+        "航空航天",
+        "aerospace",
+        "能源",
+        "试验设计",
+        "基线对比",
+        "可靠度"
+      ],
+      "journalFamilies": [
+        "ieee",
+        "elsevier",
+        "springer-nature",
+        "asme"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "matlab",
+        "simulink",
+        "ansys",
+        "comsol",
+        "solidworks",
+        "labview"
+      ],
+      "headline": "要有基线对比与消融。只说「我们的系统达到了 X」，不说「相对已有方法提升了多少」，审稿人会直接问。"
+    },
+    {
+      "id": "agri-food",
+      "label": "农业与食品",
+      "aliases": [
+        "农业",
+        "agriculture",
+        "农学",
+        "agronomy",
+        "食品",
+        "food",
+        "food science",
+        "营养",
+        "nutrition",
+        "园艺",
+        "horticulture",
+        "动物科学",
+        "animal science",
+        "作物",
+        "crop",
+        "田间试验",
+        "区组",
+        "品种"
+      ],
+      "journalFamilies": [
+        "elsevier",
+        "wiley",
+        "springer-nature",
+        "mdpi",
+        "frontiers"
+      ],
+      "defaultReporting": [
+        "arrive"
+      ],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "r",
+        "sas",
+        "asreml",
+        "genstat"
+      ],
+      "headline": "田间试验必须报区组设计与重复数。品种/年份/地点三个因素不随机化，结论只对一个环境成立。"
+    },
+    {
+      "id": "social-humanities",
+      "label": "社科与人文",
+      "aliases": [
+        "人文",
+        "humanities",
+        "社科",
+        "social science",
+        "历史",
+        "history",
+        "哲学",
+        "philosophy",
+        "文学",
+        "literature",
+        "传播",
+        "communication",
+        "法学",
+        "law",
+        "艺术",
+        "arts",
+        "语言学",
+        "linguistics",
+        "编码",
+        "访谈",
+        "案例研究"
+      ],
+      "journalFamilies": [
+        "oup",
+        "cup",
+        "elsevier",
+        "sage",
+        "wiley"
+      ],
+      "defaultReporting": [],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "none",
+        "effect": "cohen_kappa",
+        "tails": 2
+      },
+      "coreTools": [
+        "nvivo",
+        "atlas-ti",
+        "maxqda",
+        "r",
+        "python",
+        "zotero"
+      ],
+      "headline": "质性研究的可信度靠可审计性：编码簿、双人编码一致性（κ）、反例、以及「如果我错了会看到什么」。"
+    },
+    {
+      "id": "generic",
+      "label": "通用（未匹配到学科）",
+      "aliases": [],
+      "journalFamilies": [
+        "generic"
+      ],
+      "defaultReporting": [
+        "general"
+      ],
+      "defaultStats": {
+        "alpha": 0.05,
+        "correction": "holm",
+        "effect": "cohen_d",
+        "tails": 2
+      },
+      "coreTools": [
+        "python",
+        "r"
+      ],
+      "headline": "没匹配到学科时的兜底。告诉用户补一个 domain 会让后面的设计、统计、报告规范都具体起来。"
+    }
+  ],
+  "matchHints": {
+    "note": "匹配顺序：显式 domain > 期刊族 > 别名精确 > 别名包含 > 关键词。都不中返回 generic 并在 matchedBy 里说明。",
+    "order": [
+      "explicit",
+      "journalFamily",
+      "aliasExact",
+      "aliasContains",
+      "keyword",
+      "fallback"
+    ]
+  }
+}

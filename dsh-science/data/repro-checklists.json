@@ -1,0 +1,71 @@
+{
+  "$meta": {
+    "schema": "repro-checklists/1",
+    "note": "4 级可复现梯度，对齐 ACM Artifact Evaluation、NeurIPS Reproducibility Checklist 与 Nature Reporting Summary。science_provenance 用这份清单逐项判定，给定 level 时报告「距离下一级还差什么」。",
+    "updatedAt": "2026-10-21",
+    "ironRule": "级别越高越贵。投稿不必到 L4，但 L2 是底线；声称「可复现」而停在 L1 是常见且致命的过度声明。"
+  },
+  "levels": [
+    {
+      "level": 1,
+      "id": "available",
+      "label": "L1 可得",
+      "question": "别人能拿到你用的东西吗？",
+      "checks": [
+        { "id": "data-present", "label": "原始数据在", "how": "文件存在且非空，有数据字典", "fix": "把 data/ 下的原始文件补上，附 README 说明每列含义" },
+        { "id": "code-present", "label": "分析脚本在", "how": "至少一个能跑通的入口脚本", "fix": "把产生主结果的脚本放进 code/，不要只留 notebook 的导出 PDF" },
+        { "id": "readme-present", "label": "README 说清怎么跑", "how": "有「安装 → 运行 → 期望输出」三段", "fix": "写三段：依赖安装、运行命令、期望产物文件名" },
+        { "id": "materials-present", "label": "实验材料在（刺激、问卷、干预方案）", "how": "文本/图片/程序文件可获取", "fix": "把刺激材料与指导语原文放进去；版权受限时给获取途径" },
+        { "id": "license-present", "label": "有使用许可", "how": "数据与代码各有 license 文件", "fix": "加 LICENSE（代码用 MIT/Apache-2.0，数据用 CC-BY-4.0）" }
+      ]
+    },
+    {
+      "level": 2,
+      "id": "runnable",
+      "label": "L2 可跑",
+      "question": "换一台机器能跑通吗？",
+      "checks": [
+        { "id": "deps-locked", "label": "依赖已锁定", "how": "requirements.txt / renv.lock / environment.yml 存在且完整", "fix": "pip freeze 或 renv::snapshot()，不要把依赖写在 README 散文里" },
+        { "id": "entrypoint", "label": "有单一入口", "how": "一条命令能从原始数据跑到主结果", "fix": "写 run.sh 或 Makefile，把步骤串起来" },
+        { "id": "paths-relative", "label": "路径全相对", "how": "没有以盘符或用户目录开头的绝对路径", "fix": "改成相对项目根的路径，或用配置项" },
+        { "id": "no-manual-steps", "label": "没有「手工改一下这里」的步骤", "how": "全流程可脚本化", "fix": "把手动操作写成脚本；确实做不到的在 README 里标红并说明" },
+        { "id": "runs-clean", "label": "最近一次运行成功", "how": "有运行日志且 exit code 为 0", "fix": "在本机跑一遍并保存日志" }
+      ]
+    },
+    {
+      "level": 3,
+      "id": "reproducible",
+      "label": "L3 同种子同结果",
+      "question": "跑出来数字一样吗？",
+      "checks": [
+        { "id": "seed-fixed", "label": "随机种子已固定并写明", "how": "代码里有 seed 设置，文档里写明 seed 值", "fix": "用 `numpy.random.default_rng(SEED)`，把 SEED 写进配置" },
+        { "id": "results-match", "label": "重跑结果与论文数字一致", "how": "关键统计量差异在浮点误差内（相对误差 <1e-6）", "fix": "把论文里的数字做成 expected.json，重跑后自动比对" },
+        { "id": "env-recorded", "label": "环境指纹已记录", "how": "Python/R 版本、关键库版本、OS、硬件", "fix": "运行脚本自动写 env.json（版本 + hash）" },
+        { "id": "data-hashed", "label": "输入数据有 hash", "how": "每个输入文件有 sha256", "fix": "生成 manifest.json 存文件名与 sha256" },
+        { "id": "outputs-hashed", "label": "产物有 hash", "how": "图与表的源文件有 sha256", "fix": "run 结束时算产物 hash 并随结果保存" },
+        { "id": "randomness-documented", "label": "不可控随机性已声明", "how": "如 GPU 非确定性、并行归约顺序", "fix": "在 README 里列明哪些部分不能保证逐位一致" }
+      ]
+    },
+    {
+      "level": 4,
+      "id": "reusable",
+      "label": "L4 可复用",
+      "question": "别人能拿去用在自己的问题上吗？",
+      "checks": [
+        { "id": "generalized-input", "label": "换一份同格式数据也能跑", "how": "输入格式有校验，不是硬编码文件名", "fix": "把输入路径做成参数，加格式检查与清晰报错" },
+        { "id": "documented-api", "label": "函数/参数有文档", "how": "每个公开函数有 docstring 说明参数与返回", "fix": "补 docstring；至少说明单位与取值范围" },
+        { "id": "tests-present", "label": "有自检/测试", "how": "至少一个断言关键结果的测试", "fix": "写 tests/ 用小样本数据断言主统计量" },
+        { "id": "ci-or-script", "label": "可一键验证", "how": "有 verify 脚本或 CI 配置", "fix": "加 `make verify` 或在 GitHub Actions 里跑" },
+        { "id": "example-data", "label": "带示例数据", "how": "examples/ 里有小份可跑数据", "fix": "把数据脱敏抽 1% 作为示例" },
+        { "id": "container-or-nix", "label": "有容器或等价方案", "how": "Dockerfile / Nix / 明确的手工环境步骤", "fix": "写 Dockerfile；做不到就写逐步环境搭建文档" }
+      ]
+    }
+  ],
+  "blockingRules": [
+    { "id": "no-data", "label": "数据完全没有", "severity": "blocking", "message": "声称可复现但数据不在，这是最严重的过度声明" },
+    { "id": "no-code", "label": "代码完全没有", "severity": "blocking", "message": "没有分析代码，读者无法验证任何数字" },
+    { "id": "absolute-paths", "label": "全是绝对路径", "severity": "warning", "message": "换机器必然失败" },
+    { "id": "unseeded", "label": "随机过程无种子", "severity": "warning", "message": "结果不可重复，只能报「大致如此」" },
+    { "id": "figure-only", "label": "只有图片没有源数据", "severity": "warning", "message": "图片不能重算，等于不可复现" }
+  ]
+}

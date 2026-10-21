@@ -1,0 +1,57 @@
+{
+  "name": "@local/dsh-science",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "科研版 harness：以证据链与可复现为一等公民的 dsh 科研工作台",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./tools": "./lib/tools.js",
+    "./science-tools": "./lib/science-tools.js",
+    "./method-tools": "./lib/method-tools.js",
+    "./frontier-tools": "./lib/frontier-tools.js",
+    "./manuscript-tools": "./lib/manuscript-tools.js",
+    "./science": "./lib/science/pipeline.js",
+    "./package.json": "./package.json",
+    "./discipline-tools": "./lib/discipline-tools.js",
+    "./lab-tools": "./lib/lab-tools.js",
+    "./analysis-tools": "./lib/analysis-tools.js",
+    "./coach-tools": "./lib/coach-tools.js"
+  },
+  "files": [
+    "lib",
+    "data",
+    "presets",
+    "skills-vendor",
+    "skills",
+    "scripts",
+    "docs",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "science",
+    "research",
+    "evidence-chain",
+    "reproducibility"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": [
+        "./cordis.patch.yml",
+        "./presets/science.patch.yml"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

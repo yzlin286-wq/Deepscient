@@ -1,0 +1,504 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "biomed",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "biomed",
+  "label": "生物医学与临床",
+  "questionTypes": [
+    {
+      "id": "efficacy",
+      "label": "干预是否有效",
+      "when": "有一个可操作的干预和可测的结局",
+      "needs": [
+        "对照组",
+        "随机化或强识别策略",
+        "预先设定的主结局"
+      ]
+    },
+    {
+      "id": "association",
+      "label": "暴露与结局是否相关",
+      "when": "不能随机化（吸烟、职业暴露）",
+      "needs": [
+        "混杂控制",
+        "时间顺序",
+        "剂量-反应"
+      ]
+    },
+    {
+      "id": "diagnosis",
+      "label": "诊断试验准不准",
+      "when": "有新检测方法要跟金标准比",
+      "needs": [
+        "金标准",
+        "盲法判读",
+        "连续入组"
+      ]
+    },
+    {
+      "id": "prognosis",
+      "label": "哪些因素预测结局",
+      "when": "有随访队列",
+      "needs": [
+        "事件数充足",
+        "时间-事件分析",
+        "校准与区分度"
+      ]
+    },
+    {
+      "id": "prevalence",
+      "label": "某状态有多常见",
+      "when": "横断面抽样",
+      "needs": [
+        "抽样框",
+        "应答率",
+        "加权"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "label": "机制是什么",
+      "when": "体外/动物/人体样本",
+      "needs": [
+        "扰动实验",
+        "剂量依赖",
+        "因果中介"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "rct-parallel",
+      "label": "平行组随机对照试验",
+      "when": "伦理允许随机、干预可标准化、结局可在合理时间内观测",
+      "requires": [
+        "随机序列生成与分配隐藏",
+        "盲法（至少结局评估者）",
+        "意向性分析（ITT）",
+        "预设主结局与样本量"
+      ],
+      "nRule": "两组率差 15%→10%、α=.05、power=.8 需约 2×220；连续结局 d=0.4 需 2×100。用事件数而不是人数算（生存结局看事件数）",
+      "threats": [
+        {
+          "risk": "分配 concealment 失败",
+          "mitigation": "中心随机或密封信封，且记录分配时间戳"
+        },
+        {
+          "risk": " attrition 偏倚",
+          "mitigation": "报 CONSORT 流程图，做 ITT 与 per-protocol 双分析"
+        },
+        {
+          "risk": "主结局被换",
+          "mitigation": "预注册写明主结局；换结局必须声明为探索性"
+        }
+      ],
+      "reporting": [
+        "consort"
+      ],
+      "why": "唯一能干净识别因果的设计。代价是成本与伦理约束。",
+      "source": "Schulz, Altman & Moher 2010 (CONSORT 2010)"
+    },
+    {
+      "id": "cohort-prospective",
+      "label": "前瞻性队列",
+      "when": "无法随机化，但可以按暴露分组随访",
+      "requires": [
+        "明确的暴露测量",
+        "足够随访时间",
+        "失访率<20% 且与结局无关",
+        "混杂变量事前定"
+      ],
+      "nRule": "按事件数算：每个预测变量至少 10 个事件（EPV≥10）；预期事件率 10% 时需 ≥200 人/变量",
+      "threats": [
+        {
+          "risk": "失访与结局相关（信息性删失）",
+          "mitigation": "竞争风险模型 + 敏感性分析"
+        },
+        {
+          "risk": "暴露测量误差",
+          "mitigation": "重复测量取均值，或回归校准"
+        },
+        {
+          "risk": "immortal time bias",
+          "mitigation": "把暴露当时间依赖变量，不要用「曾经用过」二分"
+        }
+      ],
+      "reporting": [
+        "strobe"
+      ],
+      "why": "能建立时间顺序，是观察性设计里证据等级最高的。",
+      "source": "von Elm et al. 2007 (STROBE)"
+    },
+    {
+      "id": "case-control",
+      "label": "病例对照",
+      "when": "结局罕见、随访成本过高",
+      "requires": [
+        "病例定义明确",
+        "对照从同一源人群抽取",
+        "暴露测量对病例对照同等对待"
+      ],
+      "nRule": "罕见结局（<5%）时 OR≈RR；按对照:病例=2:1~4:1 提高功效",
+      "threats": [
+        {
+          "risk": "回忆偏倚（病例更努力回想暴露）",
+          "mitigation": "用客观记录而非自报；盲法访谈"
+        },
+        {
+          "risk": "选择偏倚（对照来自不同人群）",
+          "mitigation": "对照从病例的源人群抽样，说明抽样框"
+        }
+      ],
+      "reporting": [
+        "strobe"
+      ],
+      "why": "罕见结局下唯一经济可行的设计，但只能给 OR，且易受回忆偏倚。",
+      "source": "Schlesselman 1982"
+    },
+    {
+      "id": "diagnostic-accuracy",
+      "label": "诊断准确性研究",
+      "when": "新检测方法要评估",
+      "requires": [
+        "金标准独立且盲法",
+        "连续或随机入组（不能只挑典型病例）",
+        "预设 cutoff"
+      ],
+      "nRule": "按目标灵敏度的 CI 宽度定：灵敏度 0.9、CI 半宽 0.05 需约 140 例阳性",
+      "threats": [
+        {
+          "risk": "spectrum bias（只测重症）",
+          "mitigation": "连续入组，报告疾病谱"
+        },
+        {
+          "risk": "cutoff 从数据里挑",
+          "mitigation": "预设 cutoff，或报 ROC 全曲线 + AUC"
+        }
+      ],
+      "reporting": [
+        "strobe"
+      ],
+      "why": "诊断研究的偏倚主要来自入组方式和 cutoff 选择，不是统计方法。",
+      "source": "Bossuyt et al. 2015 (STARD)"
+    },
+    {
+      "id": "systematic-review",
+      "label": "系统综述 / Meta 分析",
+      "when": "同一问题已有多项研究且结论不一",
+      "requires": [
+        "预注册方案（PROSPERO）",
+        "可复现的检索式",
+        "双人筛选与提取",
+        "偏倚风险评估"
+      ],
+      "nRule": "不按样本量，按「是否检索到全部相关研究」判断；至少 2 个数据库 + 1 个试验注册库",
+      "threats": [
+        {
+          "risk": "发表偏倚",
+          "mitigation": "漏斗图 + Egger 检验 + 剪补法"
+        },
+        {
+          "risk": "研究间异质性",
+          "mitigation": "报 I² 与 τ²，异质性大时用随机效应并做亚组"
+        }
+      ],
+      "reporting": [
+        "prisma"
+      ],
+      "why": "证据金字塔顶端，但前提是检索可复现——检索式必须完整写进正文。",
+      "source": "Page et al. 2021 (PRISMA 2020)"
+    },
+    {
+      "id": "animal-experiment",
+      "label": "动物实验",
+      "when": "机制研究或临床前验证",
+      "requires": [
+        "随机分组",
+        "盲法评估",
+        "样本量依据（不用「每组 6 只」的惯例）",
+        "ARRIVE 关键项"
+      ],
+      "nRule": "按效应量算，不按惯例。d=1.5 时每组约 10 只可达 power=.8；多数「每组 6 只」的研究实际功效不足 50%",
+      "threats": [
+        {
+          "risk": "功效不足导致假阴性",
+          "mitigation": "事前功效分析，报实际功效"
+        },
+        {
+          "risk": "只报代表性图像",
+          "mitigation": "报全部样本的定量结果，图像只是示例"
+        }
+      ],
+      "reporting": [
+        "arrive"
+      ],
+      "why": "临床前研究的可重复性危机主要来自样本量与报告不全。",
+      "source": "Percie du Sert et al. 2020 (ARRIVE 2.0)"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "primary-endpoint",
+      "label": "主结局指标",
+      "unit": "按指标",
+      "how": "预注册里唯一定义，含测量时点与设备",
+      "precision": "写明最小临床重要差异（MCID）",
+      "artifact": "不同中心设备差异",
+      "calibration": "中心实验室或交叉校准"
+    },
+    {
+      "id": "survival-time",
+      "label": "生存时间与事件",
+      "unit": "月/天",
+      "how": "从入组或诊断起算，定义事件与删失规则",
+      "precision": "随访间隔决定精度",
+      "artifact": "失访被当作删失",
+      "calibration": "定期随访 + 死亡登记核对"
+    },
+    {
+      "id": "biomarker",
+      "label": "生物标志物浓度",
+      "unit": "pg/mL 等",
+      "how": "同一批次检测，报批间 CV",
+      "precision": "检测下限（LOD）与定量下限（LOQ）",
+      "artifact": "冻融循环导致降解",
+      "calibration": "标准曲线 + 质控样本"
+    },
+    {
+      "id": "adverse-event",
+      "label": "不良事件",
+      "unit": "例次/人",
+      "how": "按 CTCAE 分级，独立安全委员会判定",
+      "precision": "主动询问 vs 被动上报差别巨大",
+      "artifact": "漏报",
+      "calibration": "结构化问卷 + 病历核查"
+    }
+  ],
+  "methods": [
+    {
+      "id": "itt",
+      "label": "意向性分析（ITT）",
+      "when": "RCT 的主分析",
+      "assumptions": [
+        "缺失数据用多重插补或混合模型处理"
+      ],
+      "tool": "R: mice + lme4；Python: statsmodels",
+      "pitfall": "只报 per-protocol 会高估效果",
+      "why": "ITT 保留随机化的保护，是 RCT 唯一无偏的主分析。"
+    },
+    {
+      "id": "mixedlm",
+      "label": "线性/广义线性混合模型",
+      "when": "重复测量、多中心、缺失",
+      "assumptions": [
+        "随机效应结构由设计决定",
+        "MAR 缺失"
+      ],
+      "tool": "statsmodels MixedLM / lme4",
+      "pitfall": "按 p 值删随机效应",
+      "why": "用全部可用观测，避免完整案例分析偏倚。"
+    },
+    {
+      "id": "cox",
+      "label": "Cox 比例风险回归",
+      "when": "时间-事件结局 + 协变量校正",
+      "assumptions": [
+        "PH 成立",
+        "EPV≥10"
+      ],
+      "tool": "statsmodels PHReg / survival::coxph",
+      "pitfall": "不做 Schoenfeld 检验就报 HR",
+      "why": "生存分析的标准多变量模型。"
+    },
+    {
+      "id": "logistic",
+      "label": "Logistic 回归",
+      "when": "二分类结局",
+      "assumptions": [
+        "EPV≥10",
+        "无完全分离"
+      ],
+      "tool": "statsmodels Logit / glm",
+      "pitfall": "把 OR 当 RR",
+      "why": "二分类结局的标准模型，但要防过拟合。"
+    },
+    {
+      "id": "rmst",
+      "label": "限制平均生存时间（RMST）",
+      "when": "PH 不成立（曲线交叉）",
+      "assumptions": [
+        "预设时间窗 τ"
+      ],
+      "tool": "R: survRM2",
+      "pitfall": "事后选 τ",
+      "why": "PH 违反时 HR 无意义，RMST 差仍有解释。"
+    },
+    {
+      "id": "multiple-imputation",
+      "label": "多重插补",
+      "when": "缺失 >5% 且 MAR 可信",
+      "assumptions": [
+        "插补模型包含结局与全部协变量"
+      ],
+      "tool": "R: mice；Python: sklearn IterativeImputer",
+      "pitfall": "只插补一次（单一插补低估方差）",
+      "why": "正确反映缺失带来的不确定性。"
+    },
+    {
+      "id": "sensitivity-analysis",
+      "label": "敏感性分析（E-value 等）",
+      "when": "观察性研究的混杂",
+      "assumptions": [
+        "未测混杂强度可参数化"
+      ],
+      "tool": "R: EValue",
+      "pitfall": "只做一种敏感性分析",
+      "why": "回答「要多大未测混杂才能推翻结论」。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "r",
+      "label": "R",
+      "kind": "stats",
+      "install": "https://cran.r-project.org",
+      "minimalScript": "library(survival); fit <- coxph(Surv(time, event) ~ arm + age, data = d); summary(fit)",
+      "alt": [
+        "Python statsmodels",
+        "Stata"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "stata",
+      "label": "Stata",
+      "kind": "stats",
+      "install": "商业授权",
+      "minimalScript": "stcox arm age, hr",
+      "alt": [
+        "R",
+        "Python"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "prism",
+      "label": "GraphPad Prism",
+      "kind": "stats+figure",
+      "install": "商业授权",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "R ggplot2",
+        "matplotlib"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "revman",
+      "label": "RevMan",
+      "kind": "meta",
+      "install": "Cochrane 免费",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "R metafor",
+        "Python"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "redcap",
+      "label": "REDCap",
+      "kind": "data-capture",
+      "install": "机构部署",
+      "minimalScript": "（Web 表单）",
+      "alt": [
+        "OpenClinica",
+        "Excel+校验脚本"
+      ],
+      "offline": false,
+      "license": "institutional"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "odds-ratio",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「主结局是事后改的吧？」",
+      "defense": "给预注册编号与日期，正文写明与预注册的差异并标为探索性"
+    },
+    {
+      "attack": "「样本量怎么来的？」",
+      "defense": "报事前功效分析：效应量来源、α、power、脱落率假设、最终 n"
+    },
+    {
+      "attack": "「失访这么多，结论还成立吗？」",
+      "defense": "CONSORT 流程图 + ITT/per-protocol 双分析 + 最差情况插补"
+    },
+    {
+      "attack": "「为什么不用安慰剂对照？」",
+      "defense": "说明伦理约束，并用活性对照 + 等效性检验（TOST）"
+    },
+    {
+      "attack": "「多重比较没校正」",
+      "defense": "区分主结局（不校正且声明）与次要/探索（Holm 或 FDR）"
+    },
+    {
+      "attack": "「这个效应有临床意义吗？」",
+      "defense": "对照 MCID 讨论，不只看 p 与统计显著性"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "RCT 每组样本量",
+      "topJournal": "≥100/组 或事件数≥100",
+      "field": "30–200/组",
+      "source": "NEJM/Lancet 实际发表分布；小样本 RCT 常被要求改为 pilot"
+    },
+    {
+      "metric": "CONSORT 条目完成度",
+      "topJournal": "25/25 项全覆盖",
+      "field": "18–22 项",
+      "source": "CONSORT 2010 checklist"
+    },
+    {
+      "metric": "失访率",
+      "topJournal": "<10%",
+      "field": "<20%",
+      "source": "Cochrane Handbook 对偏倚风险的阈值"
+    },
+    {
+      "metric": "主结局与预注册一致",
+      "topJournal": "100% 一致或明确声明偏离",
+      "field": "多数声明",
+      "source": "AllTrials / ICMJE 政策"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "入组与基线（表1）",
+      "主结局",
+      "次要结局",
+      "亚组（预设）",
+      "不良事件"
+    ],
+    "figureBudget": 5,
+    "note": "正文 Results 第一段永远是人群特征与流程图，不是主结果。审稿人先确认「这批人能不能代表目标人群」。Figure 1 = CONSORT 流程图。"
+  },
+  "reporting": [
+    "consort",
+    "prisma",
+    "strobe",
+    "arrive"
+  ],
+  "reportingExternal": []
+}

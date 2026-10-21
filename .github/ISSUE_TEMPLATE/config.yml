@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 先看文档
+    url: https://github.com/yzlin286-wq/Deepscient/blob/main/docs/README.md
+    about: 使用、技能、MCP、数据源、计费、阶段与门，两张包各自的 docs 都在这张索引里
+  - name: 已知边界与路线图
+    url: https://github.com/yzlin286-wq/Deepscient/blob/main/ROADMAP.md
+    about: 有些事是故意不做的（headless 不组合预设、界面无截图回归、只验证 Windows），先确认一下
+  - name: 变更记录
+    url: https://github.com/yzlin286-wq/Deepscient/blob/main/CHANGELOG.md
+    about: 你遇到的问题可能已经在新版本里修掉了

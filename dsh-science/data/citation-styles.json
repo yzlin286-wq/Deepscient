@@ -1,0 +1,274 @@
+{
+  "$meta": {
+    "schema": "citation-style/1",
+    "note": "微缩版 CSL：每种风格用模板串 + 作者规则描述，由 lib/science/format/cite.js 执行。模板里的空槽会连同相邻标点一起清掉，所以不写条件分支也能出正确标点。",
+    "slots": [
+      "authors",
+      "editors",
+      "title",
+      "titleQuoted",
+      "journal",
+      "container",
+      "year",
+      "volume",
+      "issue",
+      "pages",
+      "doi",
+      "url",
+      "publisher",
+      "label",
+      "note"
+    ],
+    "updatedAt": "2026-10-20",
+    "license": "本文件是自写的格式化规则描述（事实性规则），非 CSL XML 的翻译或改写；CSL 官方样式库为 CC BY-SA 3.0，未复制其内容。",
+    "scope": "只覆盖投稿阶段真实需要的 6 种风格。需要 10,000+ 期刊精确格式时另接 citeproc-js（CPAL/AGPL，本包不引入）。"
+  },
+  "styles": {
+    "gb-t-7714-2015": {
+      "kind": "numeric",
+      "family": "numeric-bracket",
+      "inText": {
+        "single": "[{n}]",
+        "multi": "[{n}]",
+        "separator": ",",
+        "range": "-",
+        "collapseAt": 3
+      },
+      "sort": "cited",
+      "authors": {
+        "max": 3,
+        "etAl": "等",
+        "etAlForeign": "et al.",
+        "separator": ", ",
+        "lastSeparator": ", ",
+        "initials": "none",
+        "nameOrder": "family-given",
+        "suffix": "."
+      },
+      "templates": {
+        "article-journal": "{authors} {title}{label}. {journal}, {year}, {volume}({issue}): {pages}.",
+        "book": "{authors} {title}{label}. {publisher}, {year}.",
+        "chapter": "{authors} {title}{label}. {container}, {year}: {pages}.",
+        "conference": "{authors} {title}{label}. {container}, {year}: {pages}.",
+        "thesis": "{authors} {title}{label}. {publisher}, {year}.",
+        "preprint": "{authors} {title}{label}. {journal}, {year}.",
+        "dataset": "{authors} {title}{label}. {publisher}, {year}.",
+        "software": "{authors} {title}{label}. {publisher}, {year}.",
+        "misc": "{authors} {title}{label}. {year}."
+      },
+      "typeLabels": {
+        "article-journal": "[J]",
+        "book": "[M]",
+        "chapter": "[M]",
+        "conference": "[C]",
+        "thesis": "[D]",
+        "preprint": "[J/OL]",
+        "dataset": "[DS/OL]",
+        "software": "[CP]",
+        "misc": "[Z]"
+      },
+      "label": "GB/T 7714-2015 顺序编码制（中文期刊）"
+    },
+    "apa-7": {
+      "kind": "author-date",
+      "family": "author-date-paren",
+      "inText": {
+        "single": "({authors}, {year})",
+        "narrative": "{authors} ({year})",
+        "two": "{a} & {b}",
+        "separator": "; ",
+        "etAl": "et al."
+      },
+      "sort": "alphabetical",
+      "authors": {
+        "max": 20,
+        "etAl": "et al.",
+        "separator": ", ",
+        "lastSeparator": ", & ",
+        "initials": "with-period",
+        "nameOrder": "family-given",
+        "suffix": "",
+        "lastSeparatorTwo": ", & "
+      },
+      "templates": {
+        "article-journal": "{authors} ({year}). {title}. {journal}, {volume}({issue}), {pages}. {doi}",
+        "book": "{authors} ({year}). {title}. {publisher}. {doi}",
+        "chapter": "{authors} ({year}). {title}. In {editors} (Eds.), {container} (pp. {pages}). {publisher}. {doi}",
+        "conference": "{authors} ({year}). {title}. In {container} (pp. {pages}). {publisher}. {doi}",
+        "thesis": "{authors} ({year}). {title} [Doctoral dissertation]. {publisher}. {url}",
+        "preprint": "{authors} ({year}). {title} [Preprint]. {journal}. {doi}",
+        "dataset": "{authors} ({year}). {title} [Data set]. {publisher}. {doi}",
+        "software": "{authors} ({year}). {title} [Computer software]. {publisher}. {url}",
+        "misc": "{authors} ({year}). {title}. {url}"
+      },
+      "typeLabels": {},
+      "label": "APA 7th（作者-年份）"
+    },
+    "vancouver": {
+      "kind": "numeric",
+      "family": "numeric-paren",
+      "inText": {
+        "single": "({n})",
+        "multi": "({n})",
+        "separator": ",",
+        "range": "-",
+        "collapseAt": 3
+      },
+      "sort": "cited",
+      "authors": {
+        "max": 6,
+        "etAl": "et al.",
+        "separator": ", ",
+        "lastSeparator": ", ",
+        "initials": "compact",
+        "nameOrder": "family-given",
+        "suffix": "."
+      },
+      "templates": {
+        "article-journal": "{authors} {title}. {journal}. {year};{volume}({issue}):{pages}.",
+        "book": "{authors} {title}. {publisher}; {year}.",
+        "chapter": "{authors} {title}. In: {editors}, editors. {container}. {publisher}; {year}. p. {pages}.",
+        "conference": "{authors} {title}. {container}; {year}; {publisher}. p. {pages}.",
+        "thesis": "{authors} {title} [dissertation]. {publisher}; {year}.",
+        "preprint": "{authors} {title}. {journal}. {year}. {doi}",
+        "dataset": "{authors} {title} [dataset]. {publisher}; {year}. {doi}",
+        "software": "{authors} {title} [software]. {publisher}; {year}. {url}",
+        "misc": "{authors} {title}. {year}. {url}"
+      },
+      "typeLabels": {},
+      "label": "Vancouver / NLM（生物医学）"
+    },
+    "nature": {
+      "kind": "numeric",
+      "family": "numeric-superscript",
+      "inText": {
+        "single": "{n}",
+        "multi": "{n}",
+        "separator": ",",
+        "range": "–",
+        "collapseAt": 3
+      },
+      "sort": "cited",
+      "authors": {
+        "max": 5,
+        "etAl": "et al.",
+        "separator": ", ",
+        "lastSeparator": " & ",
+        "initials": "with-period",
+        "nameOrder": "family-given",
+        "suffix": ".",
+        "etAlKeep": 1,
+        "etAlForeign": "et al."
+      },
+      "templates": {
+        "article-journal": "{authors} {title}. {journal} {volume}, {pages} ({year}).",
+        "book": "{authors} {title}. ({publisher}, {year}).",
+        "chapter": "{authors} {title}. In {container} {pages} ({publisher}, {year}).",
+        "conference": "{authors} {title}. {container} ({year}).",
+        "thesis": "{authors} {title}. PhD thesis, {publisher} ({year}).",
+        "preprint": "{authors} {title}. Preprint at {doi} ({year})",
+        "dataset": "{authors} {title}. {publisher} ({year}). {doi}",
+        "software": "{authors} {title}. {publisher} ({year}). {doi}",
+        "misc": "{authors} {title}. {journal} ({year})."
+      },
+      "typeLabels": {},
+      "label": "Nature / Science 上标数字（≤5 作者，et al.）"
+    },
+    "ieee": {
+      "kind": "numeric",
+      "family": "numeric-bracket",
+      "inText": {
+        "single": "[{n}]",
+        "multi": "[{n}]",
+        "separator": ", ",
+        "range": "–",
+        "collapseAt": 3
+      },
+      "sort": "cited",
+      "authors": {
+        "max": 6,
+        "etAl": "et al.",
+        "separator": ", ",
+        "lastSeparator": ", and ",
+        "initials": "with-period-before",
+        "nameOrder": "given-family",
+        "suffix": "",
+        "lastSeparatorTwo": " and "
+      },
+      "templates": {
+        "article-journal": "{authors}, \"{title},\" {journal}, vol. {volume}, no. {issue}, pp. {pages}, {year}.",
+        "book": "{authors}, {title}. {publisher}, {year}.",
+        "chapter": "{authors}, \"{title},\" in {container}. {publisher}, {year}, pp. {pages}.",
+        "conference": "{authors}, \"{title},\" in {container}, {year}, pp. {pages}.",
+        "thesis": "{authors}, \"{title},\" Ph.D. dissertation, {publisher}, {year}.",
+        "preprint": "{authors}, \"{title},\" {journal}, {year}, {doi}",
+        "dataset": "{authors}, \"{title},\" {publisher}, {year}. {doi}",
+        "software": "{authors}, \"{title},\" {publisher}, {year}. {url}",
+        "misc": "{authors}, \"{title},\" {year}."
+      },
+      "typeLabels": {},
+      "label": "IEEE（方括号数字，工程/计算机）"
+    },
+    "cell": {
+      "kind": "author-date",
+      "family": "author-date-paren",
+      "inText": {
+        "single": "({authors}, {year})",
+        "narrative": "{authors} ({year})",
+        "two": "{a} and {b}",
+        "separator": "; ",
+        "etAl": "et al."
+      },
+      "sort": "alphabetical",
+      "authors": {
+        "max": 10,
+        "etAl": "et al.",
+        "separator": ", ",
+        "lastSeparator": ", and ",
+        "initials": "with-period",
+        "nameOrder": "family-given",
+        "suffix": "",
+        "lastSeparatorTwo": ", and "
+      },
+      "templates": {
+        "article-journal": "{authors} ({year}). {title}. {journal} {volume}, {pages}.",
+        "book": "{authors} ({year}). {title}. {publisher}.",
+        "chapter": "{authors} ({year}). {title}. In {container}, {editors} (Eds.), pp. {pages}. {publisher}.",
+        "conference": "{authors} ({year}). {title}. In {container}, pp. {pages}.",
+        "thesis": "{authors} ({year}). {title}. PhD thesis, {publisher}.",
+        "preprint": "{authors} ({year}). {title}. {journal}. {doi}",
+        "dataset": "{authors} ({year}). {title}. {publisher}. {doi}",
+        "software": "{authors} ({year}). {title}. {publisher}. {url}",
+        "misc": "{authors} ({year}). {title}. {journal}."
+      },
+      "typeLabels": {},
+      "label": "Cell Press（作者-年份，et al. 在 3 位以上）"
+    }
+  },
+  "publisherDefault": {
+    "Springer Nature": "nature",
+    "Nature Portfolio": "nature",
+    "Cell Press": "cell",
+    "Elsevier": "apa-7",
+    "AAAS": "nature",
+    "PLOS": "vancouver",
+    "Wiley": "apa-7",
+    "APS": "nature",
+    "EMBO Press": "nature",
+    "NAS": "nature",
+    "eLife Sciences": "vancouver",
+    "NEJM Group": "vancouver",
+    "AMA": "vancouver",
+    "BMJ": "vancouver",
+    "ACS": "apa-7",
+    "Rockefeller UP": "vancouver",
+    "BMC": "vancouver",
+    "NeurIPS Foundation": "ieee",
+    "ICML": "ieee",
+    "JMLR": "ieee",
+    "PeerJ": "apa-7",
+    "F1000": "vancouver",
+    "Royal Society": "nature",
+    "SAGE / APS": "apa-7"
+  }
+}

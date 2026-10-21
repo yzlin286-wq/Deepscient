@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # 两个包都不引第三方依赖，所以这里只盯 GitHub Actions 的版本
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
+
+  # 万一以后加了依赖，两个包分开盯
+  - package-ecosystem: npm
+    directory: /deepscient
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: deps
+    labels:
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: /dsh-science
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: deps
+    labels:
+      - dependencies

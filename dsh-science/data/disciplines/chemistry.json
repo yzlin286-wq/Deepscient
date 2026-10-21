@@ -1,0 +1,632 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "chemistry",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "chemistry",
+  "label": "化学（合成 / 方法学 / 表征）",
+  "questionTypes": [
+    {
+      "id": "route-viability",
+      "label": "目标分子能否被合成出来",
+      "when": "有新骨架、天然产物或候选药物需要克级供给",
+      "needs": [
+        "逆合成分析与备选路线",
+        "关键中间体的可表征性",
+        "末段收率与纯度达标",
+        "每步可放大性判断"
+      ]
+    },
+    {
+      "id": "method-scope",
+      "label": "新方法能覆盖多宽的底物范围",
+      "when": "开发了新催化/新试剂/新反应条件",
+      "needs": [
+        "底物选择覆盖电子与位阻两维",
+        "分离收率而非转化率",
+        "与已知最佳方法的对照",
+        "失败底物的诚实列出"
+      ]
+    },
+    {
+      "id": "selectivity",
+      "label": "选择性（ chemo/regio/sterero ）如何",
+      "when": "产物存在多个可能异构体",
+      "needs": [
+        "异构体比例的独立测定（HPLC/NMR）",
+        "ee/dr 的手性方法",
+        "选择性来源的机理或模型"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "label": "机理是什么",
+      "when": "要解释选择性或改进条件",
+      "needs": [
+        "动力学级数或 KIE",
+        "中间体捕获或谱学证据",
+        "计算支持的过渡态",
+        "排除性对照实验"
+      ]
+    },
+    {
+      "id": "purity-identity",
+      "label": "这个化合物到底是什么、有多纯",
+      "when": "任何新化合物报告",
+      "needs": [
+        "NMR 全谱（¹H/¹³C，必要时 2D）",
+        "HRMS 精确质量",
+        "独立纯度证明（HPLC 或 qNMR）",
+        "关键中间体的单晶或等效证据"
+      ]
+    },
+    {
+      "id": "scale-reproducibility",
+      "label": "能否在另一双手里重复并放大",
+      "when": "投稿或技术转移",
+      "needs": [
+        "试剂来源与批号",
+        "温度/时间/搅拌的量化描述",
+        "至少两批独立重复的收率区间",
+        "放大后的传热与混合记录"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "total-synthesis",
+      "label": "目标分子全合成（路线设计）",
+      "when": "复杂天然产物、药物候选物或新骨架需要从头构建",
+      "requires": [
+        "逆合成拆解与备选路线（至少一条 backup）",
+        "关键中间体的完整表征",
+        "每步分离收率与纯度",
+        "末段克级或 ≥50 mg 交付量"
+      ],
+      "nRule": "每个中间体 ≥20 mg 以便完整表征（¹H/¹³C/HRMS）；末产物 ≥5 mg 且 HPLC 纯度 ≥95%；单步条件优化至少 2 个变量×3 水平=6 组实验；关键步骤重复 ≥2 次，收率极差 ≤10%（相对）",
+      "threats": [
+        {
+          "risk": "只有一条路线，某步在他人手里不成立就全盘崩塌",
+          "mitigation": "给出 ≥1 条备选路线到关键中间体，并说明分叉点的收率代价"
+        },
+        {
+          "risk": "中间体未经纯化直接投下一步，误差沿路线累积",
+          "mitigation": "报每步的纯化方式与纯度判定（NMR 纯度或 HPLC area-%），不纯的中间体明确说明"
+        },
+        {
+          "risk": "末段收率靠「一锅法」堆出来但产物实为混合物",
+          "mitigation": "末产物给两种独立纯度证明（HPLC + qNMR），并附关键杂质峰归属"
+        },
+        {
+          "risk": "选择性来源未被验证，非对映体被当作单一化合物报出",
+          "mitigation": "报 dr/ee 的测定方法与谱图，关键手性中心用单晶或 NOE 确证"
+        }
+      ],
+      "reporting": [],
+      "why": "全合成的说服力来自「每一步都能被另一双手重复」，而不是最终产物的谱图好看。",
+      "source": "Nicolaou & Sorensen 1996, Classics in Total Synthesis (Wiley-VCH), 导论与各章实验设计评述"
+    },
+    {
+      "id": "methodology-scope",
+      "label": "方法学开发与底物拓展",
+      "when": "提出新的催化体系、试剂或反应条件，需要证明普适性",
+      "requires": [
+        "最优条件的多变量优化（温度/溶剂/配体/当量）",
+        "底物矩阵覆盖电子效应与位阻",
+        "与已知方法的头对头比较",
+        "失败底物与局限的明确交代"
+      ],
+      "nRule": "底物拓展 ≥15–25 个，覆盖 Hammett σ 从 −0.3 到 +0.8 与邻/间/对位三类取代；每个产物报分离收率（isolated yield），重复 ≥2 次且极差 ≤10%；催化剂负载报 0.5–10 mol% 区间；至少 1 个克级（≥1 mmol）验证",
+      "threats": [
+        {
+          "risk": "底物矩阵偏向给电子芳基，缺电子与杂芳环缺席",
+          "mitigation": "按 Hammett σ 分层选底物并在表中标注 σ 值，明确列出失败的缺电子底物"
+        },
+        {
+          "risk": "只报 NMR 转化率，粗品纯度未测",
+          "mitigation": "一律报分离收率 + 纯度，转化率放 SI 作为过程数据"
+        },
+        {
+          "risk": "最优条件是对单一模型底物过拟合的",
+          "mitigation": "在 3 个结构差异大的底物上验证同一条件，报收率分布而非最好值"
+        },
+        {
+          "risk": "与文献方法比较时条件不对等（当量、温度、时间不同）",
+          "mitigation": "做头对头实验：同批试剂、同规模、同分析方式复现对照方法并报结果"
+        }
+      ],
+      "reporting": [],
+      "why": "方法学的价值等于底物范围的宽度乘以条件的稳健性；两者都必须用同一套实验证据兑现。",
+      "source": "Blakemore et al. 2018, Nature Chemistry 10:383–394（Organic synthesis provides opportunities to transform drug discovery）"
+    },
+    {
+      "id": "catalysis-controls",
+      "label": "催化反应与对照实验体系",
+      "when": "声称某金属/有机催化剂是必要的，或声称非均相/均相本质",
+      "requires": [
+        "无催化剂、无配体、无添加剂的分项对照",
+        "催化剂来源与纯度（金属痕量分析）",
+        "中毒实验（Hg 或 CS₂）判定均相/非均相",
+        "转化率-时间曲线而非单点"
+      ],
+      "nRule": "至少 4 组对照（无催化剂 / 无配体 / 仅金属盐 / 仅配体）逐一报收率；Hg(0) 中毒实验 ≥100 当量并搅拌 ≥12 h；动力学曲线 ≥5 个时间点，初速率取转化率 <20% 区间线性拟合 R²>0.99",
+      "threats": [
+        {
+          "risk": "商业金属盐中的痕量杂质才是真催化剂",
+          "mitigation": "报金属盐批号与 ICP-MS 痕量分析，用最高纯度批次复算，并做无金属对照"
+        },
+        {
+          "risk": "配体其实不参与，只是改善了溶解性",
+          "mitigation": "报无配体对照的收率，并给配体结构-效果梯度（≥3 个配体）"
+        },
+        {
+          "risk": "单点收率掩盖了反应早已停止（催化剂失活）",
+          "mitigation": "给转化率-时间曲线与 TOF 初速率，报催化剂在反应中段的活性"
+        },
+        {
+          "risk": "均相/非均相归属错误导致「可回收」结论不成立",
+          "mitigation": "Hg 中毒 + 热过滤实验 + 滤液再反应三件套，并报多次循环后的金属流失（ICP-MS）"
+        }
+      ],
+      "reporting": [],
+      "why": "催化领域的多数争议不是活性高低，而是「到底谁在催化」。对照实验是唯一能回答这个问题的证据。",
+      "source": "Simmons & Hartwig 2012, Angew. Chem. Int. Ed. 51:3066–3072（On the Interpretation of Deuterium Kinetic Isotope Effects in C–H Functionalization）"
+    },
+    {
+      "id": "mechanistic-kinetics",
+      "label": "机理研究（动力学 / KIE / 自由基钟）",
+      "when": "需要解释选择性来源或指导条件改进",
+      "requires": [
+        "初速率法的级数测定",
+        "KIE（分子间竞争或平行实验）",
+        "自由基钟或捕获实验",
+        "计算（DFT）过渡态与实验能垒一致性检查"
+      ],
+      "nRule": "级数测定 ≥5 个底物浓度点，log(初速率) vs log[底物] 斜率 ±0.1 判定整数级；Eyring 分析 ≥4 个温度（间隔 10 K，范围 ≥30 K）；KIE 报 kH/kD 与测定方式，误差 ≤±10%；DFT 用 ≥2 个泛函验证能垒排序不变",
+      "threats": [
+        {
+          "risk": "用终点收率代替初速率，级数被产物抑制污染",
+          "mitigation": "只在转化率 <20% 区间测速率，并报产物添加实验"
+        },
+        {
+          "risk": "KIE 数值被当作机理判据却没有区分分子内/分子间",
+          "mitigation": "明确 KIE 类型（intramolecular competition vs independent），并报平行实验的 kH/kD 两值"
+        },
+        {
+          "risk": "DFT 能垒与实验活化能不可比（气相 vs 溶液、未做零点校正）",
+          "mitigation": "报泛函、基组、溶剂模型（SMD/PCM）、色散校正与频率校正，只比较相对趋势不比较绝对值"
+        },
+        {
+          "risk": "自由基钟的产物归属错误（重排产物被当副产物忽略）",
+          "mitigation": "报全部产物的结构与比例，用独立合成的标准品比对保留时间"
+        }
+      ],
+      "reporting": [],
+      "why": "机理论证的目标不是「有一个合理故事」，而是「排除了其他故事」。对照与动力学是排除工具。",
+      "source": "Hammett 1937, J. Am. Chem. Soc. 59:96–103（The Effect of Structure upon the Reactions of Organic Compounds）"
+    },
+    {
+      "id": "scale-up-process",
+      "label": "放大与工艺重现",
+      "when": "从毫克级走向克级/公斤级，或做技术转移",
+      "requires": [
+        "规模 ≥10× 小试且 ≥1 mmol",
+        "传热与混合参数记录（内温、搅拌转速、加料速率）",
+        "≥3 批的收率与纯度分布",
+        "杂质谱与关键工艺参数（CPP）识别"
+      ],
+      "nRule": "放大 ≥10 倍且 ≥1 mmol；收率相对小试下降 ≤10 个百分点；内温与外温差 ≤5 °C（放热反应必须报）；≥3 批数据给出均值±SD，批间纯度极差 ≤2%（HPLC area-%）",
+      "threats": [
+        {
+          "risk": "放大后传热不足导致局部过热、选择性崩塌",
+          "mitigation": "报内温曲线与加料速率，做慢加料对照，必要时改用流动化学"
+        },
+        {
+          "risk": "搅拌效率变化使非均相反应速率不可比",
+          "mitigation": "报搅拌方式（机械/磁力）、转速与雷诺数估计，或固定单位体积功率"
+        },
+        {
+          "risk": "只报最好一批的收率",
+          "mitigation": "报全部批次的收率与纯度，给出分布与失败批次的原因"
+        },
+        {
+          "risk": "杂质在放大后超标但未鉴定",
+          "mitigation": "报杂质谱（HPLC 全图）与主要杂质结构归属，给出去除步骤"
+        }
+      ],
+      "reporting": [],
+      "why": "放大是化学从「能做出来」到「能稳定做出来」的分界线，工艺参数的量化记录是唯一可转移的知识。",
+      "source": "ICH Q11 (2011), Development and Manufacture of Drug Substances（工艺参数与关键质量属性的界定要求）"
+    },
+    {
+      "id": "structure-elucidation",
+      "label": "结构确证（NMR / HRMS / 单晶）",
+      "when": "新化合物、天然产物、或绝对构型存疑",
+      "requires": [
+        "一维 + 关键二维谱（HSQC/HMBC/COSY/NOESY）",
+        "HRMS 与理论同位素分布比对",
+        "单晶 XRD 或等效的构型证据",
+        "谱图原始数据（FID）与处理参数"
+      ],
+      "nRule": "¹H 与 ¹³C 全归属；HRMS 误差 ≤5 ppm（<5 ppm 为佳）；单晶 R1<0.05（I>2σ）、数据完整度 >99%、Flack/Hooft 参数报出以定绝对构型；无单晶时用 ≥2 种独立方法（NOE + CD 计算 + 化学关联）交叉确证",
+      "threats": [
+        {
+          "risk": "¹³C 峰数少于碳数（对称性或重叠）被当作结构证据",
+          "mitigation": "报峰数并解释对称性，必要时用定量 ¹³C 或 DEPT 补证"
+        },
+        {
+          "risk": "HRMS 只给计算值不给实测值与误差",
+          "mitigation": "报实测 m/z、理论 m/z、误差 ppm 与同位素分布图"
+        },
+        {
+          "risk": "绝对构型靠旋光符号推断（不可靠）",
+          "mitigation": "用单晶 Flack/Hooft、或实测 vs 计算的 ECD/旋光双证，并说明计算级别"
+        },
+        {
+          "risk": "谱图处理参数（窗函数、基线校正）掩盖杂质峰",
+          "mitigation": "SI 附原始 FID 与处理参数，报未做基线校正的全谱"
+        }
+      ],
+      "reporting": [],
+      "why": "结构错了，后面所有收率与选择性讨论都是零；确证必须用相互独立的方法，而不是同一种方法的不同参数。",
+      "source": "Sheldrick 2015, Acta Crystallographica C71:3–8（Crystal structure refinement with SHELXL）"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "isolated-yield",
+      "label": "分离收率",
+      "unit": "%（摩尔收率）",
+      "how": "柱层析或重结晶后称重，按限量试剂算摩尔收率，报纯化方式与纯度依据",
+      "precision": "称量 ±0.1 mg 与转移损失使小规模（<20 mg）误差可达 ±5%",
+      "artifact": "残余溶剂使重量偏高；共洗脱杂质使纯度与收率同时虚高",
+      "calibration": "分析天平定期校准 + 用 qNMR 或 HPLC 纯度折算有效收率"
+    },
+    {
+      "id": "purity",
+      "label": "纯度（HPLC area-% / qNMR）",
+      "unit": "%",
+      "how": "HPLC 用外标或面积归一化并报波长与梯度；qNMR 用已知纯度内标（如马来酸、对苯二甲酸二甲酯）",
+      "precision": "HPLC area-% 对无紫外吸收杂质不敏感（可差 5–10%）；qNMR 精度约 ±1%",
+      "artifact": "面积归一化忽略响应因子差异与不吸收杂质",
+      "calibration": "用标准品做响应因子校正；qNMR 报内标称量与弛豫延迟（≥5×T1）"
+    },
+    {
+      "id": "hrms",
+      "label": "高分辨质谱精确质量",
+      "unit": "m/z 与 ppm 误差",
+      "how": "ESI/APCI 正负离子双模式，报加合物形式（[M+H]⁺/[M+Na]⁺）与理论同位素分布比对",
+      "precision": "误差 ≤5 ppm 为合格，<2 ppm 为佳",
+      "artifact": "加合物归属错误、背景峰干扰、校准漂移",
+      "calibration": "每次进样前用调谐液（如 PPG/甲酸钠簇）双点校准"
+    },
+    {
+      "id": "ee-dr",
+      "label": "对映/非对映过量（ee / dr）",
+      "unit": "%",
+      "how": "手性 HPLC 或 SFC，报手性柱型号、流动相、流速、检测波长与保留时间；dr 由 ¹H NMR 积分或 GC 测定",
+      "precision": "ee 测定精度约 ±0.5%（积分与基线影响）；>99% 时接近方法极限",
+      "artifact": "外消旋对照缺失导致峰归属可疑；柱过载压缩分离度",
+      "calibration": "进样已知 ee 的标准品建立校正曲线，并进外消旋样品确认两峰分离度 ≥1.5"
+    },
+    {
+      "id": "nmr-shift",
+      "label": "NMR 化学位移与耦合常数",
+      "unit": "ppm / Hz",
+      "how": "报溶剂与内标（TMS 或残余溶剂峰），¹H、¹³C 全归属，关键耦合报 J 值与裂分模式",
+      "precision": "化学位移 ±0.01 ppm（¹H）、±0.1 ppm（¹³C）；J 值 ±0.5 Hz",
+      "artifact": "溶剂峰压制伪影、二阶耦合误判、样品浓度导致位移漂移",
+      "calibration": "每次实验用残余溶剂峰锁场定标；报温度（298 K）"
+    },
+    {
+      "id": "turnover",
+      "label": "转换数 TON 与转换频率 TOF",
+      "unit": "无量纲 / h⁻¹",
+      "how": "TON = 产物摩尔数 / 催化剂摩尔数；TOF 取转化率 <20% 区间的初速率除以催化剂量",
+      "precision": "受催化剂称量误差（<1 mg 时可达 ±10%）与时间点采样密度限制",
+      "artifact": "以终点收率算 TOF 严重低估初活性；催化剂实际浓度因溶解性不足而不明",
+      "calibration": "用 ICP-MS 或 ¹H NMR 定量催化剂实际投入量，报溶解性检查"
+    }
+  ],
+  "methods": [
+    {
+      "id": "air-free-technique",
+      "label": "无水无氧操作（Schlenk / 手套箱）",
+      "when": "对水氧敏感的试剂、有机金属中间体、低价金属催化",
+      "assumptions": [
+        "溶剂经严格干燥（水分 <50 ppm）",
+        "气氛置换充分（≥3 次循环）"
+      ],
+      "tool": "Schlenk line / 手套箱（H₂O、O₂ <1 ppm）",
+      "pitfall": "用「无水」溶剂但未测水分；注射器取样时引入空气",
+      "why": "水氧敏感反应的收率不可重复，九成源于操作气氛而不是条件本身。"
+    },
+    {
+      "id": "chromatography",
+      "label": "柱层析纯化与收率判定",
+      "when": "任何需要分离收率的产物",
+      "assumptions": [
+        "固定相与洗脱梯度已固定",
+        "产物在洗脱序列中归属明确"
+      ],
+      "tool": "硅胶/氧化铝柱、Biotage 或 Combiflash 自动纯化",
+      "pitfall": "梯度随手改导致收率不可比；不报洗脱剂比例使他人无法重复",
+      "why": "分离收率是方法学论文的硬通货，纯化条件必须写到可复现。"
+    },
+    {
+      "id": "qnmr",
+      "label": "定量 NMR（qNMR）",
+      "when": "需要独立于色谱的纯度证明",
+      "assumptions": [
+        "内标纯度已知且不挥发",
+        "弛豫延迟 ≥5×T1",
+        "基线平整、积分区间完整"
+      ],
+      "tool": "Bruker TopSpin / MestReNova，内标马来酸或 DMT",
+      "pitfall": "弛豫延迟太短使积分失真；内标称量误差直接传到结果",
+      "why": "qNMR 不依赖响应因子，是与 HPLC 正交的第二种纯度证明。"
+    },
+    {
+      "id": "chiral-analysis",
+      "label": "手性 HPLC / SFC 测 ee",
+      "when": "不对称催化或手性产物",
+      "assumptions": [
+        "两对映体在所选柱上基线分离（Rs≥1.5）",
+        "检测器在两峰响应一致"
+      ],
+      "tool": "Daicel Chiralpak/Chiralcel 柱 + HPLC/SFC",
+      "pitfall": "不跑外消旋对照就断言峰归属；柱过载导致峰合并",
+      "why": "ee 是选择性主张的唯一量化证据，没有外消旋对照的 ee 不可信。"
+    },
+    {
+      "id": "single-crystal-xrd",
+      "label": "单晶 X 射线衍射解析",
+      "when": "需要确定连接方式或绝对构型",
+      "assumptions": [
+        "晶体质量足以给出 I/σ>2 的衍射点",
+        "吸收校正与孪晶处理正确"
+      ],
+      "tool": "Bruker APEX / Rigaku Oxford，SHELXL + Olex2",
+      "pitfall": "只报 R1 不报 Flack/Hooft 就宣称绝对构型；轻原子（H）位置被过度解读",
+      "why": "单晶是连接性与构型的最强单点证据，其余谱学方法都要向它对齐。"
+    },
+    {
+      "id": "kinetics-initial-rate",
+      "label": "初速率动力学与 Eyring 分析",
+      "when": "机理论证、级数测定、比较催化剂活性",
+      "assumptions": [
+        "转化率 <20% 区间内速率恒定",
+        "无产物抑制与催化剂失活"
+      ],
+      "tool": "原位 IR/UV 或定时取样 GC/HPLC，拟合脚本（Python/R）",
+      "pitfall": "用终点收率算速率；不报温度控制精度（±0.5 °C）",
+      "why": "级数与活化能是机理论证中唯一可被独立检验的定量约束。"
+    },
+    {
+      "id": "dft-mechanism",
+      "label": "DFT 计算支持机理",
+      "when": "过渡态能垒、选择性起源、谱学指认",
+      "assumptions": [
+        "泛函/基组对体系适用（如 M06-2X/def2-TZVP）",
+        "溶剂模型（SMD）与实验介质匹配",
+        "构象采样充分"
+      ],
+      "tool": "Gaussian 16 / ORCA 5",
+      "pitfall": "只算一条路径不给竞争路径；频率分析缺失（无法确认过渡态）；自由能未做低频校正",
+      "why": "计算的作用是排除竞争路径，必须把「不发生的路径」的能垒也算出来。"
+    },
+    {
+      "id": "hammett-analysis",
+      "label": "Hammett / 线性自由能分析",
+      "when": "取代基效应定量化、判断电荷发展",
+      "assumptions": [
+        "同一位点取代、机理不变",
+        "σ 常数选取与反应类型匹配（σ⁺/σ⁻）"
+      ],
+      "tool": "Excel/Python 线性回归 + σ 常数表",
+      "pitfall": "混用 σ 与 σ⁺ 使 ρ 值失去意义；数据点 <4 个就报线性",
+      "why": "Hammett ρ 是把「电子效应」从定性描述变成可比较数字的最简工具。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "chemdraw",
+      "label": "ChemDraw",
+      "kind": "structure-drawing",
+      "install": "商业授权（Revvity Signals）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "MarvinSketch",
+        "RDKit 生成 2D 图"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "mestrenova",
+      "label": "MestReNova",
+      "kind": "nmr-processing",
+      "install": "商业授权（Mestrelab）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "TopSpin",
+        "nmrglue"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "rdkit",
+      "label": "RDKit",
+      "kind": "cheminformatics",
+      "install": "conda install -c conda-forge rdkit",
+      "minimalScript": "python -c \"from rdkit import Chem; from rdkit.Chem import Descriptors; m=Chem.MolFromSmiles('CC(=O)Oc1ccccc1C(=O)O'); print(Descriptors.MolWt(m), Chem.rdMolDescriptors.CalcMolFormula(m))\"",
+      "alt": [
+        "Open Babel",
+        "CDK"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "gaussian",
+      "label": "Gaussian 16",
+      "kind": "dft",
+      "install": "商业授权（Gaussian Inc.）",
+      "minimalScript": "g16 opt_freq.inp opt_freq.log",
+      "alt": [
+        "ORCA",
+        "Q-Chem",
+        "Psi4"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "orca",
+      "label": "ORCA 5",
+      "kind": "dft",
+      "install": "https://www.faccts.de/orca/（学术免费）",
+      "minimalScript": "orca ts_opt.inp > ts_opt.out",
+      "alt": [
+        "Gaussian",
+        "Psi4"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "olex2",
+      "label": "Olex2 + SHELXL",
+      "kind": "crystallography",
+      "install": "https://www.olexsys.org/olex2/（免费）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "PLATON",
+        "WinGX",
+        "SHELXTL"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "aizynthfinder",
+      "label": "AiZynthFinder",
+      "kind": "retrosynthesis",
+      "install": "pip install aizynthfinder && download_public_data .",
+      "minimalScript": "aizynthcli --smiles \"CC(=O)Oc1ccccc1C(=O)O\" --config config.yml --output out.json",
+      "alt": [
+        "ChemPlanner",
+        "手工逆合成"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "nmrglue",
+      "label": "nmrglue",
+      "kind": "nmr-processing",
+      "install": "pip install nmrglue",
+      "minimalScript": "python -c \"import nmrglue as ng; dic, data = ng.bruker.read('1/'); print(data.shape, dic['acqus']['TD'])\"",
+      "alt": [
+        "MestReNova",
+        "TopSpin"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "holm",
+    "effect": "cohen-d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「92% 这个数字是分离收率还是 NMR 转化率？粗品纯度多少？」",
+      "defense": "表格里一律标 isolated yield，附纯化方式与纯度（HPLC 或 qNMR），转化率只放 SI 作为过程数据"
+    },
+    {
+      "attack": "「底物表里全是给电子芳基和一级烷基，缺电子芳基为什么一个都没有？」",
+      "defense": "补做缺电子/杂芳基底物并标注 Hammett σ，失败的底物单列一行「未反应/分解」而不是删掉"
+    },
+    {
+      "attack": "「这个化合物的 HRMS 只有计算值，实测值和误差呢？」",
+      "defense": "每个新化合物给实测 m/z、理论 m/z、误差 ppm 与加合物归属，并附同位素分布比对图"
+    },
+    {
+      "attack": "「你没有做无催化剂对照，我怀疑是商业金属盐里的痕量 Pd 在催化。」",
+      "defense": "补无催化剂/无配体/仅金属盐三组对照，报金属盐批号与 ICP-MS 痕量分析，并做 Hg(0) 中毒实验"
+    },
+    {
+      "attack": "「ee 是 96% 还是 96% de？手性柱谱图和外消旋对照在 SI 哪里？」",
+      "defense": "报手性柱型号/流动相/流速/保留时间、两峰分离度、外消旋对照谱图，并明确写 ee 而非 de"
+    },
+    {
+      "attack": "「放大到 5 g 收率掉了 30%，你正文里的条件根本不可放大。」",
+      "defense": "报放大批次的收率分布与内温曲线，说明传热/加料速率限制，并给出修正条件后的复现结果"
+    },
+    {
+      "attack": "「SI 里这几张 ¹³C 谱信噪比太差，峰数也不够，这个结构我不信。」",
+      "defense": "重测 ¹³C（延长扫描或提高浓度），报峰数与对称性解释，关键节点补 HSQC/HMBC 与单晶"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "新化合物表征完整度",
+      "topJournal": "每个新化合物：¹H、¹³C、HRMS、mp/IR、纯度证明；关键中间体另给单晶或 2D NMR",
+      "field": "缺 IR 或 mp，或只给部分 ¹³C 峰",
+      "source": "ACS Guide to Scholarly Communication (2020), Analytical Data 部分；J. Org. Chem. 与 Org. Lett. 实验部分格式要求"
+    },
+    {
+      "metric": "纯度证明数量（two independent proofs）",
+      "topJournal": "≥2 种正交方法（如 HPLC + qNMR），且报方法与参数",
+      "field": "单一 HPLC area-%",
+      "source": "ICH Q2(R2) (2023), Validation of Analytical Procedures；USP <621> 色谱系统适用性"
+    },
+    {
+      "metric": "底物拓展规模与覆盖",
+      "topJournal": "20–40 个底物，含缺电子/杂芳基/位阻底物，并列出失败案例",
+      "field": "10–15 个，多为给电子底物",
+      "source": "Blakemore et al. 2018, Nature Chemistry 10:383–394；Org. Lett. 方法学论文的实际发表分布"
+    },
+    {
+      "metric": "收率重现性",
+      "topJournal": "≥2 次独立重复，报收率区间或均值±SD，克级验证 ≥1 mmol",
+      "field": "单次收率单点报告",
+      "source": "Bergman & Danheiser 2016, Angew. Chem. Int. Ed. 55:12550（Reproducibility in Chemical Research）"
+    },
+    {
+      "metric": "HRMS 质量精度",
+      "topJournal": "误差 ≤2–5 ppm，报加合物与同位素分布",
+      "field": "≤10 ppm 或仅给理论值",
+      "source": "Gross 2017, Mass Spectrometry: A Textbook, 3rd ed. (Springer), 高分辨质量准确度章节"
+    },
+    {
+      "metric": "催化对照实验组数",
+      "topJournal": "≥4 组对照 + 中毒/热过滤 + 转化率-时间曲线",
+      "field": "仅 1 组无催化剂对照",
+      "source": "Simmons & Hartwig 2012, Angew. Chem. Int. Ed. 51:3066–3072；Hagen 2015, Industrial Catalysis: A Practical Approach, 3rd ed. (Wiley-VCH), 催化剂失活与中毒章节"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "条件优化（含对照与失败条件）",
+      "底物范围（按电子效应分组，标注 σ）",
+      "克级放大与衍生化",
+      "选择性与机理证据（KIE/动力学/计算）",
+      "产物表征汇总（指向 SI）"
+    ],
+    "figureBudget": 4,
+    "note": "Table 1 是条件优化表，必须包含至少一行「无催化剂」和一列失败条件；Figure 1 是底物范围，按 Hammett σ 从小到大排，读者一眼能看出覆盖宽度。机理图放最后，且每条箭头都要对应 SI 里的一个实验编号。"
+  },
+  "reporting": [],
+  "reportingExternal": [
+    "ich-q11",
+    "ich-q2",
+    "iupac-nomenclature",
+    "si-standard"
+  ]
+}

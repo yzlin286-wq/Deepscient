@@ -1,0 +1,675 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "materials",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "materials",
+  "label": "材料科学（合成 / 表征 / 器件）",
+  "questionTypes": [
+    {
+      "id": "structure-property",
+      "label": "结构如何决定性能",
+      "when": "有一系列成分/相组成不同的样品与对应性能数据",
+      "needs": [
+        "结构与成分的独立表征",
+        "成分梯度的连续变化（而非两个点）",
+        "性能测试条件一致",
+        "排除形貌/尺寸等共变量"
+      ]
+    },
+    {
+      "id": "process-optimization",
+      "label": "工艺参数如何影响产物",
+      "when": "温度/时间/前驱体/气氛等参数可调",
+      "needs": [
+        "参数空间的系统扫描",
+        "每点至少 3 个独立样品",
+        "产物的批次间方差",
+        "机理性解释（成核/生长/扩散）"
+      ]
+    },
+    {
+      "id": "device-performance",
+      "label": "器件性能达到什么水平",
+      "when": "有可测量的器件或原型",
+      "needs": [
+        "符合标准的测试条件（IEC/ASTM）",
+        "有效面积与掩膜定义",
+        "≥3 个独立器件的分布",
+        "与基准材料的同批对照"
+      ]
+    },
+    {
+      "id": "stability",
+      "label": "能不能用得住",
+      "when": "材料或器件要在环境下长期工作",
+      "needs": [
+        "加速老化协议（ISOS/IEC）",
+        "温度/湿度/光照/偏压分别可控",
+        "衰减曲线的拟合与寿命外推",
+        "失效模式的后表征"
+      ]
+    },
+    {
+      "id": "simulation-agreement",
+      "label": "计算与实验是否一致",
+      "when": "有 DFT/MD 预测需要实验验证",
+      "needs": [
+        "收敛性测试（截断能/k 点/超胞）",
+        "同一物理量的可比定义",
+        "实验误差棒的显式比较",
+        "不一致时的归因分析"
+      ]
+    },
+    {
+      "id": "scale-batch",
+      "label": "能否稳定批量生产",
+      "when": "从实验室克级走向批量",
+      "needs": [
+        "≥3 批独立合成",
+        "批间关键指标（比表面/粒径/性能）的 CV",
+        "放大设备的传热传质差异",
+        "在线或快速质检方法"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "synthesis-batch-series",
+      "label": "合成与批次系列（成分/工艺梯度）",
+      "when": "需要建立工艺-结构-性能的映射关系",
+      "requires": [
+        "前驱体来源与批号记录",
+        "关键工艺参数（温度曲线、气氛流量、升温速率）量化",
+        "≥3 个独立批次的重复",
+        "每批的产率与关键指标"
+      ],
+      "nRule": "≥3 个独立批次，每批 ≥3 个样品（合计 n≥9）；成分梯度 ≥5 个配比点；批间关键指标（比表面积、粒径、性能）报均值±SD 与 CV，CV>15% 视为工艺未受控必须归因；升温速率报 ±1 °C/min 精度",
+      "threats": [
+        {
+          "risk": "所谓「批次」其实是同一次合成的不同取样",
+          "mitigation": "明确定义独立批次（不同日期、不同前驱体开封、独立称量），报批号与日期"
+        },
+        {
+          "risk": "只看最优样品，忽略分布尾部",
+          "mitigation": "报全部样品的散点图与分布，不只报最好值与均值"
+        },
+        {
+          "risk": "成分梯度的同时改变了形貌与厚度，性能差异归因错误",
+          "mitigation": "固定其他变量做单因素扫描，并用 BET/TEM 确认形貌未变"
+        },
+        {
+          "risk": "炉温不均匀导致同批内位置效应",
+          "mitigation": "报样品在炉内的位置，做位置对照（同一位置的重复样品）"
+        }
+      ],
+      "reporting": [],
+      "why": "材料学的核心不确定性来自批次而不是测量；不报批间方差，任何「优化」都可能只是抽样噪声。",
+      "source": "Kovalenko et al. 2015, ACS Nano 9:1012–1057（Prospects of nanoscience with nanocrystals：合成可重复性与报告规范）"
+    },
+    {
+      "id": "characterization-chain",
+      "label": "表征链交叉验证（XRD / SEM / TEM / XPS / BET）",
+      "when": "需要确证物相、形貌、表面化学与孔隙结构",
+      "requires": [
+        "每个结论至少两种独立技术互证",
+        "仪器型号、参数与标样校准",
+        "原始数据（全谱/全图）而非裁剪图",
+        "定量指标（晶格常数、粒径分布、元素比）"
+      ],
+      "nRule": "物相结论需 XRD 全谱（2θ 范围 ≥10–80°、步长 ≤0.02°）+ 至少一种互补技术（TEM 选区衍射/Raman/XPS）；粒径统计 ≥200 个颗粒；XPS 报 ≥3 个点的同批样品以确认代表性；BET 取 P/P₀=0.05–0.30 区间且 C 常数落在 50–300",
+      "threats": [
+        {
+          "risk": "SEM 图只挑好看的一处，不代表整体",
+          "mitigation": "报低倍全貌 + 高倍细节，给 ≥3 个不同视场，并报粒径分布统计"
+        },
+        {
+          "risk": "XRD 只报主峰，杂质相被裁掉",
+          "mitigation": "报全谱并标注所有可见峰与可能的杂质相，检出限以下的说明检测能力"
+        },
+        {
+          "risk": "XPS 荷电校正随意（用 C 1s 284.8 eV 一律校正）",
+          "mitigation": "报校正依据（Au 4f₇/₂ 84.0 eV 或 adventitious C 的不确定性说明），给未校正原始结合能"
+        },
+        {
+          "risk": "TEM 的「晶格条纹」被过度解读为特定相",
+          "mitigation": "用 FFT/选区衍射标定 d 值并与 XRD 数据库比对，报多个晶粒的统计而非单张图"
+        }
+      ],
+      "reporting": [],
+      "why": "单一技术总有伪影（XRD 对非晶不敏感、XPS 只看表面 10 nm、TEM 视场极小），交叉验证是唯一能收敛结论的方式。",
+      "source": "Mourdikoudis et al. 2018, Nanoscale 10:12871–12901（Characterization techniques for nanoparticles: comparison and complementarity）"
+    },
+    {
+      "id": "device-standard-test",
+      "label": "器件制作与标准化测试",
+      "when": "需要报告可比较的器件性能（光伏、电池、热电、LED、晶体管）",
+      "requires": [
+        "测试标准与版本号（IEC/ASTM）明确",
+        "有效面积与掩膜定义",
+        "光源/温度/夹具的校准证书",
+        "≥3 个独立器件的效率分布与 champion 值分开报"
+      ],
+      "nRule": "光伏按 IEC 60904-1/-3 在 AM1.5G、1000 W/m²、25 °C 下测，掩膜面积定义有效区，认证需 ≥3 个独立器件且报平均值与 champion；电池按 IEC 62660-1 报 ≥3 个电芯、≥100 循环；统计一律给 n、均值、SD 与分布，不能只给最优器件",
+      "threats": [
+        {
+          "risk": "用掩膜面积缩小来抬高报告效率",
+          "mitigation": "报掩膜孔径与总器件面积两者，说明认证面积口径（aperture vs total area）"
+        },
+        {
+          "risk": "只报 champion 器件，分布不可知",
+          "mitigation": "报全部器件效率的直方图与均值/中位数，champion 单独标注并给其 J–V 曲线"
+        },
+        {
+          "risk": "光谱失配未校正（用未校准的太阳模拟器）",
+          "mitigation": "报模拟器等级（AAA/ABA）、光谱失配因子与校准用标准电池（如 KG5 滤光）"
+        },
+        {
+          "risk": "测试温度漂移被忽略（效率随温度 −0.3%/K）",
+          "mitigation": "报夹具温度与温控方式，必要时做温度系数校正"
+        }
+      ],
+      "reporting": [],
+      "why": "器件数值只有落在标准条件下的同一坐标系里才可比；口径不一致时效率数字没有意义。",
+      "source": "IEC 60904-3:2019（Photovoltaic devices – Part 3: Measurement principles for terrestrial PV solar devices with reference spectral irradiance data）；IEC 61215-1:2021（设计鉴定与定型）"
+    },
+    {
+      "id": "stability-aging",
+      "label": "稳定性与加速老化（ISOS / IEC）",
+      "when": "声称材料或器件在环境中长期可用",
+      "requires": [
+        "老化协议明确（温度、湿度、光照、偏压、循环）",
+        "测试期间性能的周期性记录",
+        "≥3 个器件同时老化",
+        "失效后的后表征（截面/XPS/XRD）"
+      ],
+      "nRule": "按 ISOS 协议报：至少 3 个器件、老化时长与 T₈₀/T₉₀ 定义、每次测量间隔；加速条件至少一档（如 85 °C/85% RH 或 1 sun、65 °C）；衰减曲线用线性/指数拟合报 R²>0.95 并给外推假设；电池循环按 IEC 62660-1 报 ≥100 循环的容量保持率",
+      "threats": [
+        {
+          "risk": "老化条件自定（「放在抽屉里 30 天」），不可比也不可解释",
+          "mitigation": "按 ISOS-D-1/D-2/L-2 等协议编号报条件，并给出与文献同协议的对照数据"
+        },
+        {
+          "risk": "T₈₀ 由单点外推，假设未说明",
+          "mitigation": "报拟合模型、外推区间与加速因子假设，明确标注为外推值而非实测"
+        },
+        {
+          "risk": "老化只测性能不查失效机制，稳定性故事无法归因",
+          "mitigation": "老化后做截面 SEM、XPS 深度剖析或 XRD，报失效模式（离子迁移/相分解/界面反应）"
+        },
+        {
+          "risk": "样本少且剔除「失败」器件",
+          "mitigation": "报全部老化器件与失效时间，用 Weibull 或 Kaplan–Meier 处理"
+        }
+      ],
+      "reporting": [],
+      "why": "稳定性是最容易被过度声称的性能；协议编号与器件数量是判断可信度的两个硬指标。",
+      "source": "Khenkin et al. 2020, Nature Energy 5:35–49（Consensus statement for stability assessment and reporting for perovskite photovoltaics based on ISOS procedures）"
+    },
+    {
+      "id": "simulation-experiment",
+      "label": "模拟-实验对照",
+      "when": "用 DFT/MD/相场预测结构、能带、扩散或力学行为",
+      "requires": [
+        "收敛性测试（截断能、k 点、超胞尺寸、真空层）",
+        "泛函与色散校正的选择理由",
+        "同一物理量的实验与计算定义一致",
+        "不一致时的归因（而非只报一致的部分）"
+      ],
+      "nRule": "截断能与 k 点须收敛到总能差 <1 meV/atom、应力 <0.1 GPa；超胞 ≥2×2×2 或含 ≥100 原子；能垒用 CI-NEB 且力收敛 <0.03 eV/Å；实验对比时报双方误差棒，能带计算需说明是否含准粒子修正（GW）否则带隙误差可达 30–50%",
+      "threats": [
+        {
+          "risk": "用 PBE 算带隙直接跟实验比",
+          "mitigation": "说明 PBE 系统性低估 30–50%，需要时用 HSE06/GW 或只比较趋势"
+        },
+        {
+          "risk": "未做收敛测试，结论随截断能改变",
+          "mitigation": "报收敛曲线（总能 vs 截断能/k 点）与最终取值，附一组更严格参数下的复算"
+        },
+        {
+          "risk": "只算有利路径，不给竞争相/竞争路径",
+          "mitigation": "同时报竞争相与竞争路径的能垒，用相对能量图呈现全部相关态"
+        },
+        {
+          "risk": "把计算与实验的「一致」建立在可调参数上（U 值、缺陷浓度）",
+          "mitigation": "报 U 值选取依据与敏感性（U±1 eV 的结果），缺陷浓度用实验值输入"
+        }
+      ],
+      "reporting": [],
+      "why": "计算的价值在于可证伪的预测；不报收敛性与竞争路径，计算只是给实验配了一张示意图。",
+      "source": "Jain et al. 2013, Applied Physics Letters 101:2499022（The Materials Project: accelerating materials design）；Perdew, Burke & Ernzerhof 1996, Phys. Rev. Lett. 77:3865（GGA-PBE）"
+    },
+    {
+      "id": "mechanical-reliability",
+      "label": "力学性能与可靠性统计（Weibull）",
+      "when": "材料要在载荷/循环下服役，或脆性材料的强度离散度大",
+      "requires": [
+        "试样几何与制备方式标准化（ASTM/ISO）",
+        "试验机载荷与位移校准",
+        "≥10 个试样（脆性材料建议 ≥20）",
+        "断口或失效位置记录"
+      ],
+      "nRule": "按 ASTM E8/E8M 做拉伸，每组 ≥5 个试样（报均值±SD 与 CV）；脆性材料强度用 Weibull 分析需 ≥20 个试样，报模数 m 与特征强度 σ₀ 及 95% CI；疲劳按 ASTM E466，S–N 曲线每应力水平 ≥3 个试样",
+      "threats": [
+        {
+          "risk": "试样加工缺陷（边缘微裂纹）主导断裂，测的是加工而非材料",
+          "mitigation": "报试样加工方式与边缘处理，做断口 SEM 确认裂纹源位置，剔除无效试样须报剔除数与理由"
+        },
+        {
+          "risk": "只报平均强度，离散度被隐藏",
+          "mitigation": "报 Weibull 模数 m 与分布图，脆性材料用 5% 分位强度而非均值做设计值"
+        },
+        {
+          "risk": "试验机柔度未校正导致模量偏低",
+          "mitigation": "报机器柔度校正方法与引伸计标距，用标准试样验证"
+        },
+        {
+          "risk": "环境（湿度/温度）未控，性能漂移被当作批次差",
+          "mitigation": "报测试环境温湿度，必要时在恒温恒湿箱中测试"
+        }
+      ],
+      "reporting": [],
+      "why": "力学数据是设计许用值的来源，均值毫无意义，分布尾部和试样数量才是。",
+      "source": "ASTM E8/E8M-22（Standard Test Methods for Tension Testing of Metallic Materials）；Weibull 1951, J. Appl. Mech. 18:293–297（A statistical distribution function of wide applicability）"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "bet-surface-area",
+      "label": "比表面积与孔径分布",
+      "unit": "m²/g；nm",
+      "how": "N₂ 吸附-脱附等温线（77 K），BET 取 P/P₀=0.05–0.30 线性区间，孔径用 BJH/NLDFT 从脱附支计算",
+      "precision": "比表面 ±3%（同一样品重复）；孔径分布对模型选择敏感（BJH 低估 <4 nm 孔）",
+      "artifact": "未充分脱气（残余水/溶剂）使比表面偏低；微孔样品用 BET 理论本身不适用",
+      "calibration": "用认证标样（如 Al₂O₃ 或炭黑参考样）验证；报脱气温度与时间"
+    },
+    {
+      "id": "crystallite-size",
+      "label": "晶粒尺寸与晶格参数",
+      "unit": "nm；Å",
+      "how": "XRD 全谱 + Rietveld 精修（或 Scherrer 公式 D=Kλ/(βcosθ)，K=0.9）",
+      "precision": "Scherrer 仅适用于 <100 nm 且需扣除仪器展宽；晶格参数精度可达 0.001 Å（内标校正后）",
+      "artifact": "微应变与尺寸效应混淆；择优取向使峰强失真",
+      "calibration": "用 LaB₆ 或 Si 标样测定仪器展宽函数并做内标校正"
+    },
+    {
+      "id": "particle-size",
+      "label": "粒径与分布",
+      "unit": "nm（TEM 数均；DLS 为流体力学直径）",
+      "how": "TEM 统计 ≥200 个颗粒给数均与分布；DLS 给 Z-average 与 PDI",
+      "precision": "TEM ±1 nm（标定后）；DLS 对团聚与少量大颗粒极敏感（强度加权）",
+      "artifact": "DLS 强度加权被少量团聚体主导；TEM 干态与溶液态不符",
+      "calibration": "TEM 用 certified 标尺栅格校准放大倍数；DLS 用聚苯乙烯标准球验证"
+    },
+    {
+      "id": "conductivity",
+      "label": "电导率 / 方阻",
+      "unit": "S/cm；Ω/sq",
+      "how": "四探针法（薄膜/块体）或霍尔测试，报厚度与探针间距",
+      "precision": "±5%（厚度测量误差主导）；薄膜 <50 nm 时表面效应显著",
+      "artifact": "接触电阻与探针压力影响；各向异性材料的方向未说明",
+      "calibration": "用已知方阻的标准片（如 ITO 参考样）校准，报探针间距与修正因子"
+    },
+    {
+      "id": "device-efficiency",
+      "label": "器件效率（PCE / 容量 / 输出功率）",
+      "unit": "%（PCE）；mAh/g；W/m²",
+      "how": "按标准条件测 J–V（AM1.5G、25 °C、掩膜面积）或恒流充放电；报 champion 与平均",
+      "precision": "PCE 绝对值取决于校准（±3% 相对）；循环容量 ±1%",
+      "artifact": "掩膜面积与光谱失配；温度漂移",
+      "calibration": "用认证标准电池（如 Fraunhofer ISE 校准片）设定光强；报模拟器等级"
+    },
+    {
+      "id": "xps-binding-energy",
+      "label": "XPS 结合能与元素比",
+      "unit": "eV；原子%",
+      "how": "报峰位、FWHM、拟合组分与荷电校正依据；深度剖析报溅射速率与时间",
+      "precision": "能量分辨率 ±0.1 eV（Ag 3d₅/₂ 检验）；定量 ±10–20%（相对灵敏度因子）",
+      "artifact": "荷电校正不当使峰位偏移 0.2–1 eV；溅射还原改变价态",
+      "calibration": "按 ISO 15472 校准能量标尺（Au 4f₇/₂=84.0 eV、Cu 2p₃/₂=932.6 eV）"
+    },
+    {
+      "id": "thermal-mech",
+      "label": "热导率与力学性能",
+      "unit": "W/(m·K)；GPa；MPa",
+      "how": "热导用激光闪射法（ASTM E1461）测热扩散系数×比热×密度；力学按 ASTM E8 拉伸或纳米压痕",
+      "precision": "热导 ±5%；模量 ±3%（引伸计校正后）；纳米压痕受表面粗糙度影响大",
+      "artifact": "孔隙率与界面热阻使薄膜热导远低于块体；试样加工缺陷降低强度",
+      "calibration": "用标准参考样（如 Pyroceram 9606 热导标样）验证；报环境温湿度"
+    }
+  ],
+  "methods": [
+    {
+      "id": "rietveld",
+      "label": "Rietveld 全谱精修",
+      "when": "多相混合物定量、晶格参数与微结构提取",
+      "assumptions": [
+        "晶体结构模型正确",
+        "峰形函数（pseudo-Voigt）适配仪器",
+        "择优取向与消光已处理"
+      ],
+      "tool": "GSAS-II / FullProf / TOPAS",
+      "pitfall": "只修峰强不修背景与峰形，得到「好看但错」的相含量；不报 Rwp/χ²",
+      "why": "XRD 定量相分析的唯一严谨路径，也是晶格参数与微应变的来源。"
+    },
+    {
+      "id": "scherrer",
+      "label": "Scherrer 晶粒尺寸估算",
+      "when": "纳米晶尺寸的快速估计",
+      "assumptions": [
+        "无微应变",
+        "尺寸分布窄",
+        "已扣除仪器展宽"
+      ],
+      "tool": "GSAS-II / Python (lmfit) / Origin 拟合",
+      "pitfall": "不扣仪器展宽、忽略微应变，尺寸被系统性低估",
+      "why": "最简单也最容易被滥用的估算；必须与 TEM 统计交叉验证。"
+    },
+    {
+      "id": "bet-bjh",
+      "label": "BET 比表面与 BJH/NLDFT 孔径分析",
+      "when": "多孔材料、催化剂载体、电极材料",
+      "assumptions": [
+        "单层吸附模型适用（微孔需 NLDFT）",
+        "脱气充分",
+        "样品量足够（≥50 mg）"
+      ],
+      "tool": "Micromeritics ASAP / Quantachrome，Python (pyGAPS) 复算",
+      "pitfall": "微孔材料用 BET 严重高估；脱气温度过高使骨架塌陷",
+      "why": "比表面是多孔材料的第一性参数，但模型误用极常见。"
+    },
+    {
+      "id": "tauc-plot",
+      "label": "Tauc plot 求光学带隙",
+      "when": "半导体薄膜/粉体的带隙估计",
+      "assumptions": [
+        "跃迁类型（直接/间接）已判定",
+        "吸收系数由透射/漫反射正确转换（Kubelka–Munk）"
+      ],
+      "tool": "UV-Vis 分光光度计 + Python 线性拟合",
+      "pitfall": "外推区间随手选，带隙可差 0.3 eV；不说明跃迁类型",
+      "why": "光学带隙是器件设计的输入参数，外推区间必须写出来。"
+    },
+    {
+      "id": "eis-fitting",
+      "label": "电化学阻抗谱与等效电路拟合",
+      "when": "界面电阻、离子电导、电池老化诊断",
+      "assumptions": [
+        "线性时不变（小扰动 10 mV）",
+        "半圆与扩散尾可归属到物理过程"
+      ],
+      "tool": "EC-Lab / ZView / Python (impedance.py)",
+      "pitfall": "等效电路有多个等价解，不加约束的拟合没有物理意义；不报拟合残差",
+      "why": "EIS 是少数能分离「体相/晶界/界面」贡献的技术，但过拟合风险最高。"
+    },
+    {
+      "id": "four-probe",
+      "label": "四探针法测方阻/电导",
+      "when": "薄膜与块体的电输运测量",
+      "assumptions": [
+        "样品厚度已知且均匀",
+        "探针间距远小于样品尺寸（几何修正）"
+      ],
+      "tool": "四探针台 + 源表（Keithley 2400）",
+      "pitfall": "接触电阻与探针压力未控；不报几何修正因子",
+      "why": "最常用的电导测量，也最容易被接触问题污染。"
+    },
+    {
+      "id": "dft-convergence",
+      "label": "DFT 收敛测试与结构优化",
+      "when": "任何第一性原理计算",
+      "assumptions": [
+        "总能对截断能/k 点收敛 <1 meV/atom",
+        "力收敛 <0.03 eV/Å",
+        "泛函与色散校正与体系匹配"
+      ],
+      "tool": "VASP / Quantum ESPRESSO / CP2K；pymatgen/ASE 自动化",
+      "pitfall": "直接套用文献参数不验证；k 点网格在六方/单斜体系中不足",
+      "why": "收敛性不是形式主义：未收敛的计算结论可以在参数微调后反转。"
+    },
+    {
+      "id": "weibull",
+      "label": "Weibull 可靠性分析",
+      "when": "脆性材料强度、器件失效时间分布",
+      "assumptions": [
+        "失效模式单一（同一 m）",
+        "样本 ≥20",
+        "独立同分布"
+      ],
+      "tool": "Python (reliability / scipy.stats.weibull_min) / Minitab",
+      "pitfall": "样本 <10 就报 m 值；混合失效模式不做分组",
+      "why": "材料设计许用值取自分布尾部（5% 分位），不是均值。"
+    },
+    {
+      "id": "batch-anova",
+      "label": "批次间方差分析",
+      "when": "判断工艺是否受控、性能差异是否真实",
+      "assumptions": [
+        "批次为随机效应",
+        "组内方差同质"
+      ],
+      "tool": "Python statsmodels / R lme4",
+      "pitfall": "把同批内的重复当独立重复，方差被低估 3–10 倍",
+      "why": "材料的「重复」是批次不是样品点；方差分解决定结论能否推广到下一批。"
+    },
+    {
+      "id": "image-quantification",
+      "label": "显微图像定量（粒径/孔隙/厚度）",
+      "when": "从 SEM/TEM/光学图提取统计量",
+      "assumptions": [
+        "阈值分割规则一致",
+        "视场随机且数量足够",
+        "标尺已校准"
+      ],
+      "tool": "ImageJ/Fiji（Analyze Particles）+ Python (scikit-image)",
+      "pitfall": "只报一张代表图与目测尺寸；分割阈值随图调整",
+      "why": "图像是证据不是结论；不量化就没有统计，也不能与其他批次比较。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "gsas2",
+      "label": "GSAS-II",
+      "kind": "diffraction",
+      "install": "conda install -c conda-forge gsas2pkg",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "FullProf",
+        "TOPAS",
+        "Profex"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "vesta",
+      "label": "VESTA",
+      "kind": "visualization",
+      "install": "https://jp-minerals.org/vesta/en/（免费）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "OVITO",
+        "ASE gui"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "fiji",
+      "label": "ImageJ / Fiji",
+      "kind": "image-analysis",
+      "install": "https://imagej.net/software/fiji/downloads",
+      "minimalScript": "ImageJ-win64.exe --headless --console -macro measure_particles.ijm",
+      "alt": [
+        "Python scikit-image",
+        "CellProfiler"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "quantum-espresso",
+      "label": "Quantum ESPRESSO",
+      "kind": "dft",
+      "install": "conda install -c conda-forge qe",
+      "minimalScript": "pw.x -in scf.in > scf.out",
+      "alt": [
+        "VASP",
+        "CP2K",
+        "ABINIT"
+      ],
+      "offline": true,
+      "license": "GPL-2.0"
+    },
+    {
+      "id": "lammps",
+      "label": "LAMMPS",
+      "kind": "md",
+      "install": "conda install -c conda-forge lammps",
+      "minimalScript": "lmp -in in.relax -log log.lammps",
+      "alt": [
+        "GROMACS",
+        "ASE + EMT"
+      ],
+      "offline": true,
+      "license": "GPL-2.0"
+    },
+    {
+      "id": "pymatgen",
+      "label": "pymatgen",
+      "kind": "materials-informatics",
+      "install": "pip install pymatgen",
+      "minimalScript": "python -c \"from pymatgen.core import Structure; s=Structure.from_file('POSCAR'); print(s.composition, round(s.lattice.volume,3)); print(s.get_space_group_info())\"",
+      "alt": [
+        "ASE",
+        "ASE db"
+      ],
+      "offline": true,
+      "license": "MIT"
+    },
+    {
+      "id": "ec-lab",
+      "label": "EC-Lab (BioLogic)",
+      "kind": "electrochemistry",
+      "install": "商业授权（随仪器）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "Gamry Framework",
+        "Arbin",
+        "Neware"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "originpro",
+      "label": "OriginPro",
+      "kind": "stats+figure",
+      "install": "商业授权（OriginLab）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "Python matplotlib",
+        "R ggplot2"
+      ],
+      "offline": true,
+      "license": "commercial"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "tukey-hsd",
+    "effect": "cohen-d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「你说器件效率 22.3%，这是多少个器件里的最好值？掩膜面积多大？」",
+      "defense": "报全部器件效率的直方图与均值±SD、掩膜孔径与总器件面积定义，champion 单独给 J–V 与稳定性曲线"
+    },
+    {
+      "attack": "「这三批样品的比表面积差了 18%，你的工艺到底受控吗？」",
+      "defense": "报批间 CV 与方差分解，给出前驱体批号/炉位/升温曲线的差异归因，并说明该差异是否影响性能趋势"
+    },
+    {
+      "attack": "「XRD 只给了 20°–60°，杂质峰会不会在你没扫的区间？」",
+      "defense": "补扫 10°–80° 全谱并标注全部可见峰，说明检出限（约 1–3 wt%）与是否存在非晶相（用 Raman/PDF 补证）"
+    },
+    {
+      "attack": "「XPS 的 C 1s 荷电校正用了 284.8 eV——这个参照本身就不可靠，你的峰位偏移 0.5 eV，结论还成立吗？」",
+      "defense": "报未校正原始结合能、校正依据（Au 4f 或内标）、以及与同批样品的相对峰位差，把结论限制在相对变化而非绝对值"
+    },
+    {
+      "attack": "「按 ISOS 协议你的器件只有 2 个，T₈₀ 还是外推的，这叫稳定性？」",
+      "defense": "补到 ≥3 个器件、给出实测衰减曲线与拟合模型、明确标注外推区间与加速因子假设，并附失效后截面/XPS 证据"
+    },
+    {
+      "attack": "「DFT 的截断能和 k 点收敛了吗？带隙用 PBE 算的跟实验比，差 40% 你怎么解释？」",
+      "defense": "补收敛曲线（总能 vs 截断能/k 点）、改用 HSE06 或只比较趋势，并报 U 值敏感性分析"
+    },
+    {
+      "attack": "「SEM 就一张图，凭什么说这是均匀的？」",
+      "defense": "给 ≥3 个随机视场的低倍全貌 + 粒径统计分布（n≥200），必要时报 EDS mapping 的元素分布均匀性"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "独立批次与样品数",
+      "topJournal": "≥3 个独立批次 × ≥3 个器件/样品（n≥9），报批间 CV",
+      "field": "单批 n=3，不报批间方差",
+      "source": "Khenkin et al. 2020, Nature Energy 5:35–49（ISOS 共识：要求报样本数、统计量与分散度）"
+    },
+    {
+      "metric": "XRD 报告完整度",
+      "topJournal": "全谱（2θ 10–80°、步长 ≤0.02°）+ 仪器型号 + 晶格参数精修 + 杂质相标注",
+      "field": "仅主峰局部放大图",
+      "source": "Holder & Schaak 2019, ACS Nano 13:7359–7365（Tutorial on Powder X-ray Diffraction for Characterizing Nanoscale Materials）"
+    },
+    {
+      "metric": "BET 报告完整度",
+      "topJournal": "全等温线 + 拟合区间 + C 常数 + 脱气条件 + 模型选择理由",
+      "field": "只给一个比表面数字",
+      "source": "Thommes et al. 2015, Pure Appl. Chem. 87:1051–1069（IUPAC Technical Report: Physisorption of gases）"
+    },
+    {
+      "metric": "器件测试条件标准化",
+      "topJournal": "报 IEC/ASTM 标准号与版本、光谱/光强校准来源、温度、有效面积口径",
+      "field": "只写「标准条件下测试」",
+      "source": "IEC 60904-3:2019；ASTM G173-03(2020)（AM1.5 参考光谱）"
+    },
+    {
+      "metric": "计算收敛性与参数透明度",
+      "topJournal": "报截断能/k 点收敛曲线（<1 meV/atom）、泛函与色散校正、U 值依据",
+      "field": "只写「VASP 计算，PBE」",
+      "source": "Jain et al. 2013, Applied Physics Letters 101:2499022（Materials Project 计算参数与收敛标准）"
+    },
+    {
+      "metric": "稳定性数据规模",
+      "topJournal": "≥3 个器件、按 ISOS 协议编号报条件、实测 T₈₀ 与外推分别标注",
+      "field": "1–2 个器件、自定条件",
+      "source": "Khenkin et al. 2020, Nature Energy 5:35–49（ISOS-D/L 协议）"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "合成与基础表征（XRD/形貌/成分）",
+      "结构与性能的构效关系（含批次分布）",
+      "器件或应用性能（标准条件、n 与分布）",
+      "稳定性/可靠性",
+      "机理（计算或谱学）与失效分析"
+    ],
+    "figureBudget": 5,
+    "note": "Figure 1 是合成示意 + 表征链（XRD 全谱与形貌图并列），Figure 2 起才讲性能。所有性能图必须带误差棒并标明 n；只给一条最好曲线而不给分布会被直接要求补数据。计算图放最后，且要与实验图用同一坐标量纲对照。"
+  },
+  "reporting": [],
+  "reportingExternal": [
+    "astm-e466",
+    "astm-e8",
+    "iec-60904",
+    "iec-62660",
+    "iso-15472",
+    "iso-9277",
+    "isos",
+    "mp-convergence"
+  ]
+}

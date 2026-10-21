@@ -1,0 +1,41 @@
+# 白名单式忽略：先排除一切，再逐一放行。
+# 这样即便本机工作目录里同时躺着别的项目，也不会被误提交。
+
+/*
+
+# ── 放行：仓库自己的东西 ─────────────────────────────────────────────
+!/.gitignore
+!/.gitattributes
+!/.editorconfig
+!/LICENSE
+!/README.md
+!/CHANGELOG.md
+!/CONTRIBUTING.md
+!/ROADMAP.md
+!/.github/
+!/docs/
+!/scripts/
+!/tools/
+!/deepscient/
+!/dsh-science/
+
+# ── 机器相关 / 可重建 / 不该进仓库 ──────────────────────────────────
+# 供应商层由 tools 里的脚本按本机 profile 生成，含本机路径与中转站地址
+/deepscient/local.patch.yml
+# 期刊情报缓存（241 KB）：由 dsh-science/scripts/build-intel.mjs 重建
+/dsh-science/data/journal-intel-cache.json
+# 第三方技能正文不进仓库，只留清单：若本地跑过 install-skills --apply 会有残留
+/dsh-science/skills-vendor/*/
+# 发布产物
+/dist/
+*.tgz
+
+# ── 通用噪声 ───────────────────────────────────────────────────────
+**/node_modules/
+**/.DS_Store
+**/Thumbs.db
+**/*.zstd
+**/*.log
+**/tmp-*
+**/.cache*/
+npm-debug.log*

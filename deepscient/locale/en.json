@@ -1,0 +1,8 @@
+{
+  "meta": {
+    "title": "DeepScient research workbench",
+    "description": "A gated path from question to submission — search, power, cleaning, statistics, figures, writing, internal review — plus a live project panel in the sidebar."
+  },
+  "panel": "Research",
+  "settings": "Research"
+}

@@ -1,0 +1,18 @@
+# @local/dsh-science — Host 平面 patch
+#
+# 只做三件事：
+#   1. 建 / 迁移数据根 $DSH_HOME/science 并发布 ctx.scienceKit（进程级只读描述）
+#   2. 把模型可见的科研工具挂到科研 preset（见 presets/science.patch.yml，不在本文件）
+#   3. 后续里程碑在这里追加：science-lit / science-exp / science-claim / science-ui / MCP
+#
+# 约定：本文件只贡献 host 平面；preset 平面的东西一律放 presets/。
+
+- insert:
+    - id: science-kit
+      name: '@local/dsh-science'
+      inject: []
+      config:
+        # !!js 由 Loader 在挂载时求值，换盘 / 换 profile 都跟着 DSH_HOME 走
+        root: !!js dshHomePath('science')
+        # 随包技能落到 $DSH_HOME/science/skills；用户自有技能在 $DSH_HOME/skills，永远排在前面
+        syncBundledSkills: true

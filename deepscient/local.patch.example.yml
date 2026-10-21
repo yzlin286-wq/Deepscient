@@ -1,0 +1,34 @@
+# 本地供应商层示例 —— 复制成 local.patch.yml 后按自己的中转站/官方端点改。
+#
+# 为什么需要这一层：DeepScient 有自己的数据根（默认 %USERPROFILE%\.deepscient），
+# 不共享你日常 dsh profile 的凭据。它得知道自己该用哪个供应商、哪个模型。
+#
+# 两条路：
+#   A) 自动抽取（推荐）：node scripts/deepscient-sync-models.mjs
+#      从 ~/.dsh/profiles/web/cordis.patch.yml 里把 llm-* 与 agent-default-model 两类行搬过来。
+#      只搬「变量名」，不含密钥本身。
+#   B) 手写：照下面抄，把 baseURL 与模型 id 换成你在用的。
+#
+# 注意：local.patch.yml 已被 .gitignore 排除，不要提交它（含你自己的端点地址）。
+
+- id: llm-pi-ai
+  name: "@deepseek-ai/dsh-llm-pi-ai"
+  config:
+    providers:
+      # 供应商名可以随便起，下面 agent-default-model 引用它
+      myprovider:
+        displayName: myprovider
+        # 真正的 key 放环境变量，这里只写变量名
+        apiKeyEnv: MY_PROVIDER_API_KEY
+        # openai-completions / openai-responses 二选一，看你的端点兼容哪套
+        api: openai-completions
+        baseURL: https://api.example.com/v1
+        models:
+          - id: your-model-id
+            name: your-model-id
+
+- id: agent-default-model
+  name: "@deepseek-ai/dsh-agent-default-model"
+  config:
+    provider: myprovider
+    model: your-model-id

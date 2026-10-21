@@ -1,0 +1,630 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "neuroscience",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "neuroscience",
+  "label": "神经科学（影像 / 电生理 / 行为）",
+  "questionTypes": [
+    {
+      "id": "region-engagement",
+      "label": "某脑区是否被某条件激活",
+      "when": "有可操纵的任务对比和全脑覆盖数据",
+      "needs": [
+        "条件对比（contrast）事前定义",
+        "合适的时间分辨率或 HRF 假设",
+        "被试内设计或多被试组水平模型",
+        "多重比较校正方案"
+      ]
+    },
+    {
+      "id": "connectivity",
+      "label": "区域间是否耦合/通信",
+      "when": "静息态或任务态时间序列",
+      "needs": [
+        "预处理与去噪流程固定",
+        "扫描时长足够估计相关",
+        "区分功能连接与共同驱动"
+      ]
+    },
+    {
+      "id": "representation",
+      "label": "信息以何种编码存在",
+      "when": "多体素模式或单细胞群体活动",
+      "needs": [
+        "交叉验证（嵌套）",
+        "chance level 与置换检验",
+        "训练/测试集独立（防 double dipping）"
+      ]
+    },
+    {
+      "id": "oscillation",
+      "label": "节律/时频成分是否与任务或行为相关",
+      "when": "EEG/MEG/LFP 连续信号",
+      "needs": [
+        "基线窗与试次对齐规则",
+        "伪迹处理与试次数报告",
+        "频带与时间窗事前设定"
+      ]
+    },
+    {
+      "id": "causality",
+      "label": "该区域活动是否是行为的原因",
+      "when": "TMS/tDCS/损毁/光遗传可介入",
+      "needs": [
+        "对照位点或 sham 条件",
+        "介入强度与个体化定位",
+        "行为测量的盲法"
+      ]
+    },
+    {
+      "id": "individual-difference",
+      "label": "脑指标能否解释个体差异",
+      "when": "有行为/临床变量与脑指标配对",
+      "needs": [
+        "样本量足以稳定估计相关",
+        "交叉验证或分半信度",
+        "协变量（头动、年龄、性别）控制"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "task-fmri-glm",
+      "label": "任务态 fMRI + 一阶/组水平 GLM",
+      "when": "想定位与刺激或反应锁时的 BOLD 变化，且有明确条件对比",
+      "requires": [
+        "事件时间序列与 HRF 卷积建模",
+        "头动估计并作为协变量（或做 censoring）",
+        "空间平滑核与 cluster 阈值事前声明",
+        "组水平随机效应模型（不是把被试拼成一个固定效应）"
+      ],
+      "nRule": "条件差异 d=0.5、α=.05 双侧、power=.8 需 N≈34（G*Power）；voxel 形成阈值 z>3.1（p<.001）配 cluster FWE p<.05；每个条件至少 20 个试次、每个 run 至少 5 个试次，否则 HRF 估计方差主导结果",
+      "threats": [
+        {
+          "risk": "平滑核与 cluster 阈值一起调，直到出显著团块",
+          "mitigation": "在方法里锁定 FWHM（如 6 mm）与 cluster-forming 阈值，并同时报非参数置换（TFCE/randomise）结果"
+        },
+        {
+          "risk": "double dipping：同一批数据先选 ROI/voxel 再在同一批数据上检验",
+          "mitigation": "ROI 来自独立定位 run 或文献坐标；解码用嵌套交叉验证，特征选择只在训练折内做"
+        },
+        {
+          "risk": "头动与条件共变（任务越难动得越多）",
+          "mitigation": "报 mean FD、剔除阈值（如 FD>0.5 mm 的帧）、并做剔除前后一致性检验"
+        },
+        {
+          "risk": "非球形性与自相关被忽略导致假阳性膨胀",
+          "mitigation": "用 FLAME1+2 或 3dMEMA 的稳健方差估计，报 Eklund 型 cluster 空分布检查"
+        }
+      ],
+      "reporting": [],
+      "why": "GLM 是把「设计矩阵」变成「可检验对比」的唯一通用框架；神经影像的争议几乎全部落在校正与自由度上，而不是模型本身。",
+      "source": "Friston et al. 1994, Human Brain Mapping 2:189–210（Statistical parametric maps in functional imaging: a general linear approach）"
+    },
+    {
+      "id": "resting-state",
+      "label": "静息态功能连接（种子/ICA/图论）",
+      "when": "无任务、想看内在网络组织或个体差异",
+      "requires": [
+        "扫描时长与 TR 参数报告",
+        "去噪策略（ICA-AROMA、全局信号回归与否）事前声明",
+        "配准与图谱版本固定",
+        "头动与生理噪声的量化 QC"
+      ],
+      "nRule": "脑-行为相关在真实数据中 r≈0.05–0.10：r=0.10、α=.05、power=.8 需 N≈780（Marek et al. 2022）；单被试静息扫描 ≥10 min 或 ≥2×5 min run，否则连接估计重测信度 ICC<0.5",
+      "threats": [
+        {
+          "risk": "全局信号回归与否直接改变连接符号",
+          "mitigation": "主分析预设一种去噪方案，另一方案作为敏感性分析一并报出（并注明方向是否翻转）"
+        },
+        {
+          "risk": "头动造成伪连接（micromovement 与连接强度相关）",
+          "mitigation": "报 FD/DVARS 与连接强度的相关，做 scrubbing 后复算，必要时把头动作为协变量"
+        },
+        {
+          "risk": "小样本个体差异结论不可重复",
+          "mitigation": "报分半信度或重测 ICC；样本 <100 时只报组水平网络，不做脑-行为推断"
+        },
+        {
+          "risk": "图谱与平滑选择驱动网络边界",
+          "mitigation": "同时报 voxel-wise 与两种图谱（如 Schaefer 100/400）下的结果，说明结论对划分不敏感"
+        }
+      ],
+      "reporting": [],
+      "why": "静息态没有任务约束，自由度极高，几乎所有分析选择都能改变结论，因此预处理链条本身就是论证的一部分。",
+      "source": "Marek et al. 2022, Nature 603:654–660（Reproducible brain-wide association studies require thousands of individuals）"
+    },
+    {
+      "id": "eeg-erp",
+      "label": "EEG/ERP 事件相关电位",
+      "when": "需要毫秒级时间进程，且成分（N1/P3/N400 等）有先验预期",
+      "requires": [
+        "试次锁时与基线窗事前定义",
+        "伪迹抑制流程（ICA/回归/阈值剔除）与剔除比例",
+        "电极蒙太奇与参考电极说明",
+        "成分的时间窗与电极簇事前锁定"
+      ],
+      "nRule": "单试次 SNR 决定一切：背景噪声约 10 µV、成分幅度 1–3 µV 时需 ≥40–100 个干净试次/条件；被试 N≥20（组水平 t 检验 d=0.6、power=.8）；剔除试次 >30% 必须报出并按条件分解",
+      "threats": [
+        {
+          "risk": "时间窗与电极簇从数据里挑（ERP 版的 p-hacking）",
+          "mitigation": "用与主分析独立的定位数据或文献锁定时间窗；全时段用 cluster-based permutation（Maris & Oostenveld）做无假设检验"
+        },
+        {
+          "risk": "条件间试次数不等导致 SNR 不等，振幅差是噪声差",
+          "mitigation": "等试次重抽样（bootstrap 到相同试次数）后再比较振幅"
+        },
+        {
+          "risk": "参考电极改变极性判断",
+          "mitigation": "报参考方案并给出平均参考下的复算结果"
+        },
+        {
+          "risk": "眼动/肌电伪迹与条件相关",
+          "mitigation": "报 ICA 成分剔除清单与 EOG 相关阈值，做剔除前后对比"
+        }
+      ],
+      "reporting": [],
+      "why": "ERP 的统计功效完全由试次数和伪迹控制决定；时间分辨率是优势也是多重比较的来源（每个采样点都是一次检验）。",
+      "source": "Maris & Oostenveld 2007, J. Neurosci. Methods 164:177–190（Nonparametric statistical testing of EEG- and MEG-data）"
+    },
+    {
+      "id": "extracellular-ephys",
+      "label": "在体细胞外电生理（spike sorting）",
+      "when": "需要在单细胞/群体水平看放电与刺激、行为的关系",
+      "requires": [
+        "电极类型、阻抗与采样率报告",
+        "spike sorting 算法与人工核对流程",
+        "unit 质量指标（isolation distance、ISI violation、SNR）",
+        "动物数、记录时长与 unit 数分开报"
+      ],
+      "nRule": "统计单位是动物不是 unit：每条件 ≥5 只动物，每只 ≥20 个合格 unit；unit 合格线 isolation distance >20、ISI violation <0.5%、SNR >4；用混合效应模型把 animal 作为随机截距，否则 n 被人为放大 10–100 倍",
+      "threats": [
+        {
+          "risk": "把 unit 当独立样本，虚假自由度",
+          "mitigation": "分层模型（unit nested in animal）或先按动物求均值再做 t 检验，报两种结果"
+        },
+        {
+          "risk": "sorting 参数决定 unit 数与调谐曲线",
+          "mitigation": "报 sorting 参数、用第二种算法（如 Kilosort vs MountainSort）复算并报一致性"
+        },
+        {
+          "risk": "电极漂移导致同一 unit 中途丢失/被切成两个",
+          "mitigation": "报 unit 稳定性（全程 ISI/波形漂移），跨 block 追踪同一 unit 并说明合并规则"
+        },
+        {
+          "risk": "只在「有反应」的 unit 上做后续分析",
+          "mitigation": "报全部 unit 的总数与被筛掉的数量，筛选用盲于条件的质量指标"
+        }
+      ],
+      "reporting": [
+        "arrive"
+      ],
+      "why": "电生理的样本量陷阱最深：看起来 n=800，实际 n=6 只动物。报告单位与随机效应结构决定了结论是否成立。",
+      "source": "Rossant et al. 2016, Nature Neuroscience 19:634–641（Spike sorting for large, dense electrode arrays）"
+    },
+    {
+      "id": "behaviour-psychophysics",
+      "label": "行为/心理物理范式",
+      "when": "想量化知觉阈值、决策偏好或反应时分布",
+      "requires": [
+        "试次数与自适应阶梯规则",
+        "正确率与 RT 的排除规则事前定",
+        "顺序/练习效应平衡",
+        "功效分析基于 pilot 效应量"
+      ],
+      "nRule": "被试内设计 d=0.5、α=.05、power=.8 需 N≈34（配对 t）；每条件 ≥100 试次才能稳定估计 RT 中位数（≥50 为下限）；阈值估计用 3-down-1-up 阶梯，每阶梯 ≥40 次反转",
+      "threats": [
+        {
+          "risk": "排除规则事后调整（如按 RT 剔除慢试次）",
+          "mitigation": "预注册排除阈值（如 RT<200 ms 或 >3×MAD），报排除前后结果"
+        },
+        {
+          "risk": "速度-准确性权衡被当成效应",
+          "mitigation": "同时报正确率与 RT，或用漂移扩散模型分离阈值与漂移率"
+        },
+        {
+          "risk": "顺序效应/疲劳与条件混淆",
+          "mitigation": "条件顺序随机化或拉丁方平衡，报顺序作为协变量的检验"
+        },
+        {
+          "risk": "多重比较（多条件×多指标）",
+          "mitigation": "锁定主指标（如正确率），其余标为探索并用 FDR"
+        }
+      ],
+      "reporting": [
+        "arrive"
+      ],
+      "why": "行为数据最便宜也最容易被自由度操纵；预注册与排除规则是唯一防线。",
+      "source": "Peirce et al. 2019, Behavior Research Methods 51:195–203（PsychoPy2: experiments in behavior made easy）"
+    },
+    {
+      "id": "perturbation-tms-lesion",
+      "label": "因果扰动（TMS/tDCS/损毁/光遗传）",
+      "when": "需要「必要性/充分性」而不只是相关",
+      "requires": [
+        "对照位点或 sham 刺激",
+        "个体化定位（fMRI 导航或 scalp 坐标）",
+        "刺激参数（强度 %RMT、频率、脉冲数）完整报告",
+        "双盲或评估者盲法"
+      ],
+      "nRule": "被试内 TMS 设计需 ≥20 被试（d=0.5）；患者组罕见时 ≥8–12 例并逐个报数据；刺激强度 110–120% RMT、每条件 ≥1 个 block，两条件间隔 ≥ 5 s 以避免 carry-over",
+      "threats": [
+        {
+          "risk": "对照位点选择不当（刺激了会造成同等不适/听觉效应的位点）",
+          "mitigation": "用同半球同距离的主动控制位点，并匹配听觉掩蔽与主观不适评分"
+        },
+        {
+          "risk": "TMS 的听觉/躯体感觉副作用解释行为变化",
+          "mitigation": "加 sham 线圈条件，报副作用评分作为协变量"
+        },
+        {
+          "risk": "刺激位点与目标网络错位（个体差异）",
+          "mitigation": "报导航定位误差与个体坐标，或用静息态连接定义靶点并报告该连接的强度"
+        },
+        {
+          "risk": "效应只在少数被试出现却被报成组效应",
+          "mitigation": "报全部个体数据点与效应量 CI，不只报组均值与 p"
+        }
+      ],
+      "reporting": [],
+      "why": "神经科学的大部分结论是相关性的；扰动设计是唯一能说「必要」的路径，代价是控制条件极难做干净。",
+      "source": "Walsh & Cowey 2000, Nature Reviews Neuroscience 1:73–79（Transcranial magnetic stimulation and cognitive neuroscience）"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "bold-contrast",
+      "label": "BOLD 对比估计（β / % signal change）",
+      "unit": "β 权重或 % signal change",
+      "how": "一阶 GLM 的 contrast estimate，报 HRF 模型（如 SPM 双 gamma）与派生参数",
+      "precision": "受平滑核、TR 与 HRF 假设限制；单试次估计方差远大于条件均值",
+      "artifact": "头动、生理噪声（呼吸/心跳）、scanner drift、伪激活（大血管）",
+      "calibration": "每日 phantom 扫描 + 运动 QC（mean FD<0.2 mm 为优）+ 与公开数据集流程对齐"
+    },
+    {
+      "id": "spatial-precision",
+      "label": "空间分辨率与平滑核",
+      "unit": "mm（体素尺寸 / FWHM）",
+      "how": "报原始体素大小、插值后体素大小、平滑核 FWHM 与是否做平滑",
+      "precision": "功能分辨率实际 2–4 mm；平滑会人为扩大团块",
+      "artifact": "平滑与 cluster 阈值耦合导致团块大小不可比",
+      "calibration": "用同一 FWHM 重跑并对比团块范围"
+    },
+    {
+      "id": "erp-amp-latency",
+      "label": "ERP 成分振幅与潜伏期",
+      "unit": "µV / ms",
+      "how": "在事前锁定的时间窗与电极簇上取均值振幅、用 50% 面积潜伏期法测峰潜伏期",
+      "precision": "采样率 500–1000 Hz；振幅精度受试次数限制（≈噪声/√n）",
+      "artifact": "基线窗选择、参考电极、眼动残余",
+      "calibration": "标准方波/正弦校准信号 + 电极阻抗 <10 kΩ"
+    },
+    {
+      "id": "firing-rate",
+      "label": "放电率与调谐",
+      "unit": "spikes/s（Hz）",
+      "how": "按刺激/行为对齐的 PSTH，报基线窗与平滑（高斯 σ=25 ms）",
+      "precision": "受 unit 质量与记录时长限制；低放电率 unit 的率估计偏倚大",
+      "artifact": "sorting 误差把两个 unit 合成一个（rate 偏高）、电极漂移",
+      "calibration": "每记录日测电极阻抗 + 用已知脉冲串验证在线检测阈值"
+    },
+    {
+      "id": "band-power",
+      "label": "频带功率与时频功率",
+      "unit": "µV²/Hz（或 dB）",
+      "how": "Morlet 小波或 Hilbert 变换，报频带定义、cycle 数与基线归一化方式（相对/绝对）",
+      "precision": "时频不确定性 Δf·Δt≥1/(4π)；cycle 数决定频率与时间分辨率的取舍",
+      "artifact": "1/f 背景未去除、边缘效应、基线窗含诱发响应",
+      "calibration": "用已知幅度/相位的合成信号验证分解与基线校正流程"
+    },
+    {
+      "id": "behaviour-rt-accuracy",
+      "label": "反应时与正确率",
+      "unit": "ms / %",
+      "how": "报中位数与 MAD（不用均值±SD 处理长尾 RT），d-prime 由 hit/FA 计算",
+      "precision": "受显示器刷新率（≈16.7 ms）与键盘延迟限制",
+      "artifact": "练习效应、疲劳、猜测策略",
+      "calibration": "用光电二极管测显示延迟 + 记录设备输入延迟"
+    }
+  ],
+  "methods": [
+    {
+      "id": "first-level-glm",
+      "label": "一阶 GLM + HRF 卷积",
+      "when": "任务态 fMRI 的单被试建模",
+      "assumptions": [
+        "BOLD 响应线性可加",
+        "HRF 形状在全脑一致",
+        "事件间隔足够避免非线性饱和"
+      ],
+      "tool": "FSL FEAT / SPM12 / AFNI 3dDeconvolve",
+      "pitfall": "用固定 HRF 却不做时间导数或 FIR 检查，把血流延迟当激活差异",
+      "why": "把连续时间序列投影到设计矩阵上，是所有组水平推断的输入。"
+    },
+    {
+      "id": "group-mixed-effects",
+      "label": "组水平混合效应（FLAME / 3dMEMA）",
+      "when": "多被试、每被试多 run 或方差不齐",
+      "assumptions": [
+        "被试为随机效应",
+        "一阶方差可作为权重"
+      ],
+      "tool": "FSL flameo / AFNI 3dMEMA / R: lme4",
+      "pitfall": "用固定效应（把 4D 拼接）报组结果，实际只推广到这批被试",
+      "why": "只有随机效应模型才把结论推广到人群，而不是推广到这 25 个人。"
+    },
+    {
+      "id": "permutation-cluster",
+      "label": "非参数置换 + cluster/TFCE 校正",
+      "when": "需要控制 FWE 且不愿依赖参数分布假设",
+      "assumptions": [
+        "可交换性（条件在被试内可交换）",
+        "cluster-forming 阈值事前设定"
+      ],
+      "tool": "FSL randomise / AFNI 3dttest++ -Clustsim / MNE permutation_cluster_test",
+      "pitfall": "用未校正的簇大小或事后挑 cluster 阈值（Eklund 2016 的假阳性来源）",
+      "why": "影像数据的空间相关使 Bonferroni 过保守、voxel 阈值过宽松，置换法是当下的可用折中。"
+    },
+    {
+      "id": "ica-denoise",
+      "label": "ICA 去伪迹（ICA-AROMA / ICA+FIX）",
+      "when": "静息态或任务态有明显头动、眼动、心跳成分",
+      "assumptions": [
+        "伪迹成分在时间与空间上可分",
+        "分类器在目标数据集上仍有效"
+      ],
+      "tool": "FSL fix / nipy rapidtide / MNE ICA",
+      "pitfall": "把神经成分当伪迹剔除（尤其默认模式网络成分）而不做人工核对",
+      "why": "去噪决定连接与激活的符号；必须报剔除成分数与人工核对流程。"
+    },
+    {
+      "id": "time-frequency",
+      "label": "时频分解（Morlet 小波 / Hilbert）",
+      "when": "关注节律功率、相位锁时或跨频耦合",
+      "assumptions": [
+        "信号在分析窗内近似平稳",
+        "基线窗不含诱发响应"
+      ],
+      "tool": "MNE-Python tfr_morlet / FieldTrip ft_freqanalysis / MATLAB eeglab",
+      "pitfall": "基线归一化用整个 trial 导致条件差异被吸收；cycle 数报不清楚",
+      "why": "ERP 只看锁时平均，会漏掉不锁相的功率变化；时频是必要的补充视角。"
+    },
+    {
+      "id": "spike-sorting",
+      "label": "Spike sorting（Kilosort + Phy 人工核对）",
+      "when": "高密度硅探针的细胞外记录",
+      "assumptions": [
+        "波形在记录期内稳定",
+        "unit 空间上可分"
+      ],
+      "tool": "Kilosort 3 / MountainSort5 / Phy",
+      "pitfall": "只报自动 sorting 结果不做人工 merge/split 核对，也不报 unit 质量分布",
+      "why": "sorting 是推断的最上游；上游错了，下游统计再严谨也只是精致地错。"
+    },
+    {
+      "id": "nested-cv-decoding",
+      "label": "嵌套交叉验证解码（MVPA）",
+      "when": "想证明某区域携带某类信息",
+      "assumptions": [
+        "样本可交换",
+        "超参数只在训练折内选"
+      ],
+      "tool": "scikit-learn Pipeline + StratifiedKFold / nilearn Decoder",
+      "pitfall": "特征选择/归一化在全部数据上做（double dipping），准确率虚高",
+      "why": "唯一能区分「区域被激活」与「区域编码了可区分信息」的方法。"
+    },
+    {
+      "id": "power-simulation",
+      "label": "功效分析与空数据仿真",
+      "when": "设计阶段或为样本量辩护",
+      "assumptions": [
+        "效应量与噪声结构可从 pilot 或文献借用",
+        "平滑与阈值方案已定"
+      ],
+      "tool": "neuropower / fmripower / 自写置换仿真",
+      "pitfall": "用体素级 d 算功效却用 cluster 推断（量纲不匹配），或忽略被试间方差",
+      "why": "影像的 effective n 远小于名义 n；不仿真就说不清 20 个被试能检出什么。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "fsl",
+      "label": "FSL",
+      "kind": "pipeline+stats",
+      "install": "https://fsl.fmrib.ox.ac.uk/fsl/docs（或 conda install -c conda-forge fslinstaller）",
+      "minimalScript": "feat design.fsf && randomise -i 4d.nii.gz -o out -m mask.nii.gz -d design.mat -t design.con -n 5000 -T",
+      "alt": [
+        "AFNI",
+        "SPM12"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "spm12",
+      "label": "SPM12",
+      "kind": "stats",
+      "install": "https://www.fil.ion.ucl.ac.uk/spm/software/spm12/（MATLAB 运行）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "FSL FEAT",
+        "nilearn"
+      ],
+      "offline": true,
+      "license": "GPL-2.0"
+    },
+    {
+      "id": "afni",
+      "label": "AFNI",
+      "kind": "pipeline+stats",
+      "install": "https://afni.nimh.nih.gov（conda install -c conda-forge afni）",
+      "minimalScript": "3dDeconvolve -input pb04.sub-01.r*.scale+tlrc.HEAD -polort 2 -num_stimts 1 -stim_times 1 times.1D 'BLOCK(2,1)' -fout -bucket stats.sub-01",
+      "alt": [
+        "FSL",
+        "SPM12"
+      ],
+      "offline": true,
+      "license": "GPL-2.0"
+    },
+    {
+      "id": "fmriprep",
+      "label": "fMRIPrep",
+      "kind": "preprocessing",
+      "install": "docker pull nipreps/fmriprep:24.1.1",
+      "minimalScript": "fmriprep /data/bids /out participant --participant-label 01 --fs-license-file license.txt --output-spaces MNI152NLin2009cAsym:res-2",
+      "alt": [
+        "Nipype 自建流程",
+        "AFNI proc 脚本"
+      ],
+      "offline": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "mne-python",
+      "label": "MNE-Python",
+      "kind": "stats+analysis",
+      "install": "pip install mne",
+      "minimalScript": "python -c \"import mne; r=mne.io.read_raw_fif('sub-01_task-rest_raw.fif', preload=True); r.filter(1,40).plot_psd()\"",
+      "alt": [
+        "FieldTrip",
+        "EEGLAB"
+      ],
+      "offline": true,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "id": "fieldtrip",
+      "label": "FieldTrip",
+      "kind": "analysis",
+      "install": "https://www.fieldtriptoolbox.org（MATLAB）",
+      "minimalScript": "cfg = []; cfg.dataset = 'sub-01.fif'; data = ft_preprocessing(cfg);",
+      "alt": [
+        "MNE-Python",
+        "EEGLAB"
+      ],
+      "offline": true,
+      "license": "GPL-3.0"
+    },
+    {
+      "id": "kilosort",
+      "label": "Kilosort 3",
+      "kind": "spike-sorting",
+      "install": "pip install kilosort（需 CUDA）",
+      "minimalScript": "python -c \"from kilosort import run_kilosort; ops, st, clu, tF, Wall, sc = run_kilosort(settings={'data_dir':'/data/rec01','n_chan_bin':384})\"",
+      "alt": [
+        "MountainSort5",
+        "SpikeInterface"
+      ],
+      "offline": true,
+      "license": "GPL-3.0"
+    },
+    {
+      "id": "psychopy",
+      "label": "PsychoPy",
+      "kind": "stimulus-presentation",
+      "install": "pip install psychopy",
+      "minimalScript": "python -c \"from psychopy import visual, core; w=visual.Window(); visual.TextStim(w,'test').draw(); w.flip(); core.wait(1.0); core.quit()\"",
+      "alt": [
+        "Presentation",
+        "jsPsych"
+      ],
+      "offline": true,
+      "license": "GPL-3.0"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "fwe-cluster-permutation",
+    "effect": "cohen-d",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「你这个 cluster 的阈值是怎么定的？换成 z>2.3 结果还在吗？」",
+      "defense": "方法里写明事前锁定的形成阈值（如 z>3.1, p<.001）与 cluster FWE p<.05，并附 randomise 5000 次的非参数结果与阈值敏感性表"
+    },
+    {
+      "attack": "「这是典型的 double dipping：你在这批数据上选 ROI，又在这批数据上算效应。」",
+      "defense": "ROI 定义为独立定位 run 或文献坐标（引坐标与半径），并给出留一被试（leave-one-subject-out）复算结果"
+    },
+    {
+      "attack": "「25 个被试的组效应也敢下结论？」",
+      "defense": "报事前功效仿真（含平滑与 cluster 推断的 effective n）、效应量 CI，并把结论限制在方向与位置而非精确幅度"
+    },
+    {
+      "attack": "「头动这么大的被试没剔，激活团块是不是就在运动皮层边缘？」",
+      "defense": "报 mean FD 分布、剔除规则（FD>0.5 mm 帧数）、剔除前后团块对比，并加头动作为逐帧回归量复算"
+    },
+    {
+      "attack": "「ERP 的基线窗换一下，你的条件差异就没了。」",
+      "defense": "报基线窗定义，附两种基线（如 −200~0 ms 与 −100~0 ms）与平均参考下的复算，并用全时段 cluster permutation 做无假设检验"
+    },
+    {
+      "attack": "「unit 数 800 个？你有几只动物？」",
+      "defense": "把动物数、每只 unit 数与记录时长分开报，主分析用 animal 为随机截距的混合模型，并给出按动物先平均后的 t 检验结果"
+    },
+    {
+      "attack": "「解码准确率 78% 相对 chance 显著——你的交叉验证是嵌套的吗？chance 怎么算的？」",
+      "defense": "说明嵌套 CV 结构（外层评估、内层调参）、chance 来自标签置换分布（≥1000 次）而非 1/n_class，且特征选择在训练折内完成"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "任务态 fMRI 组水平被试数",
+      "topJournal": "≥30/组（单条件对比），组间比较 ≥2×40",
+      "field": "12–25",
+      "source": "Eklund, Nichols & Knutsson 2016, PNAS 113:7900–7905（Cluster failure: inflated false-positive rates）对样本与校正的现实约束"
+    },
+    {
+      "metric": "静息态脑-行为相关的样本量",
+      "topJournal": "≥300（探索性 ≥1000）",
+      "field": "30–150",
+      "source": "Marek et al. 2022, Nature 603:654–660"
+    },
+    {
+      "metric": "多重比较校正报告",
+      "topJournal": "主结果给 FWE 校正（cluster/置换/TFCE），且给出未校正图作为补充",
+      "field": "常只报 p<.001 uncorrected",
+      "source": "Nichols et al. 2017, Nature Neuroscience 20:299–303（Best practices in data analysis and sharing in neuroimaging using MRI）"
+    },
+    {
+      "metric": "平滑核与 cluster 阈值一致性",
+      "topJournal": "FWHM、形成阈值、cluster 大小三者同时报出且与推断方法匹配",
+      "field": "只报最终团块坐标",
+      "source": "Eklund et al. 2016, PNAS；COBIDAS 报告清单"
+    },
+    {
+      "metric": "预处理与数据共享",
+      "topJournal": "BIDS 格式 + 流程容器化（fMRIPrep 版本号）+ 去标识原始数据可获取声明",
+      "field": "仅报软件名",
+      "source": "Gorgolewski et al. 2016, Scientific Data 3:160044（BIDS）"
+    },
+    {
+      "metric": "EEG/MEG 报告条目",
+      "topJournal": "电极蒙太奇、参考、伪迹流程、试次数、剔除比例、时频参数全报",
+      "field": "缺参考与剔除比例",
+      "source": "Pernet et al. 2020, Nature Neuroscience 23:1473–1483（COBIDAS MEEG）"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "被试与数据质量（头动/剔除/试次数）",
+      "主对比的组水平结果（校正后）",
+      "效应量与个体数据分布",
+      "控制分析（平滑/阈值/去噪敏感性）",
+      "与行为或临床变量的关系（若为探索则明确标注）"
+    ],
+    "figureBudget": 5,
+    "note": "Figure 1 永远是单被试示例 + 组水平统计图并列，且必须标出校正方式与阈值；正文第一段报数据质量（剔除多少帧、多少试次），不要从显著团块开始写。方法段的预处理链条要按顺序可复现到版本号。"
+  },
+  "reporting": [
+    "arrive"
+  ],
+  "reportingExternal": [
+    "bids",
+    "cobidas",
+    "cobidas-meeg"
+  ]
+}

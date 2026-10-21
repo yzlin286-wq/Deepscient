@@ -1,0 +1,43 @@
+{
+  "$meta": {
+    "note": "待人工确认 ISSN 的期刊"
+  },
+  "entries": [
+    {
+      "id": "bmj",
+      "name": "BMJ",
+      "reason": "no-confident-match",
+      "candidates": [
+        "BMJ",
+        "BMJ",
+        "BMJ Open",
+        "BMJ"
+      ]
+    },
+    {
+      "id": "jcb",
+      "name": "Journal of Cell Biology",
+      "reason": "no-confident-match",
+      "candidates": [
+        "The Journal of Cell Biology",
+        "European Journal of Cell Biology",
+        "The International Journal of Biochemistry & Cell Biology",
+        "American Journal of Respiratory Cell and Molecular Biology"
+      ]
+    },
+    {
+      "id": "neurips",
+      "name": "NeurIPS",
+      "reason": "no-confident-match",
+      "candidates": []
+    },
+    {
+      "id": "icml",
+      "name": "ICML",
+      "reason": "no-confident-match",
+      "candidates": [
+        "International Conference on Machine Learning"
+      ]
+    }
+  ]
+}

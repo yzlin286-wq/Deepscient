@@ -1,0 +1,658 @@
+{
+  "$meta": {
+    "schema": "discipline/1",
+    "id": "social-humanities",
+    "updatedAt": "2026-10-21"
+  },
+  "id": "social-humanities",
+  "label": "社科与人文",
+  "questionTypes": [
+    {
+      "id": "meaning",
+      "label": "行动者对处境的解释是什么",
+      "when": "关注意义、动机、经验而非频率",
+      "needs": [
+        "深度访谈或参与观察",
+        "研究者位置反思",
+        "编码簿与审计轨迹"
+      ]
+    },
+    {
+      "id": "process",
+      "label": "某个结果是通过什么机制发生的",
+      "when": "有明确后果，要追到产生它的决策链",
+      "needs": [
+        "过程追踪与可观察含义",
+        "至少两类独立证据",
+        "替代机制被排除"
+      ]
+    },
+    {
+      "id": "distribution",
+      "label": "某种观念/行为分布有多广",
+      "when": "要估计总体参数或群体间差异",
+      "needs": [
+        "概率抽样或明确抽样框",
+        "量表信度（α 或 ω）",
+        "加权与无应答分析"
+      ]
+    },
+    {
+      "id": "comparison",
+      "label": "为什么甲成了这样而乙没有",
+      "when": "2–20 个可界定的案例，结果不同但条件部分重叠",
+      "needs": [
+        "案例选择逻辑（most similar / most different）",
+        "条件与结果的编码规则",
+        "构型分析或比较历史"
+      ]
+    },
+    {
+      "id": "discourse",
+      "label": "文本如何建构对象与立场",
+      "when": "语料可获取，关注措辞、框架、互文",
+      "needs": [
+        "语料抽样与体裁控制",
+        "参照语料",
+        "关键性与搭配分析"
+      ]
+    },
+    {
+      "id": "normative",
+      "label": "某个规范主张能否成立",
+      "when": "哲学、法学、伦理学的论证性研究",
+      "needs": [
+        "前提显式化",
+        "反例与思想实验",
+        "对最强反对意见的回应"
+      ]
+    }
+  ],
+  "designs": [
+    {
+      "id": "single-case",
+      "label": "单案例研究（嵌入式多分析单位）",
+      "when": "案例是极端/关键/启示性个案，或要检验一个成熟理论在边界上的表现",
+      "requires": [
+        "分析单位界定（案例内再分若干子单位）",
+        "≥3 类独立证据来源（访谈 / 档案 / 观察 / 实物）",
+        "证据链（chain of evidence）与案例库",
+        "命题先于资料收集写成（Yin 的 rival explanations）"
+      ],
+      "nRule": "不按人数，按证据链密度：每个命题至少 2 条来源独立的证据；每类关键事实至少 2 份不同文件；访谈 15–30 人（或至新增访谈不再产生新编码连续 3 次）。",
+      "threats": [
+        {
+          "risk": "只做「故事复述」，理论贡献停留在描述层",
+          "mitigation": "事前写 1 个理论命题 + 2 个竞争解释，在讨论里逐条判定哪个被证据支持"
+        },
+        {
+          "risk": "只采信受访者叙事，把自我陈述当事实",
+          "mitigation": "对每一关键事实做三角验证，并在证据表里标注「仅单一来源」的条目"
+        },
+        {
+          "risk": "案例被选成「最配合的那一个」，选择性偏差未申明",
+          "mitigation": "写明案例选择逻辑（关键个案 / 极端个案 / 最大变异），并说明被排除的候选案例"
+        }
+      ],
+      "reporting": [],
+      "why": "单案例的价值在于机制与边界，不在于代表性。它的可信度来自可审计的证据链，而不是样本量。",
+      "source": "Yin 2018, Case Study Research and Applications (6th ed.), Sage, Ch. 2 与 Ch. 4 构念效度与证据链"
+    },
+    {
+      "id": "comparative-case",
+      "label": "比较案例 / 定性比较分析（QCA）",
+      "when": "中等数量案例（4–50），结果是条件组合的产物，存在等终性",
+      "requires": [
+        "案例总体与边界先界定",
+        "条件（condition）数量受案例数约束",
+        "校准锚点（完全不隶属 / 交叉点 / 完全隶属）显式",
+        "真值表与一致性阈值事前设定"
+      ],
+      "nRule": "条件数 k 与案例数 N：N ≥ 2^k 时避免有限多样性（k=4 需 ≥16 案例）；N < 2^k 时必须报「逻辑余项」处理方式。充分性 consistency ≥0.80、PRI ≥0.70、覆盖度 raw coverage 报出；必要性 consistency ≥0.90。",
+      "threats": [
+        {
+          "risk": "条件数超过案例数，模型过拟合出「完美」解",
+          "mitigation": "把 k 压到 ≤ N/4，报有限多样性比例，并做随机数据基准检验"
+        },
+        {
+          "risk": "一致性阈值事后下调直到出解",
+          "mitigation": "阈值写进预注册或方法节并声明调整历史，附阈值敏感性表（0.75/0.80/0.85）"
+        },
+        {
+          "risk": "把 QCA 解读成因果效应量",
+          "mitigation": "明确 QCA 给的是集合关系（充分/必要），不报「提升 X 个百分点」这类效应"
+        }
+      ],
+      "reporting": [],
+      "why": "当结果是多条件组合而不是单变量线性效应时，集合论方法比回归更贴近研究问题。",
+      "source": "Ragin 2008, Redesigning Social Inquiry: Fuzzy Sets and Beyond, University of Chicago Press; Rihoux & Ragin 2009, Configurational Comparative Methods, Sage"
+    },
+    {
+      "id": "grounded-theory",
+      "label": "扎根理论（建构主义取向）",
+      "when": "既有理论不足，需要从资料中生成中层理论",
+      "requires": [
+        "理论抽样（不是便利抽样）",
+        "开放-轴心-选择编码三阶段",
+        "持续比较与备忘录（memoing）",
+        "饱和判据明示"
+      ],
+      "nRule": "饱和判据要可核查：连续 3 次访谈（或 2 轮理论抽样）不再产生新编码；深度访谈通常 20–30 人，焦点小组 4–6 组 × 6–8 人；编码簿在饱和前应有 ≥3 个版本并留档。",
+      "threats": [
+        {
+          "risk": "用现成理论框架套资料（codebook shopping），编码簿第一天就定稿",
+          "mitigation": "保留编码簿版本历史，展示类别如何从资料中长出；至少 1 个类别是被资料推翻后重建的"
+        },
+        {
+          "risk": "「饱和」被当作停止收集的借口",
+          "mitigation": "报每轮新增编码数曲线，以及最后一次出现新编码的访谈编号"
+        },
+        {
+          "risk": "理论抽样被便利抽样替代（只找好约的人）",
+          "mitigation": "写明每轮抽样的理论理由（为什么下一个要选反例/极端案例）"
+        }
+      ],
+      "reporting": [],
+      "why": "扎根理论的产出是可检验的中层命题，它的合法性依赖抽样是理论驱动的、编码是从资料长出来的。",
+      "source": "Glaser & Strauss 1967, The Discovery of Grounded Theory, Aldine; Corbin & Strauss 2015, Basics of Qualitative Research (4th ed.), Sage"
+    },
+    {
+      "id": "thematic-analysis",
+      "label": "反思性主题分析（Braun & Clarke 六阶段）",
+      "when": "要系统梳理大量访谈/开放题材料的意义模式，不承诺生成新理论",
+      "requires": [
+        "熟悉资料 → 初始编码 → 生成主题 → 复核主题 → 定义命名 → 写作",
+        "双人独立编码 ≥20% 材料",
+        "研究者立场与理论取向声明",
+        "反例（negative case）分析"
+      ],
+      "nRule": "双人独立编码覆盖 ≥20% 材料（15 份访谈则 ≥4 份），逐份报一致与分歧；κ 只作参考不作门槛——类别高度不平衡时 κ 会虚低，重要的是分歧如何被解决并留痕。主题数一般 3–6 个，每个主题 ≥3 条来自不同受访者的引文。",
+      "threats": [
+        {
+          "risk": "把主题做成「话题汇总」（topic summary），失去意义上的组织性",
+          "mitigation": "每个主题写成一句主张（claim）+ 支撑引文 + 反例，主题名不得是名词短语清单"
+        },
+        {
+          "risk": "引文只挑最漂亮的那几句",
+          "mitigation": "报每个主题的引文覆盖受访者数，并单列「与主题不符」的材料"
+        },
+        {
+          "risk": "κ 高就当作可信，掩盖编码簿本身被协商到一致",
+          "mitigation": "报编码簿迭代过程与校准轮次；把一致性当程序性检查，不当效度证明"
+        }
+      ],
+      "reporting": [],
+      "why": "主题分析最灵活也最容易被写成「访谈摘录集」，因此六阶段的留痕就是它的方法学内容。",
+      "source": "Braun & Clarke 2006, Using thematic analysis in psychology, Qualitative Research in Psychology 3(2):77–101"
+    },
+    {
+      "id": "content-analysis",
+      "label": "定量内容分析",
+      "when": "材料量大、类别可操作化，要报频率与组间差异",
+      "requires": [
+        "内容单元与语境单元定义",
+        "编码簿含类别定义与示例",
+        "系统抽样框与抽样比例",
+        "编码员培训与信度检验"
+      ],
+      "nRule": "≥10% 内容单元（或至少 300 个单元）双编码；Krippendorff's α ≥0.800 为可接受（探索性 ≥0.667）；两编码员名义变量用 Cohen's κ ≥0.70。样本量按目标比例的 CI 定：比例 0.5、半宽 0.05 需约 384 个单元。",
+      "threats": [
+        {
+          "risk": "「其他/杂项」类别膨胀到 20% 以上，编码簿实际失效",
+          "mitigation": "设上限（≤10%），超限则重新归纳类别并重编码，报两次编码的差异"
+        },
+        {
+          "risk": "只报 κ 不报分歧如何处置，一致性变成表演",
+          "mitigation": "附分歧清单与裁决规则（第三人仲裁 / 讨论后修订编码簿），报修订前后两次 κ"
+        },
+        {
+          "risk": "抽样只取易获取的时段，季节性与事件性内容被漏掉",
+          "mitigation": "用构造周（constructed week）或分层随机抽样覆盖时间维度"
+        }
+      ],
+      "reporting": [],
+      "why": "内容分析把解释性判断变成可复核的计数，前提是编码簿可操作、信度可复算。",
+      "source": "Krippendorff 2019, Content Analysis: An Introduction to Its Methodology (4th ed.), Sage, Ch. 11 信度"
+    },
+    {
+      "id": "mixed-methods",
+      "label": "混合方法（聚敛式 / 解释性序列 / 探索性序列）",
+      "when": "单一方法无法同时回答「有多少」和「为什么」",
+      "requires": [
+        "设计类型与整合点显式声明",
+        "两股数据的抽样逻辑分别说明",
+        "联合展示（joint display）",
+        "meta-inference 与不一致处的处理"
+      ],
+      "nRule": "两股数据各自满足自己的标准：量化按功效（d=0.4、α=.05、power=.8 需 2×100），质性按饱和（通常 15–30 访谈）。不要求同一样本量，但必须报两股样本的重叠与差异；整合段落至少 1 张 joint display 表。",
+      "threats": [
+        {
+          "risk": "「两块并列」冒充整合：量化一章、质性一章，结论各说各话",
+          "mitigation": "加 joint display：行是主题/构念，列是量化指标与质性引文，最后一列写 meta-inference"
+        },
+        {
+          "risk": "质性只用来给量化结果配「生动引文」",
+          "mitigation": "声明质性承担的解释职能（补充机制 / 生成假设 / 挑战量化构念），并给出一处质性修正量化的实例"
+        },
+        {
+          "risk": "两股数据冲突被静默略过",
+          "mitigation": "单列「不一致」小节，说明是测量差异、样本差异还是构念差异"
+        }
+      ],
+      "reporting": [],
+      "why": "混合方法的方法学价值全在整合点上；没有整合，就只是两项研究装订在一起。",
+      "source": "Creswell & Plano Clark 2018, Designing and Conducting Mixed Methods Research (3rd ed.), Sage"
+    },
+    {
+      "id": "archival-analysis",
+      "label": "档案与文献分析（来源批判）",
+      "when": "研究对象已过去，或组织内部文件是唯一入口",
+      "requires": [
+        "档案系列与抽样框清单（含缺口）",
+        "来源批判四问：真实性、可靠性、代表性、意义",
+        "≥2 个独立档案系列交叉",
+        "引文按档案号可复核"
+      ],
+      "nRule": "每一关键事实至少 2 份来源独立的文件；档案抽样要报「可得 vs 应收」的比例，缺口清单逐条列出；引文必须带全宗号/卷宗号/页码，可复核率 100%。",
+      "threats": [
+        {
+          "risk": "档案沉默（archival silence）：被记录的是有权者的视角",
+          "mitigation": "显式讨论谁没有留下记录，并用口述史、报刊、司法卷宗补位"
+        },
+        {
+          "risk": "把官方文件的措辞当作实际行为",
+          "mitigation": "区分「规范文本」与「执行记录」，两者都要引，冲突处单独讨论"
+        },
+        {
+          "risk": "只用一个档案馆的一个系列，选材偏倚无法排除",
+          "mitigation": "跨 ≥2 个独立来源（如中央档案 + 地方档案 + 报刊），报各自的口径差异"
+        }
+      ],
+      "reporting": [],
+      "why": "档案不是中立的资料库，它的形成逻辑本身就是研究对象的一部分。",
+      "source": "Scott 1990, A Matter of Record: Documentary Sources in Social Research, Polity Press"
+    },
+    {
+      "id": "corpus-discourse",
+      "label": "语料库话语分析",
+      "when": "有可比语料，关注框架、措辞与话语变迁",
+      "requires": [
+        "语料抽样与体裁/时段控制",
+        "参照语料（同体裁、同时段）",
+        "分词与标注质量检查",
+        "关键性与搭配的效应量报告"
+      ],
+      "nRule": "专门语料 ≥100 万词；对比设计的每个子库 ≥10 万词（低于此 keyness 由噪声主导）。标注质量抽检 200 个单元，F1 ≥0.90；关键性报 log-likelihood 与 log ratio（效应量），不只报 p。",
+      "threats": [
+        {
+          "risk": "参照语料与目标语料体裁不匹配，keyness 只是体裁差异",
+          "mitigation": "参照语料按体裁、时段、渠道逐维匹配，报匹配表"
+        },
+        {
+          "risk": "把 keyness 当显著性检验（语料不是概率样本）",
+          "mitigation": "改写为「该词在本语料中的相对过量」，用效应量与分散度（哪几篇贡献）支撑"
+        },
+        {
+          "risk": "中文分词错误被读成语篇特征",
+          "mitigation": "双人标注抽检 + 报分词工具与词典版本，对关键词做人工回读"
+        }
+      ],
+      "reporting": [],
+      "why": "语料库方法把「我觉得这个说法很常见」变成可复核的频次与搭配证据。",
+      "source": "Baker 2006, Using Corpora in Discourse Analysis, Continuum; Stefanowitsch 2020, Corpus Linguistics: A Guide to the Methodology, Language Science Press"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "intercoder-reliability",
+      "label": "编码员间一致性",
+      "unit": "无量纲（Cohen's κ / Krippendorff's α）",
+      "how": "双人独立编码同一批单元后计算；名义变量用 κ，多编码员或序数用 α",
+      "precision": "由编码单元数与类别数决定；类别极不平衡时 κ 偏低（prevalence paradox），需同时报 PABAK 或 α",
+      "artifact": "编码员培训后「协商到一致」，把真实分歧消掉",
+      "calibration": "3 轮校准：独立编码 → 逐条对照 → 修订编码簿，报每轮 κ"
+    },
+    {
+      "id": "codebook-coverage",
+      "label": "编码簿覆盖与残余类别",
+      "unit": "百分比（编码单元覆盖率 / 其他类占比）",
+      "how": "统计落入每个编码的单元比例，单列「其他/杂项」",
+      "precision": "按单元计数，精确到 1 个百分点",
+      "artifact": "「其他」膨胀 >15% 说明类别不足，覆盖率高只是假象",
+      "calibration": "每 5 份新材料复核一次编码簿，保留版本历史"
+    },
+    {
+      "id": "saturation-curve",
+      "label": "饱和曲线（新增编码数）",
+      "unit": "个新编码/每轮访谈",
+      "how": "按收集顺序累计新编码数，画曲线并标出最后一次新增",
+      "precision": "按轮次计，最小单位 1 个编码",
+      "artifact": "把「没有新编码」写成饱和，但抽样已停止扩大",
+      "calibration": "理论抽样继续到出现反例或连续 3 次无新增"
+    },
+    {
+      "id": "likert-scale",
+      "label": "量表得分",
+      "unit": "量表分（如 1–7 Likert；总分或维度均分）",
+      "how": "预试后做项目分析，报 Cronbach's α 或 McDonald's ω 与验证性因子分析拟合",
+      "precision": "维度分通常 3–5 题，α ≥0.70 为可接受",
+      "artifact": "共同方法偏差（同一问卷自报自变量与因变量）",
+      "calibration": "反向题 + 预试 n=30 + Harman 单因子检验或标记变量法"
+    },
+    {
+      "id": "archive-provenance",
+      "label": "档案来源可追溯性",
+      "unit": "条目数 / 可复核率（%）",
+      "how": "每条引文登记全宗号、卷宗号、页码、阅档日期",
+      "precision": "精确到页；口述材料精确到录音时间码",
+      "artifact": "转引二手文献而未回原档，错误被层层继承",
+      "calibration": "关键引文回原档核对，抽样 20% 复核"
+    },
+    {
+      "id": "keyness",
+      "label": "关键词关键性",
+      "unit": "log-likelihood（LL）与 log ratio（每百万词）",
+      "how": "目标语料 vs 参照语料的频次比较，报效应量与贡献文档数",
+      "precision": "受语料规模限制，子库 <10 万词时不报 LL",
+      "artifact": "分词/标注错误与体裁差异被读成话语特征",
+      "calibration": "双人标注抽检 200 单元，F1 ≥0.90；关键词人工回读"
+    }
+  ],
+  "methods": [
+    {
+      "id": "reflexive-ta",
+      "label": "反思性主题分析六阶段",
+      "when": "访谈/开放式材料，需要系统化意义模式",
+      "assumptions": [
+        "分析者位置影响编码，需显式反思",
+        "主题是分析者建构而非资料中「等待被发现」"
+      ],
+      "tool": "NVivo / ATLAS.ti / MAXQDA，或纸笔 + 电子表格",
+      "pitfall": "把主题当成话题清单，主题名是名词而非主张",
+      "why": "六阶段给出可核查的路径，使解释不是印象而是留痕的判断。"
+    },
+    {
+      "id": "open-axial-coding",
+      "label": "开放-轴心-选择编码与持续比较",
+      "when": "扎根理论取向，要从资料生成理论",
+      "assumptions": [
+        "理论抽样可行",
+        "编码簿随资料演化"
+      ],
+      "tool": "MAXQDA / NVivo 的 memo 与矩阵查询",
+      "pitfall": "借用他人编码簿，编码与资料脱钩",
+      "why": "持续比较让类别在反例面前被修正，这是生成理论的引擎。"
+    },
+    {
+      "id": "kappa",
+      "label": "Cohen's κ / Krippendorff's α 计算与解释",
+      "when": "双人或多人编码后检验一致性",
+      "assumptions": [
+        "编码单元相互独立",
+        "类别互斥且穷尽",
+        "编码员独立作业"
+      ],
+      "tool": "R: irr、irrCAC；Python: statsmodels CohenKappa",
+      "pitfall": "只报 κ 不报分歧裁决；类别不平衡时用 κ 判死编码簿",
+      "why": "一致性是程序检查，不是效度证明——但缺了它，编码就无法被复核。"
+    },
+    {
+      "id": "qca",
+      "label": "定性比较分析（真值表与布尔最小化）",
+      "when": "中等 N、结果由条件组合决定、存在等终性",
+      "assumptions": [
+        "案例是条件构型",
+        "校准锚点有理论依据"
+      ],
+      "tool": "R: QCA 包；fsQCA 3.0",
+      "pitfall": "一致性阈值事后调整，或条件数 > 案例数/4",
+      "why": "它把「哪种组合通向结果」变成可复算的集合关系，而不是叙述性比较。"
+    },
+    {
+      "id": "process-tracing",
+      "label": "过程追踪与因果机制检验",
+      "when": "单案例或少数案例中追机制",
+      "assumptions": [
+        "机制有可观察含义（observable implications）",
+        "存在可排除的替代机制"
+      ],
+      "tool": "证据表（Bayesian 更新式）+ 手工编码，辅以 NVivo",
+      "pitfall": "只收集支持证据，不做 hoop test / smoking gun test",
+      "why": "机制主张的可信度取决于它能否在证据面前被证伪，而不是证据数量。"
+    },
+    {
+      "id": "joint-display",
+      "label": "混合方法整合（joint display 与 meta-inference）",
+      "when": "量化与质性两股数据并存",
+      "assumptions": [
+        "两股数据指向同一构念（或明确说明构念差异）",
+        "整合是分析步骤而非写作排布"
+      ],
+      "tool": "电子表格做矩阵；量化部分用 R/Python",
+      "pitfall": "并列呈现后称「相互印证」，没有 meta-inference",
+      "why": "整合点才是混合方法的产出，其余都是准备工作。"
+    },
+    {
+      "id": "keyness-collocation",
+      "label": "关键性与搭配分析",
+      "when": "语料可比、关注措辞与框架差异",
+      "assumptions": [
+        "参照语料体裁匹配",
+        "语料规模足以支撑频次比较"
+      ],
+      "tool": "R: quanteda；AntConc；#LancsBox",
+      "pitfall": "把 LL 值当 p 值，或忽略贡献文档集中度",
+      "why": "它把「说法不同」量化成可复核的过量与搭配模式。"
+    },
+    {
+      "id": "audit-trail",
+      "label": "审计轨迹与反例分析",
+      "when": "任何质性研究，用于建立可信度",
+      "assumptions": [
+        "过程可被外部复核",
+        "反例被主动寻找而非回避"
+      ],
+      "tool": "git 版本库 + 编码日志 + 备忘录",
+      "pitfall": "轨迹事后补写，时间戳与决策不一致",
+      "why": "Lincoln & Guba 的可信赖性四标准里，dependability 与 confirmability 只能靠轨迹兑现。"
+    }
+  ],
+  "tools": [
+    {
+      "id": "nvivo",
+      "label": "NVivo",
+      "kind": "qualitative-coding",
+      "install": "商业授权（Lumivero）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "ATLAS.ti",
+        "MAXQDA",
+        "Taguette"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "atlas-ti",
+      "label": "ATLAS.ti",
+      "kind": "qualitative-coding",
+      "install": "商业授权（ATLAS.ti Scientific Software）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "NVivo",
+        "MAXQDA"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "maxqda",
+      "label": "MAXQDA",
+      "kind": "qualitative-coding",
+      "install": "商业授权（VERBI）",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "NVivo",
+        "ATLAS.ti"
+      ],
+      "offline": true,
+      "license": "commercial"
+    },
+    {
+      "id": "r",
+      "label": "R",
+      "kind": "stats",
+      "install": "https://cran.r-project.org",
+      "minimalScript": "library(irr); kappa2(d[, c(\"coder1\", \"coder2\")], weight = \"nominal\")",
+      "alt": [
+        "Python statsmodels",
+        "SPSS"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "quanteda",
+      "label": "quanteda（R 包）",
+      "kind": "corpus",
+      "install": "install.packages(\"quanteda\")",
+      "minimalScript": "library(quanteda); x <- dfm(tokens(corpus(d$text))); print(textstat_keyness(x, target = docvars(x, \"grp\") == \"news\"))",
+      "alt": [
+        "AntConc",
+        "#LancsBox",
+        "Python spaCy"
+      ],
+      "offline": true,
+      "license": "GPL-3"
+    },
+    {
+      "id": "qca",
+      "label": "QCA（R 包）",
+      "kind": "configurational",
+      "install": "install.packages(\"QCA\")",
+      "minimalScript": "library(QCA); tt <- truthTable(d, outcome = \"Y\", conditions = \"A, B, C\", incl.cut = 0.8); print(minimize(tt, details = TRUE))",
+      "alt": [
+        "fsQCA 3.0",
+        "Tosmana"
+      ],
+      "offline": true,
+      "license": "GPL-2"
+    },
+    {
+      "id": "antconc",
+      "label": "AntConc",
+      "kind": "corpus",
+      "install": "https://www.laurenceanthony.net/software/antconc/",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "quanteda",
+        "#LancsBox"
+      ],
+      "offline": true,
+      "license": "freeware"
+    },
+    {
+      "id": "zotero",
+      "label": "Zotero",
+      "kind": "reference",
+      "install": "https://www.zotero.org/download",
+      "minimalScript": "（图形界面）",
+      "alt": [
+        "EndNote",
+        "BibTeX + biber"
+      ],
+      "offline": true,
+      "license": "AGPL-3.0"
+    }
+  ],
+  "statsDefaults": {
+    "alpha": 0.05,
+    "correction": "none",
+    "effect": "cohen_kappa",
+    "tails": 2
+  },
+  "reviewerAttacks": [
+    {
+      "attack": "「两个编码员 κ=0.81，所以编码可信——那编码簿是谁定的？会不会是把类别合并到一致为止？」",
+      "defense": "报编码簿 3 个版本与每轮校准的 κ，附分歧清单与裁决规则，明确一致性是程序检查而非效度证明"
+    },
+    {
+      "attack": "「这是单一个案，你凭什么推出一般性结论？」",
+      "defense": "把结论限定为机制与边界条件，声明可转移性由读者判断，并给出「若换环境会看到什么差异」的推论"
+    },
+    {
+      "attack": "「你说达到理论饱和，判据是什么？第几个访谈之后没有新编码？」",
+      "defense": "给饱和曲线与最后一次新增编码的访谈编号，并说明理论抽样为何在此停止"
+    },
+    {
+      "attack": "「15 个访谈、一个城市、一所高校的学生，代表性在哪里？」",
+      "defense": "说明抽样逻辑（理论抽样而非统计代表性），报受访者构成，并把结论限定在样本的描述范围内"
+    },
+    {
+      "attack": "「质性一章、量化一章，整合发生在哪一段？joint display 呢？」",
+      "defense": "补 joint display 矩阵与 meta-inference，并单列两股数据不一致之处及其解释"
+    },
+    {
+      "attack": "「档案只来自一个全宗，你怎么排除选材偏倚？」",
+      "defense": "补第二个独立来源交叉核对，列档案缺口清单，并讨论档案沉默对结论的影响"
+    },
+    {
+      "attack": "「关键性分析用的是 LL 值，但你的参照语料跟目标语料根本不是一个体裁。」",
+      "defense": "按体裁/时段/渠道重建匹配参照语料，改报 log ratio 与贡献文档数，承认 LL 不是显著性检验"
+    },
+    {
+      "attack": "「反例在哪里？你只贴了支持主题的引文。」",
+      "defense": "每个主题单列「不符合的材料」小节，说明例外是削弱、限定还是丰富了该主题"
+    },
+    {
+      "attack": "「QCA 的一致性阈值 0.75 是你看完结果才定的吧？」",
+      "defense": "给阈值敏感性表（0.75/0.80/0.85）与预注册记录，说明阈值调整前后的解是否稳定"
+    }
+  ],
+  "benchmarks": [
+    {
+      "metric": "双编码覆盖与一致性报告",
+      "topJournal": "≥20% 材料双人独立编码，报 Krippendorff's α ≥0.800（或 κ ≥0.70）及分歧裁决过程",
+      "field": "10% 材料，只报一个 κ 数字",
+      "source": "Krippendorff 2019, Content Analysis (4th ed.), Sage, Ch. 11；O'Connor & Joffe 2020, International Journal of Qualitative Methods 19:1–13"
+    },
+    {
+      "metric": "质性样本量与饱和判据",
+      "topJournal": "明示饱和判据（新增编码曲线）并做反例分析",
+      "field": "按惯例 12–20 个访谈，不解释为何停止",
+      "source": "Guest, Bunce & Johnson 2006, How many interviews are enough? Field Methods 18(1):59–82"
+    },
+    {
+      "metric": "案例研究的证据链",
+      "topJournal": "≥3 类独立证据来源 + 证据链 + 案例库可查",
+      "field": "仅访谈单一来源",
+      "source": "Yin 2018, Case Study Research and Applications (6th ed.), Sage, Ch. 2 构念效度与信度"
+    },
+    {
+      "metric": "混合方法整合深度",
+      "topJournal": "显式 joint display + meta-inference + 不一致处讨论",
+      "field": "两股结果并列呈现",
+      "source": "Creswell & Plano Clark 2018, Designing and Conducting Mixed Methods Research (3rd ed.), Sage"
+    },
+    {
+      "metric": "QCA 报告参数",
+      "topJournal": "consistency ≥0.80、PRI ≥0.70，校准锚点与阈值事前设定并做稳健性检验",
+      "field": "consistency 0.75，阈值事后调整",
+      "source": "Greckhamer, Furnari, Fiss & Aguilera 2018, Strategic Organization 16(4):482–495"
+    }
+  ],
+  "exemplarStructure": {
+    "resultsOrder": [
+      "研究情境与分析单位界定",
+      "材料来源与抽样（含编码簿来源与版本）",
+      "主题/构型呈现（每个主题带反例）",
+      "量化部分（如有，先报信效度）",
+      "整合（joint display 与 meta-inference）",
+      "替代解释与效度威胁"
+    ],
+    "figureBudget": 3,
+    "note": "社科人文的 Findings 第一段永远是「我看了什么材料、怎么选的、边界在哪」，不是最动人的那句引文。引文必须带受访者编号与人口学标签，且同一主题下引文要覆盖 ≥3 名不同受访者。图要少而准：一张案例/主题关系图（或 QCA 构型图）、一张饱和曲线或编码分布图，第三张留给整合矩阵。单案例论文不要画「理论框架图」充数，审稿人会问那张图是你事前的假设还是事后的总结。"
+  },
+  "reporting": [],
+  "reportingExternal": []
+}

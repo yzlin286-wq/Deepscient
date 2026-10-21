@@ -1,0 +1,63 @@
+{
+  "name": "rt-caffeine",
+  "design": "between-2",
+  "domain": "psychology",
+  "testId": "ttest-welch",
+  "columns": {
+    "a": {
+      "column": "rt",
+      "where": {
+        "group": "caffeine"
+      }
+    },
+    "b": {
+      "column": "rt",
+      "where": {
+        "group": "placebo"
+      }
+    }
+  },
+  "csv": "data.csv",
+  "howToCall": {
+    "tool": "science_stats",
+    "args": {
+      "projectId": "<你的课题 id>",
+      "testId": "ttest-welch",
+      "csvPath": "data/exp1.csv",
+      "columns": {
+        "a": {
+          "column": "rt",
+          "where": {
+            "group": "caffeine"
+          }
+        },
+        "b": {
+          "column": "rt",
+          "where": {
+            "group": "placebo"
+          }
+        }
+      }
+    },
+    "note": "长表格式：用 where 从同一列里切出两组，不需要先在 Excel 里拆表"
+  },
+  "expected": {
+    "n": {
+      "a": 24,
+      "b": 24
+    },
+    "statistic": -0.9516,
+    "df": 44.790660058687784,
+    "p": 0.346386,
+    "effectSize": {
+      "kind": "cohens-d",
+      "value": -0.2747
+    },
+    "fallbackP": 0.642689
+  },
+  "whatToLookAt": [
+    "先看 assumptions 里两组正态性；反应时通常右偏，偏得厉害就该用 Mann-Whitney",
+    "效应量带 CI：CI 跨 0 时不能只靠 p 值说有效",
+    "本例正态性可接受，但非参数检验 p = 0.6427 与 t 检验一致，这个一致性本身就是稳健性证据"
+  ]
+}
