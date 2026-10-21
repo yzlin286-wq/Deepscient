@@ -670,6 +670,9 @@ function routeNext(sci, projectId) {
   const advice = sci.coach.advise(sci.store, projectId)
   // advise() 的字段名是 current / nextActions / done —— 直接透出，不在这里改语义。
   const stage = advice.current ?? null
+  // 四个计数以前写死 0：界面上「当前阶段阻塞几个门」永远是 0，等于把最关键的信息丢了。
+  // advise 只给阶段身份，计数回 stageStatus 取真实值。
+  const live = stage ? sci.coach.stageStatus(sci.store, projectId, stage.id) : null
   return {
     projectId,
     stage: stage
@@ -677,10 +680,10 @@ function routeNext(sci, projectId) {
           id: stage.id,
           label: stage.label,
           goal: stage.goal,
-          blocking: 0,
-          warnings: 0,
-          skipped: 0,
-          manual: 0,
+          blocking: live?.blocking ?? 0,
+          warnings: live?.warnings ?? 0,
+          skipped: live?.skipped ?? 0,
+          manual: live?.manual ?? 0,
         }
       : null,
     reason: advice.reason ?? null,
@@ -698,6 +701,82 @@ function routeNext(sci, projectId) {
     tools: advice.tools ?? [],
     failureModes: advice.failureModes ?? [],
     done: Boolean(advice.done),
+  }
+}
+
+/**
+ * 总览：一次给全「走到哪、卡在哪、下一步、产出什么」。
+ *
+ * 分开取要打四个接口（projects/:id、stages、next、各自计数），首屏等四轮；
+ * 而且计数散在四处，界面自己加容易加错。这里合成一次，计数一律回 stageStatus 取。
+ *
+ * artifacts 的 present 用「所在阶段是否完成」判定：一个阶段的门全过了才算产物齐，
+ * 没过就标待产出。这是能力边界内的诚实近似——产物是否真的落盘由门自己查。
+ */
+function routeOverview(sci, projectId) {
+  const row = sci.store.db.prepare('SELECT * FROM project WHERE id = ?').get(projectId)
+  const stagesRoute = routeStages(sci, projectId)
+  const nextRoute = routeNext(sci, projectId)
+
+  const completed = stagesRoute.stages.filter((s) => s.complete)
+  const current = stagesRoute.stages.find((s) => !s.complete) ?? null
+  const total = stagesRoute.stages.length
+
+  const counts = {}
+  const countOf = (key, table) => {
+    try {
+      counts[key] = sci.store.db.prepare(`SELECT COUNT(*) AS c FROM ${table} WHERE project_id = ?`).get(projectId).c
+    } catch {
+      counts[key] = null
+    }
+  }
+  countOf('papers', 'paper')
+  countOf('analyses', 'analysis')
+  countOf('figures', 'figure_spec')
+  countOf('experiments', 'experiment')
+  countOf('runs', 'experiment_run')
+  countOf('provenance', 'provenance')
+
+  const artifacts = stagesRoute.stages.flatMap((s) =>
+    (s.artifacts ?? []).map((name) => ({
+      stageId: s.id,
+      stageLabel: s.label,
+      name,
+      present: Boolean(s.complete),
+    })))
+
+  return {
+    project: row ? projectRow(row) : null,
+    progress: {
+      done: completed.length,
+      total,
+      percent: total === 0 ? 0 : Math.round((completed.length / total) * 100),
+      current: current
+        ? {
+            id: current.id,
+            label: current.label,
+            goal: current.goal,
+            blocking: current.blocking,
+            warnings: current.warnings,
+            skipped: current.skipped,
+            manual: current.manual,
+          }
+        : null,
+      blockedNow: current?.blocking ?? 0,
+    },
+    counts,
+    artifacts,
+    next: { stage: nextRoute.stage, reason: nextRoute.reason, actions: nextRoute.nextActions },
+    stages: stagesRoute.stages.map((s) => ({
+      id: s.id,
+      label: s.label,
+      complete: s.complete,
+      blocking: s.blocking,
+      warnings: s.warnings,
+      skipped: s.skipped,
+      manual: s.manual,
+    })),
+    summary: stagesRoute.summary,
   }
 }
 
@@ -918,6 +997,10 @@ export async function handleApi(req, res, ctx = null) {
       }
       if (parts[2] === 'next') {
         json(res, 200, routeNext(sci, projectId))
+        return true
+      }
+      if (parts[2] === 'overview') {
+        json(res, 200, routeOverview(sci, projectId))
         return true
       }
       if (parts[2]) {

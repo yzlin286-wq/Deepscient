@@ -3,6 +3,28 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.6.0] — 2026-10-21
+
+控制台总览的数据面：一次拿全「走到哪、卡在哪、下一步、产出什么」，并修掉一处把关键信息写死的 bug。
+
+### 新增
+
+- **`GET /deepscient/api/projects/:id/overview`**：一次返回项目身份、进度（done/total/percent）、当前阶段四个真实计数、库内产物计数（文献/分析/图/实验/记录）、按阶段的产出清单（`present` 用「该阶段门全过」判定）、下一步动作（带 `fix`）与阶段汇总。界面首屏从此只打一个接口，不用再拼四个。
+
+### 修复
+
+- **`/next` 的当前阶段计数是假的**：`stage.blocking` / `warnings` / `skipped` / `manual` 在 `routeNext` 里被硬编码成 `0`，界面上「当前阶段阻塞几个门」永远显示 0，等于把最该看的信息丢了。现在回 `stageStatus()` 取真实值。实测某课题：当前 S1，阻塞 1 · 警告 3（此前一律 0）。
+
+### 实测（3081 真实库）
+
+```
+progress : 9/12 (75%)
+current  : S1 文献与现状 | 阻塞 1 警告 3 未留记录 0
+counts   : papers=0 analyses=2 figures=1
+artifacts: 22 项，已产出 15 项
+next[0]  : 至少检索过一次 → science_lit_query 或 science_search；检索范围要写进记录
+```
+
 ## [0.5.1] — 2026-10-21
 
 侧栏从「一个图标进去再点页签」改成「一页一个图标」，并把品牌露出的最后一处补齐。
