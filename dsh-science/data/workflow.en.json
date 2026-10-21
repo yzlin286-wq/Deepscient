@@ -1,0 +1,294 @@
+{
+  "$comment": "English overlay for dsh-science/data/workflow.json. Indexed by stage id and stage.gate id; anything missing falls back to the Chinese source and is reported in the API response as a fallback key.",
+  "stages": {
+    "S0": {
+      "label": "Question and scope",
+      "goal": "Shrink \"I want to work on this area\" into one sentence that can be falsified and finished within a year.",
+      "artifacts": ["project.json"]
+    },
+    "S1": {
+      "label": "Literature and state of the art",
+      "goal": "Know how far this question has been taken, and leave a verifiable search record.",
+      "artifacts": ["library records", "gap matrix"]
+    },
+    "S2": {
+      "label": "Hypothesis and design",
+      "goal": "Pick a design a reviewer would accept, and settle its preconditions one by one.",
+      "artifacts": ["plan.md"]
+    },
+    "S3": {
+      "label": "Sample size and preregistration",
+      "goal": "Lock the sample size, primary outcome, and analysis plan before the first participant is recruited, and register it publicly.",
+      "artifacts": ["sample-size section of plan.md", "prereg draft", "prereg_ref"]
+    },
+    "S4": {
+      "label": "Materials and measurement",
+      "goal": "Tie every variable to a concrete measurement action, and record its precision and calibration.",
+      "artifacts": ["measurement protocols under protocols/"]
+    },
+    "S5": {
+      "label": "Data collection",
+      "goal": "Collect data per the protocol, and leave the collection itself auditable.",
+      "artifacts": ["data/*.csv", "experiments/<slug>/<runId>/"]
+    },
+    "S6": {
+      "label": "Data management",
+      "goal": "Someone else should be able to understand this dataset and run it without you.",
+      "artifacts": ["env/env.json", "code/*.py"]
+    },
+    "S7": {
+      "label": "Statistical analysis",
+      "goal": "Run the pre-specified method, report effect sizes with intervals, and report the assumption checks too.",
+      "artifacts": ["analysis records", "draft results section"]
+    },
+    "S8": {
+      "label": "Figures and tables",
+      "goal": "A figure should read on its own, fit the page directly, and stay distinguishable for colour-blind readers and in greyscale print.",
+      "artifacts": ["figures/*.pdf", "figures/*.svg"]
+    },
+    "S9": {
+      "label": "Writing",
+      "goal": "Write to the target journal's structure, with every claim pointing at one piece of evidence or one result record.",
+      "artifacts": ["paper.md"]
+    },
+    "S10": {
+      "label": "Internal review",
+      "goal": "Attack your own paper the way a reviewer would, before submission.",
+      "artifacts": ["audit report", "provenance listing"]
+    },
+    "S11": {
+      "label": "Submission and revision",
+      "goal": "Build to the journal's requirements, submit, and answer every revision point instead of arguing.",
+      "artifacts": ["PDF/DOCX/JATS/HTML", "cover letter", "response to reviewers"]
+    }
+  },
+  "gates": {
+    "S0.project": {
+      "label": "Project exists",
+      "fix": "science_project_open { title, domain, question }"
+    },
+    "S0.question": {
+      "label": "Research question is one sentence",
+      "fix": "Fill in question: population + variable + comparison + time point"
+    },
+    "S0.domain": {
+      "label": "Discipline identified",
+      "fix": "Provide domain or targetJournal so the matcher can decide the discipline"
+    },
+    "S0.ethics": {
+      "label": "Ethics and data licence recorded",
+      "fix": "Pass ethics and dataLicense to science_project_open; even \"not applicable\" must be written down"
+    },
+    "S0.scope": {
+      "label": "Scope fits within one study",
+      "fix": "Self-check: can you recruit the sample, book the equipment, obtain the data, and finish in time"
+    },
+    "S1.search": {
+      "label": "At least one search performed",
+      "fix": "science_lit_query or science_search; put the search scope in the record"
+    },
+    "S1.papers": {
+      "label": "At least 10 papers in the library",
+      "fix": "Add databases and search strings; results from a single database are not a review"
+    },
+    "S1.fulltext": {
+      "label": "Full text available for key papers",
+      "fix": "Use the science_fulltext_hunting workflow to locate open-access versions"
+    },
+    "S1.gap": {
+      "label": "Gap located",
+      "fix": "science_gap_matrix: lay out established findings and open questions as a matrix"
+    },
+    "S1.coverage": {
+      "label": "Search strings and time window reproducible",
+      "fix": "Record: databases, search strings, time window, inclusion/exclusion criteria, search date"
+    },
+    "S2.design": {
+      "label": "Design chosen",
+      "fix": "science_discipline_profile shows the designs in this field, then specify one with science_exp_plan"
+    },
+    "S2.hypothesis": {
+      "label": "Hypothesis is falsifiable",
+      "fix": "Write it as \"X causes Y because Z; observing not-Y refutes it\""
+    },
+    "S2.outcome": {
+      "label": "Exactly one primary outcome, defined",
+      "fix": "Keep one primary outcome; label the rest secondary or exploratory"
+    },
+    "S2.requires": {
+      "label": "Design preconditions settled one by one",
+      "fix": "The requires list from science_exp_plan is a checklist; tick every item"
+    },
+    "S2.threats": {
+      "label": "Main threats have countermeasures",
+      "fix": "Every threat needs a mitigation; listing threats without countermeasures counts as not done"
+    },
+    "S2.controls": {
+      "label": "Controls and blinding are sound",
+      "fix": "Self-check: what the control group is compared against, who is blinded, what breaks the blind"
+    },
+    "S3.sample": {
+      "label": "Sample size is justified",
+      "fix": "Give an effect size to compute n, or a given n to compute the MDE; both routes need numbers"
+    },
+    "S3.power": {
+      "label": "Power and alpha declared",
+      "fix": "Default α = 0.05 and power = 0.80; use 0.90 for replication studies"
+    },
+    "S3.cluster": {
+      "label": "Design effect computed for clustered designs",
+      "fix": "When randomising by class, village, or ward, pass clusterSize and icc"
+    },
+    "S3.prereg": {
+      "label": "Preregistration submitted with an id",
+      "fix": "Post the prereg draft to OSF/PROSPERO and put the DOI into the project card"
+    },
+    "S3.stopping": {
+      "label": "Stopping rules and exclusions fixed in advance",
+      "fix": "Self-check: when recruitment stops, which data is void, and who decides"
+    },
+    "S4.measure": {
+      "label": "Every variable has a measurement definition",
+      "fix": "The measurements section of science_discipline_profile gives units, procedure, outputs, and calibration"
+    },
+    "S4.instruments": {
+      "label": "Instruments and scales in place",
+      "fix": "Self-check: scale licences, equipment bookings, consumables delivered, software licences"
+    },
+    "S4.calibration": {
+      "label": "Calibration and pilot done",
+      "fix": "Self-check: where the calibration record is, how many pilot cases, whether pilot data is excluded"
+    },
+    "S5.data": {
+      "label": "Data files under data/",
+      "fix": "Keep raw data in data/, not in code/ or the repository root"
+    },
+    "S5.run": {
+      "label": "At least one recorded run",
+      "fix": "science_exp_run: record input/output hashes, environment, and seed together"
+    },
+    "S5.dictionary": {
+      "label": "Data dictionary written",
+      "fix": "For each column: meaning, unit, value domain, missing-value code (NA must not be confused with 0)"
+    },
+    "S5.raw-untouched": {
+      "label": "Raw data not overwritten",
+      "fix": "Write cleaning output to data/clean/; keep the raw files read-only"
+    },
+    "S6.env": {
+      "label": "Environment pinned",
+      "fix": "science_exp_run writes env.json automatically; add requirements/lock as well"
+    },
+    "S6.code": {
+      "label": "Analysis code under code/",
+      "fix": "Name analysis scripts run.py and keep them in code/, one script per task"
+    },
+    "S6.missing": {
+      "label": "Missing-data strategy decided",
+      "fix": "Report the missing proportion first, then choose deletion or imputation; imputation needs a sensitivity analysis"
+    },
+    "S6.outlier": {
+      "label": "Outlier rules fixed in advance",
+      "fix": "State the criterion, the handling, and the results both before and after handling"
+    },
+    "S7.analysis": {
+      "label": "Primary analysis run",
+      "fix": "science_stats: read assumptions first, then p"
+    },
+    "S7.effect": {
+      "label": "Effect size and confidence interval reported",
+      "fix": "A p-value-only analysis is incomplete; switch to a test that reports effectSize or compute it"
+    },
+    "S7.assumptions": {
+      "label": "No unresolved assumption failures",
+      "fix": "If assumptions fail, rerun with an alternative test listed in the warnings from science_stats"
+    },
+    "S7.multiplicity": {
+      "label": "Multiple-comparison policy applied",
+      "fix": "Do not correct the primary hypothesis but declare it; correct the rest per the pre-specified policy (holm/BH)"
+    },
+    "S7.sensitivity": {
+      "label": "At least one robustness check done",
+      "fix": "Non-parametric counterpart, rerun without outliers, or swap a covariate — pick one and report agreement"
+    },
+    "S8.figure": {
+      "label": "At least one figure produced",
+      "fix": "science_figure: size figures in millimetres to the journal's spec"
+    },
+    "S8.ready": {
+      "label": "Figure passes the journal self-check",
+      "fix": "Check: font ≥ 6 pt, raster ≥ 300 dpi, a vector format present"
+    },
+    "S8.errbars": {
+      "label": "Error-bar meaning declared",
+      "fix": "SD / SEM / 95% CI must be stated in the caption; never mix them"
+    },
+    "S8.tables": {
+      "label": "Main table readable on its own",
+      "fix": "Self-check: every column has a unit, every group an n, every statistic a df"
+    },
+    "S9.manuscript": {
+      "label": "Manuscript created",
+      "fix": "science_manuscript_new; templates come from journals.json"
+    },
+    "S9.journal": {
+      "label": "Target journal chosen",
+      "fix": "Pick with science_journal_fit, or pass targetJournal directly"
+    },
+    "S9.lint": {
+      "label": "No blocking lint issues",
+      "fix": "science_manuscript_lint; blocking issues must be fixed before building outputs"
+    },
+    "S9.reporting": {
+      "label": "Reporting guideline checked item by item",
+      "fix": "science_reporting_standards: CONSORT/PRISMA/ARRIVE etc., chosen by design"
+    },
+    "S9.unverified": {
+      "label": "No unmarked unverified claims",
+      "fix": "For each [unverified] passage either add evidence or demote it to a limitation"
+    },
+    "S10.audit": {
+      "label": "Manuscript audited",
+      "fix": "science_paper_audit: score item by item against reviewer dimensions"
+    },
+    "S10.prov": {
+      "label": "Provenance chain verifies",
+      "fix": "science_provenance; if the chain breaks, resolve it before writing the methods section"
+    },
+    "S10.repro": {
+      "label": "Reproducibility checklist met",
+      "fix": "The L1–L4 levels from science_reproducibility; reach at least L2 (runnable)"
+    },
+    "S10.figs": {
+      "label": "Figures match the numbers in the text",
+      "fix": "Spot-check: every n and every p in the text is traceable to an analysis record"
+    },
+    "S11.build": {
+      "label": "All four outputs built",
+      "fix": "science_manuscript_build: PDF + DOCX + JATS + HTML"
+    },
+    "S11.format": {
+      "label": "Typesetting environment check passes",
+      "fix": "science_format_check: install missing packages first; any downgrade must be stated in the submission notes"
+    },
+    "S11.route": {
+      "label": "Submission route confirmed",
+      "fix": "science_submission_route: system, file naming, author order, conflict-of-interest statement"
+    },
+    "S11.cover": {
+      "label": "Cover letter written",
+      "fix": "science_cover_letter: one paragraph on the gap, two on the findings, one on fit to this journal"
+    },
+    "S11.rebuttal": {
+      "label": "Every revision point answered",
+      "fix": "science_rebuttal: one response per comment; change what you can, and give reasons plus alternatives where you cannot"
+    }
+  },
+  "globalRules": [
+    "Missing means skip: unfindable, unrunnable, or absent data is always marked skip with what is missing — never pass.",
+    "Freeze before analysing: design, primary outcome, sample size, and analysis plan are fixed before looking at the data. Changing the plan after seeing data must be declared exploratory in the manuscript.",
+    "Effect sizes and intervals first: a result reporting only a p-value is incomplete in this application.",
+    "Every number traceable: each n and p in the text must map to an entry in an analysis or run record.",
+    "No acceptance predictions: this application gives no probability of acceptance and no judgement beyond journal tiering."
+  ]
+}

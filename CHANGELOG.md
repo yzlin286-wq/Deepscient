@@ -3,6 +3,33 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 `dsh-science/` 是独立版本线（当前 0.2.0），随产品迭代但不跟着改号，原因见 [docs/spec.md](docs/spec.md)。
 
+## [0.6.3] — 2026-10-21
+
+数据层双语打通：英文模式下阶段名、门名、下一步动作都是英文，判定结果不变。
+
+### 新增
+
+- **`dsh-science/data/workflow.en.json`**：12 个阶段的 `label` / `goal` / `artifacts`，55 个门的 `label` / `fix`，外加 5 条 `globalRules` 的英文版。按 `stageId` 与 `stageId.gateId` 索引。
+- **`?locale=en`**：`/projects/:id/stages`、`/next`、`/overview` 接受语言参数。`label` / `goal` / `artifacts` / `fix` 取覆盖表，`complete` / `blocking` / `status` 一律仍由 `stageStatus()` 判定——翻译不碰结论。
+- **`fallbacks[]`**：没翻到的阶段或门，key 会列进响应的 `fallbacks` 数组，不回退得无声无息。
+- 前端 `withLocale(path)`：请求自动带 `locale=<当前语言>`，中文时不加参数（与现网一致）。
+
+### 修复
+
+- **覆盖文件读错目录**：`scienceRoot()` 返回的是 `$DSH_HOME/science`（实例的研究库），而 `workflow.json` 在**包目录**里。改成按候选顺序找真正装着 `workflow.json` 的那份（环境变量 → 仓库同级 `dsh-science` → 各 profile 的 `node_modules`）。此前读到不存在的路径后静默回退，表现为「`?locale=en` 没反应」。
+
+### 实测
+
+```
+[zh] S1 = 文献与现状                     | 至少检索过一次            [status=fail] | fallbacks=0
+[en] S1 = Literature and state of the art | At least one search performed [status=fail] | fallbacks=0
+```
+
+### 未完成
+
+- `tools.en.json`（36 个工具的描述）与 `sources.en.json`（8 个源）未建，工具页与接入页的数据仍是中文。
+- 引导（47 条）与设置（43 条）界面文案仍是中文硬编码。
+
 ## [0.6.2] — 2026-10-21
 
 流程 / 工具 / 计费 / 接入 / 说明五页文案迁进字典，字典到 125 key，中英逐 key 对齐。

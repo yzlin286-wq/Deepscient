@@ -15,7 +15,7 @@ window.__ModuleLoader__.load({
        而且验证脚本可以直接 curl 它。                                          */
 
     async function getJson(path) {
-      const res = await fetch(`${API}${path}`, { credentials: 'same-origin', headers: { accept: 'application/json' } })
+      const res = await fetch(`${API}${withLocale(path)}`, { credentials: 'same-origin', headers: { accept: 'application/json' } })
       const text = await res.text()
       let body = null
       try {
@@ -48,6 +48,19 @@ window.__ModuleLoader__.load({
         const off = locale?.subscribe?.(() => bump((n) => n + 1))
         return typeof off === 'function' ? off : undefined
       }, [])
+    }
+
+    /** 请求带上当前语言：阶段名、门名、下一步动作由服务端按语言回。 */
+    function withLocale(path) {
+      if (!path) return path
+      let active = 'zh'
+      try {
+        active = i18n.ctx?.get?.('locale')?.getLocale?.()?.active ?? 'zh'
+      } catch {
+        active = 'zh'
+      }
+      if (!active || String(active).startsWith('zh')) return path
+      return path + (path.includes('?') ? '&' : '?') + 'locale=' + encodeURIComponent(active)
     }
 
     function useApi(path, deps = []) {

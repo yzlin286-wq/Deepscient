@@ -14,12 +14,79 @@ import { fileURLToPath } from 'node:url'
 
 import { getDoc, listDocs } from './content.js'
 import { readSettings, writeSettings } from './settings.js'
-import { dshHome, science, scienceRoot } from './science.js'
+import { dshHome, pkgDir, science, scienceRoot } from './science.js'
 import { checkInstalled, readIndex as readVendorIndex, VENDOR_ROOT, MANIFEST as VENDOR_MANIFEST } from '../scripts/install-skills.mjs'
 import { clearSource, listSources, updateSources, verifySource, mask } from './sources.js'
 import { usageRange } from './usage.js'
 
 const API = '/deepscient/api'
+
+/* ── 英文覆盖 ───────────────────────────────────────────────────────────────
+   中文写在数据里（workflow.json / sources.js），翻译另存 <name>.en.json，按 id 索引。
+   缺项回退中文并把 key 记进 fallbacks——静默回退会让人以为已经翻完。 */
+
+const OVERLAY_CACHE = new Map()
+
+/**
+ * 覆盖文件跟着 dsh-science 包走，不是跟着 DSH_HOME 走：
+ * scienceRoot() 是「这个实例的研究库」，而 workflow.json 在包目录里。
+ * 按候选顺序找到真正装着 workflow.json 的那份，避免读到不存在的路径后静默回退。
+ */
+function scienceDataDir() {
+  const candidates = [
+    process.env.DEEPSCIENT_SCIENCE_DIR ? join(process.env.DEEPSCIENT_SCIENCE_DIR, 'data') : null,
+    join(pkgDir, '..', 'dsh-science', 'data'),
+    ...['deepscient', 'web', 'desktop'].map((profile) =>
+      join(dshHome(), 'profiles', profile, 'node_modules', '@local', 'dsh-science', 'data')),
+  ].filter(Boolean)
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'workflow.json'))) return dir
+  }
+  return candidates[1]
+}
+
+function loadOverlay(file) {
+  if (OVERLAY_CACHE.has(file)) return OVERLAY_CACHE.get(file)
+  let data = null
+  try {
+    data = JSON.parse(readFileSync(join(scienceDataDir(), file), 'utf8'))
+  } catch {
+    data = null
+  }
+  OVERLAY_CACHE.set(file, data)
+  return data
+}
+
+function wantEnglish(url) {
+  return String(url?.searchParams?.get('locale') ?? '').toLowerCase().startsWith('en')
+}
+
+/** workflow 的英文覆盖；没翻到的阶段或门记进 fallbacks。 */
+function localizeWorkflow(wf, fallbacks) {
+  const en = loadOverlay('workflow.en.json')
+  if (!en) return wf
+  const stages = (wf.stages ?? []).map((stage) => {
+    const s = en.stages?.[stage.id]
+    if (!s) fallbacks.push(`workflow.${stage.id}`)
+    const gates = (stage.gates ?? []).map((gate) => {
+      const g = en.gates?.[`${stage.id}.${gate.id}`]
+      if (!g) {
+        fallbacks.push(`workflow.${stage.id}.${gate.id}`)
+        return gate
+      }
+      return { ...gate, label: g.label ?? gate.label, fix: g.fix ?? gate.fix }
+    })
+    return {
+      ...stage,
+      label: s?.label ?? stage.label,
+      goal: s?.goal ?? stage.goal,
+      artifacts: s?.artifacts ?? stage.artifacts,
+      gates,
+    }
+  })
+  return { ...wf, stages, globalRules: en.globalRules ?? wf.globalRules }
+}
+
 
 /** 每条路由允许的方法；不在表里的一律 405，明确告诉对方可用方法。 */
 const METHODS = {
@@ -626,32 +693,39 @@ function findApiKeyEnv(node, providerId, depth = 0) {
   return null
 }
 
-function routeStages(sci, projectId) {
-  const wf = sci.coach.loadWorkflow()
+function routeStages(sci, projectId, url = null) {
+  const fallbacks = []
+  const raw = sci.coach.loadWorkflow()
+  const wf = wantEnglish(url) ? localizeWorkflow(raw, fallbacks) : raw
   const stages = wf.stages.map((s) => {
     const st = sci.coach.stageStatus(sci.store, projectId, s.id)
     return {
       id: st.id,
-      label: st.label,
-      goal: st.goal,
+      // label / goal / artifacts / gate 的文案取本地化后的 workflow；
+      // complete / blocking / status 这些判定仍来自 stageStatus，不在这里重算。
+      label: s.label,
+      goal: s.goal,
       complete: st.complete,
       blocking: st.blocking,
       warnings: st.warnings,
       skipped: st.skipped,
       manual: st.manual,
       tools: st.tools,
-      artifacts: st.artifacts,
-      gates: st.gates.map((g) => ({
-        id: g.id,
-        label: g.label,
-        severity: g.severity,
-        status: g.status,
-        detail: g.detail ?? null,
-        fix: g.fix ?? null,
-      })),
+      artifacts: s.artifacts,
+      gates: (s.gates ?? []).map((g) => {
+        const live = (st.gates ?? []).find((x) => x.id === g.id) ?? {}
+        return {
+          id: g.id,
+          label: g.label,
+          severity: g.severity,
+          status: live.status ?? null,
+          detail: live.detail ?? null,
+          fix: g.fix ?? live.fix ?? null,
+        }
+      }),
     }
   })
-  return {
+  const payload = {
     projectId,
     severityOrder: wf.severityOrder ?? [],
     stages,
@@ -664,9 +738,20 @@ function routeStages(sci, projectId) {
       manual: stages.reduce((n, s) => n + s.manual, 0),
     },
   }
+  if (fallbacks.length) payload.fallbacks = [...new Set(fallbacks)]
+  return payload
 }
 
-function routeNext(sci, projectId) {
+function routeNext(sci, projectId, url = null) {
+  const fallbacks = []
+  const raw = sci.coach.loadWorkflow()
+  const wf = wantEnglish(url) ? localizeWorkflow(raw, fallbacks) : raw
+  const stageById = new Map(wf.stages.map((s) => [s.id, s]))
+  const gateText = (stageId, gateId) => {
+    const stage = stageById.get(stageId)
+    const gate = (stage?.gates ?? []).find((g) => g.id === gateId)
+    return gate ?? null
+  }
   const advice = sci.coach.advise(sci.store, projectId)
   // advise() 的字段名是 current / nextActions / done —— 直接透出，不在这里改语义。
   const stage = advice.current ?? null
@@ -678,8 +763,8 @@ function routeNext(sci, projectId) {
     stage: stage
       ? {
           id: stage.id,
-          label: stage.label,
-          goal: stage.goal,
+          label: stageById.get(stage.id)?.label ?? stage.label,
+          goal: stageById.get(stage.id)?.goal ?? stage.goal,
           blocking: live?.blocking ?? 0,
           warnings: live?.warnings ?? 0,
           skipped: live?.skipped ?? 0,
@@ -687,16 +772,19 @@ function routeNext(sci, projectId) {
         }
       : null,
     reason: advice.reason ?? null,
-    nextActions: (advice.nextActions ?? []).map((a) => ({
+    nextActions: (advice.nextActions ?? []).map((a) => {
+      const localized = gateText(stage?.id ?? '', a.gate ?? '')
+      return {
       // advise 的条目是 {gate, label, fix, detail, reason}：没有 severity/status，
       // 取法本身就说明了严重度（blocking > warning > unrecorded > self-check）。
       gate: a.gate ?? null,
       id: a.gate ?? null,
-      label: a.label ?? null,
+      label: localized?.label ?? a.label ?? null,
       detail: a.detail ?? null,
-      fix: a.fix ?? null,
+      fix: localized?.fix ?? a.fix ?? null,
       reason: a.reason ?? null,
-    })),
+      }
+    }),
     stages: advice.stages ?? [],
     tools: advice.tools ?? [],
     failureModes: advice.failureModes ?? [],
@@ -713,10 +801,10 @@ function routeNext(sci, projectId) {
  * artifacts 的 present 用「所在阶段是否完成」判定：一个阶段的门全过了才算产物齐，
  * 没过就标待产出。这是能力边界内的诚实近似——产物是否真的落盘由门自己查。
  */
-function routeOverview(sci, projectId) {
+function routeOverview(sci, projectId, url = null) {
   const row = sci.store.db.prepare('SELECT * FROM project WHERE id = ?').get(projectId)
-  const stagesRoute = routeStages(sci, projectId)
-  const nextRoute = routeNext(sci, projectId)
+  const stagesRoute = routeStages(sci, projectId, url)
+  const nextRoute = routeNext(sci, projectId, url)
 
   const completed = stagesRoute.stages.filter((s) => s.complete)
   const current = stagesRoute.stages.find((s) => !s.complete) ?? null
@@ -777,6 +865,7 @@ function routeOverview(sci, projectId) {
       manual: s.manual,
     })),
     summary: stagesRoute.summary,
+    ...(stagesRoute.fallbacks ? { fallbacks: stagesRoute.fallbacks } : {}),
   }
 }
 
@@ -992,15 +1081,15 @@ export async function handleApi(req, res, ctx = null) {
       }
 
       if (parts[2] === 'stages') {
-        json(res, 200, routeStages(sci, projectId))
+        json(res, 200, routeStages(sci, projectId, url))
         return true
       }
       if (parts[2] === 'next') {
-        json(res, 200, routeNext(sci, projectId))
+        json(res, 200, routeNext(sci, projectId, url))
         return true
       }
       if (parts[2] === 'overview') {
-        json(res, 200, routeOverview(sci, projectId))
+        json(res, 200, routeOverview(sci, projectId, url))
         return true
       }
       if (parts[2]) {
