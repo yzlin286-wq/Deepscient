@@ -70,20 +70,59 @@ window.__ModuleLoader__.load({
     /** 读端点（按需触发的那种）：与 sendJson 同一套错误口径。 */
     const fetchJson = (path) => sendJson('GET', path)
 
-    /* ── 面板导航：胶囊/引导要能把主面板切到指定页签 ───────────────────────
-       主面板是按需挂载的，模块级的一个待办位就够了；挂载后先读它再清掉。      */
+    /* ── 一级面板注册表 ────────────────────────────────────────────────────
+       6 个页面各占侧栏一个图标，id 与 main 的 key 必须同名：侧栏点下去的 id
+       就是主栏要渲染的 key。这张表同时驱动两处注册，不可能对不上。            */
 
-    const panelNav = { pending: null, listeners: new Set() }
+    const PAGES = [
+      { key: 'workbench', title: '工作台', order: 20, Icon: WorkbenchIcon, Component: WorkbenchPage },
+      { key: 'stages', title: '流程', order: 21, Icon: StagesIcon, Component: StagesPage },
+      { key: 'tools', title: '工具', order: 22, Icon: ToolsIcon, Component: ToolsPage },
+      { key: 'billing', title: '计费', order: 23, Icon: BillingIcon, Component: BillingPage },
+      { key: 'sources', title: '接入', order: 24, Icon: SourcesIcon, Component: SourcesPage },
+      { key: 'docs', title: '说明', order: 25, Icon: DocsIcon, Component: DocsPage },
+    ]
 
-    function requestPanel(tab) {
-      panelNav.pending = tab
-      panelNav.listeners.forEach((fn) => fn(tab))
+    const panelId = (key) => `science-${key}`
+
+    /* ── 跨面板导航：胶囊、引导、设置里点了「计费」「接入」都要换一级面板 ─────
+       拍平之后没有「页签」这个概念了，切面板就是 layout 服务的 selectPanel。   */
+
+    const panelHost = { ctx: null }
+
+    function requestPanel(key) {
+      const page = PAGES.find((item) => item.key === key)
+      if (!page) return
+      try {
+        panelHost.ctx?.get?.('layout')?.selectPanel?.(panelId(page.key))
+      } catch {
+        /* 没有 layout 服务时什么也不做：面板本来就已经在那儿了 */
+      }
     }
 
-    function subscribePanel(fn) {
-      panelNav.listeners.add(fn)
-      return () => panelNav.listeners.delete(fn)
+    /* ── 选中课题：跨面板共享，切换面板不丢选择 ───────────────────────────── */
+
+    const selection = { projectId: '', listeners: new Set() }
+
+    function selectProject(id) {
+      selection.projectId = id || ''
+      selection.listeners.forEach((fn) => fn())
     }
+
+    function useSelectedProject(projects) {
+      const [id, setId] = useState(selection.projectId)
+      useEffect(() => {
+        const fn = () => setId(selection.projectId)
+        selection.listeners.add(fn)
+        return () => { selection.listeners.delete(fn) }
+      }, [])
+      const first = projects.data?.items?.[0]?.id ?? ''
+      return [id || first, selectProject]
+    }
+
+    /* 「工作台」点阶段梯子上的某一级要展开「流程」里的同一级。
+       两个面板是两个独立挂载点，中间只留一个待展开的 id。 */
+    const stageJump = { id: '' }
 
     /** 万级以内给原数，以上给 k/M：底部胶囊位置小，别撑成一行。 */
     function formatTokens(value) {
@@ -107,11 +146,6 @@ window.__ModuleLoader__.load({
       sub: { fontSize: 12, opacity: 0.6 },
       spacer: { flex: 1 },
       body: { flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 20px 40px' },
-      tabs: { display: 'flex', gap: 4, padding: '0 20px', borderBottom: '1px solid rgba(127,127,127,0.18)' },
-      tab: (active) => ({
-        padding: '9px 12px', fontSize: 13, cursor: 'pointer', background: 'none', border: 'none',
-        color: 'inherit', opacity: active ? 1 : 0.55, borderBottom: active ? '2px solid #1f6f5c' : '2px solid transparent',
-      }),
       card: {
         border: '1px solid rgba(127,127,127,0.18)', borderRadius: 10, padding: 14,
         marginBottom: 12, background: 'rgba(127,127,127,0.04)',
@@ -202,13 +236,63 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function PanelIcon({ size = 18, active }) {
+    /* ── 侧栏一级图标 ──────────────────────────────────────────────────────
+       6 个页面 6 个图标，同一套笔画（1.5-1.6，currentColor，未选中降透明度），
+       全部内联，不引外部资源。                                               */
+
+    function iconShell(size, active, children) {
       return h(
         'svg',
         { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block', opacity: active ? 1 : 0.75 } },
-        h('rect', { x: 3.5, y: 4.5, width: 17, height: 15, rx: 2.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
-        h('path', { d: 'M7 15.5 L10.2 11.2 L13 13.6 L17 8.4', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        children,
       )
+    }
+
+    function WorkbenchIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('rect', { key: 'a', x: 3.5, y: 4.5, width: 17, height: 15, rx: 2.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
+        h('path', { key: 'b', d: 'M7 15.5 L10.2 11.2 L13 13.6 L17 8.4', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+      ])
+    }
+
+    function StagesIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('path', { key: 'a', d: 'M3.5 18.5 h4 v-4 h4 v-4 h4 v-4 h5', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        h('circle', { key: 'b', cx: 5.5, cy: 18.5, r: 1.3, fill: 'currentColor' }),
+        h('circle', { key: 'c', cx: 18.5, cy: 6.5, r: 1.3, fill: 'currentColor' }),
+      ])
+    }
+
+    function ToolsIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('path', { key: 'a', d: 'M14.8 4.4a4.6 4.6 0 0 0 5.8 6.1l-9.4 9.4a2.3 2.3 0 0 1-3.3-3.3z', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        h('circle', { key: 'b', cx: 16.6, cy: 7.4, r: 1.1, fill: 'currentColor' }),
+      ])
+    }
+
+    function BillingIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('circle', { key: 'a', cx: 12, cy: 12, r: 8.3, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
+        h('path', { key: 'b', d: 'M14.2 9.1c-.6-.7-1.4-1-2.4-1-1.5 0-2.6.7-2.6 1.8 0 2.6 5 1.2 5 3.8 0 1.1-1.1 1.9-2.7 1.9-1 0-1.9-.4-2.5-1.1', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' }),
+        h('path', { key: 'c', d: 'M12 6.4v11.2', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round' }),
+      ])
+    }
+
+    function SourcesIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('circle', { key: 'a', cx: 6, cy: 6, r: 2.3, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
+        h('circle', { key: 'b', cx: 18, cy: 6, r: 2.3, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
+        h('circle', { key: 'c', cx: 12, cy: 18, r: 2.3, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
+        h('path', { key: 'd', d: 'M8.1 6.7 L10.4 16 M15.9 6.7 L13.6 16 M8.3 6 h7.4', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round' }),
+      ])
+    }
+
+    function DocsIcon({ size = 18, active }) {
+      return iconShell(size, active, [
+        h('path', { key: 'a', d: 'M5 4.6h9.2L19 9.4v10H5z', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinejoin: 'round' }),
+        h('path', { key: 'b', d: 'M13.9 4.9v4.6H19', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinejoin: 'round' }),
+        h('path', { key: 'c', d: 'M8 13h7 M8 16h5', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round' }),
+      ])
     }
 
     /* ── 工作台 ─────────────────────────────────────────────────────────── */
@@ -851,14 +935,7 @@ window.__ModuleLoader__.load({
           ? `今日 ${formatTokens(totals.totalTokens)} tokens`
           : state.status === 'error' ? 'tokens —' : 'tokens …'
 
-        const open = () => {
-          requestPanel('billing')
-          try {
-            ctx.get?.('layout')?.selectPanel?.(PANEL_ID)
-          } catch {
-            /* 没有 layout 服务时只记待办页签 */
-          }
-        }
+        const open = () => requestPanel('billing')
 
         return h('button',
           {
@@ -1054,14 +1131,7 @@ window.__ModuleLoader__.load({
           setError('')
           persist({ onboardingDone: true, onboardingStep: GUIDE_TOTAL })
         }
-        const openPanel = (tab) => {
-          requestPanel(tab)
-          try {
-            ctx.get?.('layout')?.selectPanel?.(PANEL_ID)
-          } catch {
-            /* 没有布局服务时只记待办页签 */
-          }
-        }
+        const openPanel = (key) => requestPanel(key)
         const copy = (text, tag) => {
           try {
             navigator.clipboard?.writeText(text)
@@ -1218,62 +1288,72 @@ window.__ModuleLoader__.load({
     }
 
 
-    function Panel() {
-      const [tab, setTab] = useState('workbench')
-      const [projectId, setProjectId] = useState('')
-      const [jump, setJump] = useState('')
-      const projects = useApi('/projects')
-      const first = projects.data?.items?.[0]?.id ?? ''
-      const activeId = projectId || first
-      const stages = useApi(activeId ? `/projects/${encodeURIComponent(activeId)}/stages` : null, [activeId])
-      const next = useApi(activeId ? `/projects/${encodeURIComponent(activeId)}/next` : null, [activeId])
-      const tools = useApi(tab === 'tools' ? '/tools' : null)
-      const skills = useApi(tab === 'tools' ? '/skills' : null)
-      const docs = useApi(tab === 'docs' ? '/docs' : null)
-      const [range, setRange] = useState('today')
-      const usage = useApi(tab === 'billing' ? `/usage?range=${range}` : null, [range])
-      const sources = useApi(tab === 'sources' ? '/sources' : null)
+    /* ── 六个一级页面 ──────────────────────────────────────────────────────
+       每个页面是 main 上独立的挂载点，只有当前这个在发请求；切走即卸载。
+       页面之间不共享取数结果，只共享「选中了哪个课题」这一件事。             */
 
-      // 胶囊/引导点了「计费」「接入」时，主面板可能还没挂载：挂载后先把待办页签吃掉。
-      useEffect(() => {
-        const consume = (value) => {
-          if (!value) return
-          setTab(value)
-          panelNav.pending = null
-        }
-        consume(panelNav.pending)
-        return subscribePanel(consume)
-      }, [])
-
-      const tabs = [
-        ['workbench', '工作台'],
-        ['stages', '流程'],
-        ['tools', '工具'],
-        ['billing', '计费'],
-        ['sources', '接入'],
-        ['docs', '说明'],
-      ]
-
+    function Page({ title, projectId, children }) {
       return h(
         'div',
         { style: S.panel },
         h('div', { style: S.header },
           h('div', { style: S.title }, 'DeepScient 科研工作台'),
-          h('div', { style: S.sub }, activeId ? `课题 ${activeId}` : '未选课题'),
+          h('div', { style: S.sub }, title),
           h('div', { style: S.spacer }),
-          h('div', { style: S.sub }, '数据来自本机研究库，阶段判定与助手说的是同一套门'),
+          h('div', { style: S.sub }, projectId ? `课题 ${projectId}` : '数据来自本机研究库'),
         ),
-        h('div', { style: S.tabs },
-          tabs.map(([id, label]) => h('button', { key: id, style: S.tab(tab === id), onClick: () => setTab(id) }, label))),
-        h('div', { style: S.body },
-          tab === 'workbench' ? h(Workbench, { projects, projectId: activeId, onProject: setProjectId, stages, next, onJump: (id) => { setJump(id); setTab('stages') } }) : null,
-          tab === 'stages' ? h(StageList, { stages, initial: jump }) : null,
-          tab === 'tools' ? h(ToolList, { tools, skills }) : null,
-          tab === 'billing' ? h(BillingPanel, { usage, range, onRange: setRange, onRefresh: usage.reload }) : null,
-          tab === 'sources' ? h(SourcesPanel, { sources }) : null,
-          tab === 'docs' ? h(Docs, { docs }) : null,
-        ),
+        h('div', { style: S.body }, children),
       )
+    }
+
+    function WorkbenchPage() {
+      const projects = useApi('/projects')
+      const [projectId, onProject] = useSelectedProject(projects)
+      const stages = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/stages` : null, [projectId])
+      const next = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/next` : null, [projectId])
+      const jump = (id) => { stageJump.id = id; requestPanel('stages') }
+      return h(
+        Page,
+        { title: '工作台 · 阶段判定与助手说的是同一套门', projectId },
+        h(Workbench, { projects, projectId, onProject, stages, next, onJump: jump }),
+      )
+    }
+
+    function StagesPage() {
+      const projects = useApi('/projects')
+      const [projectId] = useSelectedProject(projects)
+      const stages = useApi(projectId ? `/projects/${encodeURIComponent(projectId)}/stages` : null, [projectId])
+      // 从工作台跳过来时要展开同一级；读过一次就清掉，免得下次进来又自动展开
+      const initial = useRef(stageJump.id)
+      useEffect(() => { stageJump.id = '' }, [])
+      return h(Page, { title: '流程 · 十二个阶段与每个门凭什么通过', projectId },
+        h(StageList, { stages, initial: initial.current }))
+    }
+
+    function ToolsPage() {
+      const tools = useApi('/tools')
+      const skills = useApi('/skills')
+      return h(Page, { title: '工具 · 这一步会用到的后端能力与第三方技能' },
+        h(ToolList, { tools, skills }))
+    }
+
+    function BillingPage() {
+      const [range, setRange] = useState('today')
+      const usage = useApi(`/usage?range=${range}`, [range])
+      return h(Page, { title: '计费 · token 是真值，金额是估算' },
+        h(BillingPanel, { usage, range, onRange: setRange, onRefresh: usage.reload }))
+    }
+
+    function SourcesPage() {
+      const sources = useApi('/sources')
+      return h(Page, { title: '接入 · 文献源与检索 API 的凭据只写一个文件' },
+        h(SourcesPanel, { sources }))
+    }
+
+    function DocsPage() {
+      const docs = useApi('/docs')
+      return h(Page, { title: '说明 · 这套系统怎么用、边界在哪' },
+        h(Docs, { docs }))
     }
 
     /* ── 设置页 ─────────────────────────────────────────────────────────── */
@@ -1407,10 +1487,7 @@ window.__ModuleLoader__.load({
               h('button', { style: S.button, onClick: reopenGuide }, '重新打开使用引导'),
               h('button', {
                 style: S.button,
-                onClick: () => {
-                  requestPanel('sources')
-                  try { ctx.get?.('layout')?.selectPanel?.(PANEL_ID) } catch { /* 没有布局服务就只记待办 */ }
-                },
+                onClick: () => requestPanel('sources'),
               }, '去填文献 / 检索 API')),
             h('div', { style: { ...S.sub, marginTop: 8 } },
               '引导在新建的浏览器里第一次打开时自动出现；重开后立刻会再出现一次。')),
@@ -1514,11 +1591,36 @@ window.__ModuleLoader__.load({
     /* ── 注册 ───────────────────────────────────────────────────────────────
        id 与 key 必须是同一个字符串：侧栏图标点下去就是把 main 切到同名 key。      */
 
+    /* ── 浏览器标签 ────────────────────────────────────────────────────────
+       外壳的静态 index.html 写着自家名字，这里改成产品名；路由切换时外壳可能
+       把 title 写回去，所以盯着 head 变化重设。只在值不同时写，避免自触发。   */
+
+    const PRODUCT_TITLE = 'DeepScient 科研工作台'
+
+    function applyDocumentTitle(ctx) {
+      if (typeof document === 'undefined' || !document.head) return
+      const set = () => {
+        if (document.title !== PRODUCT_TITLE) document.title = PRODUCT_TITLE
+      }
+      set()
+      if (typeof MutationObserver === 'undefined') return
+      const observer = new MutationObserver(set)
+      observer.observe(document.head, { childList: true, subtree: true, characterData: true })
+      const stop = () => observer.disconnect()
+      if (typeof ctx.effect === 'function') ctx.effect(() => stop)
+      else if (typeof ctx.on === 'function') ctx.on('dispose', stop)
+    }
+
     function apply(ctx) {
       const t = ctx.locale.bind(NS)
+      // 胶囊、引导、设置页要换一级面板，先把 ctx 交出去给 requestPanel
+      panelHost.ctx = ctx
+
       const SettingsSection = makeSettingsSection(ctx)
       const UsageDockPill = makeUsagePill(ctx)
       const Onboarding = makeOnboarding(ctx)
+
+      applyDocumentTitle(ctx)
 
       ctx.slots.inject('sidebar.brand.mark', () =>
         ctx.slots.register({ name: 'sidebar.brand.mark', locale: NS }, BrandMark))
@@ -1526,11 +1628,22 @@ window.__ModuleLoader__.load({
       ctx.slots.inject('sidebar.brand.name', () =>
         ctx.slots.register({ name: 'sidebar.brand.name', locale: NS }, BrandName))
 
-      ctx.slots.inject('sidebar.panellist', () =>
-        ctx.slots.register({ name: 'sidebar.panellist', id: PANEL_ID, order: 20, locale: NS, label: () => t('panel') }, PanelIcon))
+      // 空白会话欢迎页的品牌位。不接这里，第一屏大字标还是外壳自己的。
+      ctx.slots.inject('conversation.hero.brand.mark', () =>
+        ctx.slots.register({ name: 'conversation.hero.brand.mark', locale: NS }, () => h(BrandMark, { size: 30 })))
 
-      ctx.slots.inject('main', () =>
-        ctx.slots.register({ name: 'main', key: PANEL_ID, locale: NS }, Panel))
+      // 六个一级面板：侧栏 id 与 main 的 key 出自同一张 PAGES 表
+      for (const page of PAGES) {
+        const id = panelId(page.key)
+        ctx.slots.inject('sidebar.panellist', () =>
+          ctx.slots.register(
+            { name: 'sidebar.panellist', id, order: page.order, locale: NS, label: () => t(`panel.${page.key}`) },
+            page.Icon,
+          ))
+
+        ctx.slots.inject('main', () =>
+          ctx.slots.register({ name: 'main', key: id, locale: NS }, page.Component))
+      }
 
       ctx.slots.inject('settings.section', () =>
         ctx.slots.register({ name: 'settings.section', id: PANEL_ID, order: 40, locale: NS, label: () => t('settings') }, SettingsSection))

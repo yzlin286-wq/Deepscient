@@ -113,9 +113,13 @@ check('科研预设排第一', () => assert.match(sciencePatch, /order:\s*1\b/))
 
 const locales = ['zh', 'en'].map((l) => JSON.parse(readFileSync(join(pkgDir, 'locale', `${l}.json`), 'utf8')))
 check('中文 locale 有 meta.title', () => assert.match(locales[0].meta.title, /DeepScient/))
-check('两份 locale 都有 panel 键', () => {
-  assert.ok(locales[0].panel)
-  assert.ok(locales[1].panel)
+check('两份 locale 都有 panel 键，且六个一级页名齐全', () => {
+  const keys = ['root', 'workbench', 'stages', 'tools', 'billing', 'sources', 'docs']
+  for (const locale of locales) {
+    assert.equal(typeof locale.panel, 'object', 'panel 应是按页名分组的对象')
+    const missing = keys.filter((k) => !locale.panel[k])
+    assert.deepEqual(missing, [], `缺 ${missing.join('、')}`)
+  }
 })
 check('icon.svg 存在且非空', () => assert.ok(statSync(join(pkgDir, 'icon.svg')).size > 200))
 
@@ -275,7 +279,7 @@ check('$DSH_HOME 显式给出时优先', () => assert.equal(scienceMod.dshHome()
 
 const content = await import(pathToFileURL(join(pkgDir, 'host', 'content.js')).href)
 const docs = content.listDocs()
-check('说明文档有 9 篇（含 skills / mcp）', () => assert.equal(docs.length, 9, docs.map((d) => d.id).join(',')))
+check('说明文档有 10 篇（含 skills / mcp / paper）', () => assert.equal(docs.length, 10, docs.map((d) => d.id).join(',')))
 check('第一页是快速上手', () => assert.equal(docs[0].id, 'quickstart'))
 check('新增的三篇（引导/计费/接入）都在', () => {
   const ids = docs.map((d) => d.id)
@@ -332,7 +336,18 @@ check('模块被加载器接住', () => assert.ok(mod))
 check('模块注入 slots 与 locale', () => assert.deepEqual(mod.inject, ['slots', 'locale']))
 
 const ctx = {
-  locale: { bind: () => (key) => ({ panel: '科研工作台', settings: '科研' })[key] ?? key },
+  locale: {
+    bind: () => (key) => ({
+      'panel.root': '科研工作台',
+      'panel.workbench': '工作台',
+      'panel.stages': '流程',
+      'panel.tools': '工具',
+      'panel.billing': '计费',
+      'panel.sources': '接入',
+      'panel.docs': '说明',
+      settings: '科研',
+    })[key] ?? key,
+  },
   slots: {
     inject(name, fn) {
       fn()
@@ -347,45 +362,67 @@ const ctx = {
 mod.apply(ctx)
 const byName = (name) => registrations.filter((r) => r.name === name)
 
-check('一共注册 7 个槽', () => assert.equal(registrations.length, 7, registrations.map((r) => r.name).join(',')))
+check('一共注册 18 个槽', () => assert.equal(registrations.length, 18, registrations.map((r) => r.name).join(',')))
 check('品牌图标槽', () => assert.equal(byName('sidebar.brand.mark').length, 1))
 check('品牌名槽', () => assert.equal(byName('sidebar.brand.name').length, 1))
-check('侧栏面板列表槽', () => assert.equal(byName('sidebar.panellist').length, 1))
-check('主区域面板槽', () => assert.equal(byName('main').length, 1))
+check('欢迎页品牌槽（第一屏不露外壳标记）', () =>
+  assert.equal(byName('conversation.hero.brand.mark').length, 1))
+check('侧栏一级面板 6 个（不再是二级页签）', () => assert.equal(byName('sidebar.panellist').length, 6))
+check('主区域面板 6 个', () => assert.equal(byName('main').length, 6))
 check('设置分区槽', () => assert.equal(byName('settings.section').length, 1))
 check('输入区底部胶囊槽（token 计费）', () => assert.equal(byName('conversation.composer.dock').length, 1))
 check('胶囊 id 不与出厂那颗撞名', () => assert.equal(byName('conversation.composer.dock')[0].id, 'deepscient-usage'))
 check('浮层槽（使用引导）', () => assert.equal(byName('shell.overlay').length, 1))
 check('引导浮层 id', () => assert.equal(byName('shell.overlay')[0].id, 'deepscient-onboarding'))
-check('panellist 的 id 是 science', () => assert.equal(byName('sidebar.panellist')[0].id, 'science'))
-check('main 的 key 与 panellist 的 id 相同', () => {
-  assert.equal(byName('main')[0].key, byName('sidebar.panellist')[0].id)
+
+const PAGE_KEYS = ['workbench', 'stages', 'tools', 'billing', 'sources', 'docs']
+check('一级面板 id 是 science-<页名>', () =>
+  assert.deepEqual(byName('sidebar.panellist').map((r) => r.id), PAGE_KEYS.map((k) => `science-${k}`)))
+check('main 的 key 与侧栏 id 一一对应（漏一个就点出白屏）', () =>
+  assert.deepEqual(byName('main').map((r) => r.key), byName('sidebar.panellist').map((r) => r.id)))
+check('侧栏六项有递增且互不相同的排序号', () => {
+  const orders = byName('sidebar.panellist').map((r) => r.order)
+  assert.deepEqual(orders, [...orders].sort((a, b) => a - b))
+  assert.equal(new Set(orders).size, 6)
 })
-check('panellist 有排序号', () => assert.equal(typeof byName('sidebar.panellist')[0].order, 'number'))
-check('settings.section 的 id 是 science', () => assert.equal(byName('settings.section')[0].id, 'science'))
-check('label 是函数且能取到中文', () => {
-  assert.equal(typeof byName('sidebar.panellist')[0].label, 'function')
-  assert.equal(byName('sidebar.panellist')[0].label(), '科研工作台')
+check('label 是函数且六项都取到各自中文名', () => {
+  assert.deepEqual(
+    byName('sidebar.panellist').map((r) => r.label()),
+    ['工作台', '流程', '工具', '计费', '接入', '说明'],
+  )
 })
+check('settings.section 的 id 仍是 science', () => assert.equal(byName('settings.section')[0].id, 'science'))
 check('每个注册都带 component', () => {
   for (const r of registrations) assert.equal(typeof r.component, 'function')
 })
 
 const brandName = byName('sidebar.brand.name')[0].component({})
-const brandText = JSON.stringify(brandName)
-check('品牌名渲染出 DeepScient', () => assert.match(brandText, /DeepScient/))
+check('品牌名渲染出 DeepScient', () => assert.match(JSON.stringify(brandName), /DeepScient/))
 const mark = byName('sidebar.brand.mark')[0].component({ size: 24 })
 check('品牌图标是 svg 且尺寸可传', () => {
   assert.equal(mark.type, 'svg')
   assert.equal(mark.props.width, 24)
 })
-const icon = byName('sidebar.panellist')[0].component({})
-check('面板图标是 svg', () => assert.equal(icon.type, 'svg'))
-const panel = byName('main')[0].component({})
-const panelText = JSON.stringify(panel)
-check('面板根节点渲染出标题', () => assert.match(panelText, /DeepScient 科研工作台/))
-check('面板有计费页签', () => assert.match(panelText, /计费/))
-check('面板有接入页签', () => assert.match(panelText, /接入/))
+const heroMark = byName('conversation.hero.brand.mark')[0].component({})
+check('欢迎页品牌位指向自家 BrandMark（不是外壳标记）', () => {
+  assert.equal(typeof heroMark.type, 'function')
+  assert.equal(heroMark.type.name, 'BrandMark')
+})
+check('六个面板图标都是 svg', () => {
+  for (const r of byName('sidebar.panellist')) assert.equal(r.component({}).type, 'svg')
+})
+check('六个页面共用同一个品牌外壳，标题写着 DeepScient', () => {
+  const shells = byName('main').map((r) => r.component({}).type)
+  assert.equal(new Set(shells).size, 1, '六个页面应当共用同一个 Page 外壳')
+  assert.equal(shells[0].name, 'Page')
+  assert.match(JSON.stringify(shells[0]({ title: 'x' })), /DeepScient 科研工作台/)
+})
+check('六个页面的副标题各不相同（一级菜单要能分辨）', () => {
+  const titles = byName('main').map((r) => r.component({}).props?.title)
+  assert.equal(new Set(titles).size, 6, titles.join(' | '))
+})
+check('界面里不再有二级页签条', () => assert.ok(!/S\.tabs|S\.tab\(/.test(clientSrc)))
+check('浏览器标签改成产品名', () => assert.match(clientSrc, /PRODUCT_TITLE\s*=\s*'DeepScient 科研工作台'/))
 const settingsSection = byName('settings.section')[0].component({})
 check('设置页会先进入读取态', () => assert.equal(settingsSection.type?.name, 'Loading'))
 
@@ -592,7 +629,7 @@ const unknown = await get('/deepscient/api/nope')
 check('未知端点 404', () => assert.equal(unknown.status, 404))
 
 const docsApi = await get('/deepscient/api/docs')
-check('docs 200 且 9 篇', () => assert.equal(docsApi.body.items.length, 9))
+check('docs 200 且 10 篇', () => assert.equal(docsApi.body.items.length, 10))
 const docApi = await get('/deepscient/api/docs/quickstart')
 check('单篇文档带 markdown', () => assert.match(docApi.body.markdown, /^# 快速上手/))
 const billingDoc = await get('/deepscient/api/docs/billing')
