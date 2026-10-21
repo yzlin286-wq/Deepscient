@@ -16,8 +16,8 @@
 ## 产物
 
 ```
-dist/local-deepscient-0.4.0.tgz     118979 字节
-sha256  47605d69066a98f9506d41f092abec1c52e04cc01c9b3794f082964a6f733c18
+dist/local-deepscient-0.4.0.tgz     118968 字节
+sha256  ffed6cdefc6961be6c677dbb30ec7fb867aafda8f3ca9d233666afb410062b98
 ```
 
 30 个文件（0.3.0 是 25 个）：新增 `mcp.patch.yml`、`scripts/install-skills.mjs`、`scripts/probe-mcp.mjs`、`docs/skills.md`、`docs/mcp.md`（清单本体在 `dsh-science/skills-vendor/`，不进 deepscient 的包）。

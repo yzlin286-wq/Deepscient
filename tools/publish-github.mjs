@@ -20,7 +20,7 @@
  * 所有输出都会把 token 替换成 ***。
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 const argv = process.argv.slice(2)
 const flag = (name) => argv.includes(`--${name}`)
@@ -71,30 +71,45 @@ const pushViaGit = () => {
 }
 
 /** 路线 2：Git Data API。只在 api.github.com 可达时才有意义。 */
-const api = async (path, init = {}) => {
-  const response = await fetch(`https://api.github.com${path}`, {
-    ...init,
-    headers: {
-      accept: 'application/vnd.github+json',
-      authorization: `Bearer ${TOKEN}`,
-      'user-agent': 'deepscient-publish',
-      'x-github-api-version': '2022-11-28',
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
-      ...init.headers,
-    },
-    signal: AbortSignal.timeout(60000),
-  })
-  const text = await response.text()
-  let body
+const api = async (path, init = {}, attempt = 1) => {
   try {
-    body = text ? JSON.parse(text) : null
-  } catch {
-    body = text
+    const response = await fetch(`https://api.github.com${path}`, {
+      ...init,
+      headers: {
+        accept: 'application/vnd.github+json',
+        authorization: `Bearer ${TOKEN}`,
+        'user-agent': 'deepscient-publish',
+        'x-github-api-version': '2022-11-28',
+        ...(init.body ? { 'content-type': 'application/json' } : {}),
+        ...init.headers,
+      },
+      signal: AbortSignal.timeout(60000),
+    })
+    const text = await response.text()
+    let body
+    try {
+      body = text ? JSON.parse(text) : null
+    } catch {
+      body = text
+    }
+    if (!response.ok) {
+      // 5xx / 429 可重试；4xx（权限、校验）重试也没用
+      const retryable = response.status >= 500 || response.status === 429
+      if (retryable && attempt < 4) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1500))
+        return api(path, init, attempt + 1)
+      }
+      throw new Error(`API ${init.method ?? 'GET'} ${path} → ${response.status} ${scrub(text).slice(0, 300)}`)
+    }
+    return body
+  } catch (error) {
+    // 网络层抖动（fetch failed / 连接重置）同样重试
+    if (attempt < 4 && !/→ 4\d\d/.test(String(error.message))) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1500))
+      return api(path, init, attempt + 1)
+    }
+    throw error
   }
-  if (!response.ok) {
-    throw new Error(`API ${init.method ?? 'GET'} ${path} → ${response.status} ${scrub(text).slice(0, 300)}`)
-  }
-  return body
 }
 
 const pushViaApi = async () => {
@@ -138,10 +153,39 @@ const pushViaApi = async () => {
   const todo = entries.filter((entry) => remoteBlobs.get(entry.path) !== entry.sha)
   log(`复用远端 blob：${same.length} 个；需要上传：${todo.length} 个`)
 
+  // 断点续传：网络抖动时重跑不必从头再传。键是「路径 + 本地 blob sha」，内容变了就不会误用。
+  const CACHE = '.git/deepscient-publish-cache.json'
+  let cache = {}
+  try {
+    cache = JSON.parse(readFileSync(CACHE, 'utf8'))
+  } catch {
+    cache = {}
+  }
   const uploaded = new Map(same.map((entry) => [entry.path, entry.sha]))
+  const pending = []
+  let reused = 0
+  for (const entry of todo) {
+    const key = `${entry.path}@${entry.sha}`
+    if (cache[key]) {
+      uploaded.set(entry.path, cache[key])
+      reused += 1
+    } else {
+      pending.push(entry)
+    }
+  }
+  if (reused) log(`从上次中断处续传：${reused} 个已传过`)
+
   let done = 0
-  const CONCURRENCY = 4
-  const queue = [...todo]
+  const CONCURRENCY = 2
+  const queue = [...pending]
+  const flush = () => {
+    const snapshot = {}
+    for (const [path, sha] of uploaded) {
+      const entry = entries.find((item) => item.path === path)
+      if (entry) snapshot[`${path}@${entry.sha}`] = sha
+    }
+    writeFileSync(CACHE, JSON.stringify(snapshot))
+  }
   const worker = async () => {
     for (;;) {
       const entry = queue.shift()
@@ -153,10 +197,14 @@ const pushViaApi = async () => {
       })
       uploaded.set(entry.path, blob.sha)
       done += 1
-      if (done % 25 === 0 || done === todo.length) log(`  上传 ${done}/${todo.length}`)
+      if (done % 20 === 0 || done === pending.length) {
+        flush()
+        log(`  上传 ${done}/${pending.length}`)
+      }
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+  flush()
 
   const tree = await api(`/repos/${owner}/${repo}/git/trees`, {
     method: 'POST',
