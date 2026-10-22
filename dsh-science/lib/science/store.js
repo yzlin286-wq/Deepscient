@@ -7,11 +7,11 @@
  *   - 论文主键由指纹决定，多源命中同一篇只落一行、sources 合并
  */
 import { DatabaseSync } from 'node:sqlite'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-export const SCHEMA_VERSION = 7
+export const SCHEMA_VERSION = 8
 
 /** 子领域 id 的历史形态有 `subfields/1312` 与 `1312` 两种，入库与查询前统一取尾段。 */
 function normaliseIds(ids = []) {
@@ -381,6 +381,149 @@ const MIGRATIONS = [
     up(db) {
       const cols = new Set(db.prepare('PRAGMA table_info(project)').all().map((r) => r.name))
       if (!cols.has('ethics_json')) db.exec('ALTER TABLE project ADD COLUMN ethics_json TEXT')
+    },
+  },
+  {
+    /* 8：orchestra 战役层（add-only）。
+       调度器需要持久化「计划 → 工作流 → 任务 → 分片 → 租约」这条链，
+       并把投票/产物/事件留在同一库里，才能在中途崩溃后按库恢复而不是靠内存。 */
+    version: 8,
+    note: 'orchestra 战役层：campaign / workstream / task / shard / agent / vote / artifact / event',
+    up(db) {
+      db.exec(`
+        /* 一份冻结的方案 = 一个战役。plan_hash 唯一，重复提交同一方案直接拒绝。 */
+        CREATE TABLE IF NOT EXISTS campaign(
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          question TEXT NOT NULL,
+          discipline TEXT,
+          constraints_json TEXT,
+          plan_hash TEXT,
+          seed INTEGER,
+          state TEXT NOT NULL DEFAULT 'planned',
+          budget_json TEXT,
+          spend_json TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS campaign_plan_hash ON campaign(plan_hash);
+
+        /* 工作流：舞台内的有序分组，order_index 决定串行顺序。 */
+        CREATE TABLE IF NOT EXISTS campaign_workstream(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          stage_id TEXT,
+          title TEXT,
+          depends_on_json TEXT,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS campaign_workstream_campaign ON campaign_workstream(campaign_id, order_index);
+
+        /* 任务：一个任务可被投票决定票数，再拆成多个分片并行跑。 */
+        CREATE TABLE IF NOT EXISTS campaign_task(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          workstream_id TEXT,
+          title TEXT,
+          role TEXT,
+          executor TEXT,
+          gate_json TEXT,
+          depends_on_json TEXT,
+          priority INTEGER NOT NULL DEFAULT 100,
+          votes INTEGER NOT NULL DEFAULT 1,
+          shards INTEGER NOT NULL DEFAULT 0,
+          state TEXT NOT NULL DEFAULT 'planned',
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS campaign_task_campaign ON campaign_task(campaign_id, workstream_id);
+
+        /* 分片：调度与租约的最小单位。idempotency_key 保证重放只落一次。 */
+        CREATE TABLE IF NOT EXISTS campaign_shard(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          task_id TEXT NOT NULL,
+          shard_index INTEGER NOT NULL DEFAULT 0,
+          role TEXT,
+          executor TEXT,
+          kind TEXT,
+          payload_json TEXT,
+          idempotency_key TEXT NOT NULL,
+          state TEXT NOT NULL DEFAULT 'queued',
+          priority INTEGER NOT NULL DEFAULT 100,
+          attempt INTEGER NOT NULL DEFAULT 0,
+          max_attempts INTEGER NOT NULL DEFAULT 3,
+          lease_owner TEXT,
+          lease_until INTEGER,
+          next_run_at INTEGER NOT NULL DEFAULT 0,
+          output_json TEXT,
+          error TEXT,
+          gate_json TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS campaign_shard_idem ON campaign_shard(idempotency_key);
+        CREATE INDEX IF NOT EXISTS campaign_shard_queue ON campaign_shard(state, next_run_at, priority, created_at);
+        CREATE INDEX IF NOT EXISTS campaign_shard_campaign ON campaign_shard(campaign_id, state);
+        CREATE INDEX IF NOT EXISTS campaign_shard_task ON campaign_shard(task_id, state);
+        CREATE INDEX IF NOT EXISTS campaign_shard_lease ON campaign_shard(lease_until);
+
+        /* 角色槽位：谁在跑哪个分片，靠 last_heartbeat 判断存活。 */
+        CREATE TABLE IF NOT EXISTS campaign_agent(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          role TEXT,
+          preset TEXT,
+          slot_index INTEGER,
+          state TEXT NOT NULL DEFAULT 'idle',
+          current_shard TEXT,
+          started_at INTEGER,
+          last_heartbeat INTEGER
+        );
+        CREATE INDEX IF NOT EXISTS campaign_agent_campaign ON campaign_agent(campaign_id, role);
+
+        /* 投票：判决与证据权重分开存，便于事后重算共识。 */
+        CREATE TABLE IF NOT EXISTS campaign_vote(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          task_id TEXT,
+          shard_id TEXT,
+          voter TEXT,
+          verdict TEXT NOT NULL,
+          evidence_weight REAL NOT NULL DEFAULT 1,
+          payload_json TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS campaign_vote_task ON campaign_vote(task_id, verdict);
+
+        /* 产物：path + sha256 是可复核的最小凭据。 */
+        CREATE TABLE IF NOT EXISTS campaign_artifact(
+          id TEXT PRIMARY KEY,
+          campaign_id TEXT NOT NULL,
+          task_id TEXT,
+          shard_id TEXT,
+          kind TEXT NOT NULL,
+          path TEXT NOT NULL,
+          sha256 TEXT,
+          bytes INTEGER,
+          producer_role TEXT,
+          tool TEXT,
+          input_hash TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS campaign_artifact_campaign ON campaign_artifact(campaign_id, kind);
+
+        /* 事件流：自增 id 即时间线，detail 用 JSON 保留扩展字段。 */
+        CREATE TABLE IF NOT EXISTS campaign_event(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          campaign_id TEXT NOT NULL,
+          shard_id TEXT,
+          kind TEXT NOT NULL,
+          detail_json TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS campaign_event_campaign ON campaign_event(campaign_id, id);
+      `)
     },
   },
 ]
@@ -1033,6 +1176,381 @@ export class ScienceStore {
     return status
   }
 
+  /* ══════════ v8：orchestra 战役仓储 ══════════ */
+
+  /** 建战役。plan_hash 唯一是调度幂等闸门：同一方案重复提交必须失败而不是跑两遍。 */
+  createCampaign({ id = null, projectId = null, question, discipline = null, constraints = null,
+    planHash = null, seed = null, state = 'planned', budget = null, spend = null } = {}) {
+    const cid = id || `cmp_${randomBytes(4).toString('hex')}`
+    const now = Date.now()
+    try {
+      this.db.prepare(`
+        INSERT INTO campaign(id, project_id, question, discipline, constraints_json, plan_hash, seed,
+          state, budget_json, spend_json, created_at, updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        cid, projectId, String(question ?? ''), discipline,
+        constraints === null ? null : JSON.stringify(constraints),
+        planHash, Number.isFinite(seed) ? seed : null, state,
+        budget === null ? null : JSON.stringify(budget),
+        spend === null ? null : JSON.stringify(spend),
+        now, now,
+      )
+    } catch (error) {
+      if (planHash && /UNIQUE/i.test(String(error.message))) {
+        throw new Error(`plan-hash-exists: ${planHash}`)
+      }
+      throw error
+    }
+    return cid
+  }
+
+  getCampaign(id) {
+    const row = this.db.prepare('SELECT * FROM campaign WHERE id = ?').get(id)
+    return row ? hydrateCampaign(row) : null
+  }
+
+  getCampaignByPlanHash(planHash) {
+    const row = this.db.prepare('SELECT * FROM campaign WHERE plan_hash = ?').get(planHash)
+    return row ? hydrateCampaign(row) : null
+  }
+
+  listCampaigns({ limit = 20 } = {}) {
+    return this.db.prepare('SELECT * FROM campaign ORDER BY created_at DESC LIMIT ?')
+      .all(Math.max(1, Math.min(500, limit)))
+      .map(hydrateCampaign)
+  }
+
+  /** 只允许改调度关心的字段，其余键忽略，避免仓储层被当成通用 UPDATE。 */
+  updateCampaign(id, patch = {}) {
+    const sets = []
+    const params = []
+    const put = (col, val) => { sets.push(`${col}=?`); params.push(val) }
+    if (patch.state !== undefined) put('state', patch.state)
+    if (patch.spend !== undefined) put('spend_json', patch.spend === null ? null : JSON.stringify(patch.spend))
+    if (patch.budget !== undefined) put('budget_json', patch.budget === null ? null : JSON.stringify(patch.budget))
+    if (patch.planHash !== undefined) put('plan_hash', patch.planHash)
+    if (patch.plan_hash !== undefined) put('plan_hash', patch.plan_hash)
+    put('updated_at', patch.updated_at ?? patch.updatedAt ?? Date.now())
+    params.push(id)
+    const res = this.db.prepare(`UPDATE campaign SET ${sets.join(', ')} WHERE id = ?`).run(...params)
+    return Number(res.changes) > 0
+  }
+
+  upsertWorkstream({ id = null, campaignId, stageId = null, title = null, dependsOn = [], orderIndex = 0 }) {
+    const wid = id || `ws_${randomBytes(4).toString('hex')}`
+    this.db.prepare(`
+      INSERT OR REPLACE INTO campaign_workstream(id, campaign_id, stage_id, title, depends_on_json, order_index, created_at)
+      VALUES(?,?,?,?,?,?,?)
+    `).run(wid, campaignId, stageId, title, JSON.stringify(dependsOn || []), orderIndex, Date.now())
+    return wid
+  }
+
+  insertTasks(tasks = []) {
+    if (!Array.isArray(tasks) || tasks.length === 0) return 0
+    const now = Date.now()
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO campaign_task(id, campaign_id, workstream_id, title, role, executor,
+        gate_json, depends_on_json, priority, votes, shards, state, created_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `)
+    let n = 0
+    this.db.exec('BEGIN')
+    try {
+      for (const t of tasks) {
+        if (!t?.id || !t.campaignId) continue
+        stmt.run(
+          t.id, t.campaignId, t.workstreamId ?? null, t.title ?? null, t.role ?? null,
+          t.executor ?? null,
+          t.gate === undefined || t.gate === null ? null : JSON.stringify(t.gate),
+          JSON.stringify(t.dependsOn || []),
+          Number.isFinite(t.priority) ? t.priority : 100,
+          Number.isFinite(t.votes) ? t.votes : 1,
+          Number.isFinite(t.shards) ? t.shards : 0,
+          t.state || 'planned', now,
+        )
+        n += 1
+      }
+      this.db.exec('COMMIT')
+    } catch (error) {
+      this.db.exec('ROLLBACK')
+      throw error
+    }
+    return n
+  }
+
+  /** 分片重放是常态（崩溃恢复），幂等键冲突按已存在处理，不报错也不重复计数。 */
+  insertShards(shards = []) {
+    if (!Array.isArray(shards) || shards.length === 0) return 0
+    const now = Date.now()
+    const stmt = this.db.prepare(`
+      INSERT OR IGNORE INTO campaign_shard(id, campaign_id, task_id, shard_index, role, executor, kind,
+        payload_json, idempotency_key, state, priority, attempt, max_attempts, next_run_at,
+        gate_json, created_at, updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,'queued',?,0,?,?,?,?,?)
+    `)
+    let n = 0
+    this.db.exec('BEGIN')
+    try {
+      for (const s of shards) {
+        if (!s?.id || !s.campaignId || !s.taskId || !s.idempotencyKey) continue
+        const res = stmt.run(
+          s.id, s.campaignId, s.taskId, Number.isFinite(s.shardIndex) ? s.shardIndex : 0,
+          s.role ?? null, s.executor ?? null, s.kind ?? null,
+          s.payload === undefined || s.payload === null ? null : JSON.stringify(s.payload),
+          s.idempotencyKey,
+          Number.isFinite(s.priority) ? s.priority : 100,
+          Number.isFinite(s.maxAttempts) ? s.maxAttempts : 3,
+          Number.isFinite(s.nextRunAt) ? s.nextRunAt : 0,
+          s.gate === undefined || s.gate === null ? null : JSON.stringify(s.gate),
+          now, now,
+        )
+        n += Number(res.changes) || 0
+      }
+      this.db.exec('COMMIT')
+    } catch (error) {
+      this.db.exec('ROLLBACK')
+      throw error
+    }
+    return n
+  }
+
+  /**
+   * 领取分片。BEGIN IMMEDIATE 先拿写锁，再选 id、再按 state='queued' 条件更新，
+   * 这样并发调用只会有一方把同一行改成 leased。
+   *
+   * executorIn / kindIn 是可选过滤器：调度器按模式分工（local 只跑 local、
+   * delegate 只挑 llm），不传或传空数组时 WHERE 与旧版完全一致。
+   */
+  claimShards({ campaignId, owner, limit = 100, now = Date.now(), leaseMs = 120000,
+    executorIn = null, kindIn = null } = {}) {
+    const n = Math.max(1, Math.min(1000, Number(limit) || 100))
+    const leaseUntil = now + Math.max(1000, Number(leaseMs) || 120000)
+    const clauses = ['campaign_id = ?', "state = 'queued'", 'next_run_at <= ?']
+    const params = [campaignId, now]
+    if (Array.isArray(executorIn) && executorIn.length > 0) {
+      clauses.push(`executor IN (${executorIn.map(() => '?').join(',')})`)
+      params.push(...executorIn)
+    }
+    if (Array.isArray(kindIn) && kindIn.length > 0) {
+      clauses.push(`kind IN (${kindIn.map(() => '?').join(',')})`)
+      params.push(...kindIn)
+    }
+    let rows = []
+    this.db.exec('BEGIN IMMEDIATE')
+    try {
+      const picked = this.db.prepare(`
+        SELECT id FROM campaign_shard
+        WHERE ${clauses.join(' AND ')}
+        ORDER BY priority ASC, created_at ASC LIMIT ?
+      `).all(...params, n)
+      if (picked.length > 0) {
+        const ids = picked.map((r) => r.id)
+        const marks = ids.map(() => '?').join(',')
+        this.db.prepare(`
+          UPDATE campaign_shard SET state='leased', lease_owner=?, lease_until=?, updated_at=?
+          WHERE id IN (${marks}) AND state='queued'
+        `).run(owner, leaseUntil, now, ...ids)
+        rows = this.db.prepare(`
+          SELECT * FROM campaign_shard
+          WHERE id IN (${marks}) AND state='leased' AND lease_owner=? AND lease_until=?
+          ORDER BY priority ASC, created_at ASC
+        `).all(...ids, owner, leaseUntil)
+      }
+      this.db.exec('COMMIT')
+    } catch (error) {
+      this.db.exec('ROLLBACK')
+      throw error
+    }
+    return rows.map(hydrateShard)
+  }
+
+  heartbeat({ owner, shardIds = [], now = Date.now(), leaseMs = 120000 } = {}) {
+    if (!owner || !Array.isArray(shardIds) || shardIds.length === 0) return 0
+    const marks = shardIds.map(() => '?').join(',')
+    const res = this.db.prepare(`
+      UPDATE campaign_shard SET lease_until=?, updated_at=?
+      WHERE id IN (${marks}) AND state='leased' AND lease_owner=?
+    `).run(now + Math.max(1000, Number(leaseMs) || 120000), now, ...shardIds, owner)
+    return Number(res.changes) || 0
+  }
+
+  /** 回收过期租约：还能重试就回队列，超过上限直接 failed，避免坏分片无限循环。 */
+  reapExpiredLeases({ campaignId = null, now = Date.now() } = {}) {
+    let sql = "SELECT * FROM campaign_shard WHERE state='leased' AND lease_until < ?"
+    const params = [now]
+    if (campaignId) { sql += ' AND campaign_id = ?'; params.push(campaignId) }
+    const expired = this.db.prepare(sql).all(...params)
+    if (expired.length === 0) return []
+    const fail = this.db.prepare(`
+      UPDATE campaign_shard SET state='failed', attempt=?, error='lease-expired',
+        lease_owner=NULL, lease_until=NULL, updated_at=? WHERE id=?
+    `)
+    const requeue = this.db.prepare(`
+      UPDATE campaign_shard SET state='queued', attempt=?, lease_owner=NULL, lease_until=NULL,
+        next_run_at=?, updated_at=? WHERE id=?
+    `)
+    const out = []
+    this.db.exec('BEGIN IMMEDIATE')
+    try {
+      for (const row of expired) {
+        const attempt = (Number(row.attempt) || 0) + 1
+        if (attempt >= (Number(row.max_attempts) || 1)) {
+          fail.run(attempt, now, row.id)
+          out.push({ ...row, state: 'failed', attempt, error: 'lease-expired', lease_owner: null, lease_until: null })
+        } else {
+          requeue.run(attempt, now, now, row.id)
+          out.push({ ...row, state: 'queued', attempt, lease_owner: null, lease_until: null, next_run_at: now })
+        }
+      }
+      this.db.exec('COMMIT')
+    } catch (error) {
+      this.db.exec('ROLLBACK')
+      throw error
+    }
+    return out.map(hydrateShard)
+  }
+
+  /** 只认 leased/queued 的分片；带 owner 时校验租约归属，防止过期 worker 覆盖结果。 */
+  completeShard({ shardId, owner = null, output = null, gate = null } = {}) {
+    const sets = ["state='done'", 'output_json=?', 'updated_at=?']
+    const params = [output === null ? null : JSON.stringify(output), Date.now()]
+    if (gate !== null && gate !== undefined) {
+      sets.push('gate_json=?')
+      params.push(JSON.stringify(gate))
+    }
+    let sql = `UPDATE campaign_shard SET ${sets.join(', ')} WHERE id = ? AND state IN ('queued','leased')`
+    params.push(shardId)
+    if (owner !== null) { sql += ' AND lease_owner = ?'; params.push(owner) }
+    const res = this.db.prepare(sql).run(...params)
+    return Number(res.changes) > 0
+  }
+
+  /** 指数退避封顶 5 分钟，避免下游故障时把队列打成全速重试。 */
+  failShard({ shardId, owner = null, error = null, now = Date.now(), retryAt = null, maxAttempts = null } = {}) {
+    const row = this.db.prepare('SELECT * FROM campaign_shard WHERE id = ?').get(shardId)
+    if (!row) return { state: null, attempt: 0 }
+    const prevAttempt = Number(row.attempt) || 0
+    const attempt = prevAttempt + 1
+    const limit = Number.isFinite(maxAttempts) ? maxAttempts : (Number(row.max_attempts) || 3)
+    const state = attempt >= limit ? 'failed' : 'queued'
+    const backoff = Math.min(300000, 1000 * (2 ** prevAttempt))
+    const nextRunAt = state === 'failed' ? row.next_run_at : (retryAt ?? (now + backoff))
+    let sql = `
+      UPDATE campaign_shard SET state=?, attempt=?, error=?, next_run_at=?,
+        lease_owner=NULL, lease_until=NULL, updated_at=? WHERE id=?
+    `
+    const params = [state, attempt, error === null ? null : String(error), nextRunAt, now, shardId]
+    if (owner !== null) { sql += ' AND lease_owner = ?'; params.push(owner) }
+    const res = this.db.prepare(sql).run(...params)
+    if (Number(res.changes) === 0) return { state: row.state, attempt: prevAttempt }
+    return { state, attempt }
+  }
+
+  /** 给 needs-review / needs-human 这类「停在等人」的状态留的窄入口。 */
+  setShardState({ shardId, state, output = null, error = null } = {}) {
+    const res = this.db.prepare(`
+      UPDATE campaign_shard SET state=?, output_json=COALESCE(?, output_json),
+        error=COALESCE(?, error), updated_at=? WHERE id=?
+    `).run(state, output === null ? null : JSON.stringify(output), error, Date.now(), shardId)
+    return Number(res.changes) > 0
+  }
+
+  recordVote({ id = null, campaignId, taskId = null, shardId = null, voter = null, verdict,
+    evidenceWeight = 1, payload = null } = {}) {
+    const vid = id || `cv_${randomBytes(4).toString('hex')}`
+    this.db.prepare(`
+      INSERT INTO campaign_vote(id, campaign_id, task_id, shard_id, voter, verdict,
+        evidence_weight, payload_json, created_at)
+      VALUES(?,?,?,?,?,?,?,?,?)
+    `).run(vid, campaignId, taskId, shardId, voter, String(verdict),
+      Number.isFinite(evidenceWeight) ? evidenceWeight : 1,
+      payload === null ? null : JSON.stringify(payload), Date.now())
+    return vid
+  }
+
+  listVotes({ taskId = null, campaignId = null } = {}) {
+    const params = []
+    let sql = 'SELECT * FROM campaign_vote WHERE 1=1'
+    if (taskId) { sql += ' AND task_id = ?'; params.push(taskId) }
+    if (campaignId) { sql += ' AND campaign_id = ?'; params.push(campaignId) }
+    sql += ' ORDER BY created_at ASC'
+    return this.db.prepare(sql).all(...params).map(hydrateVote)
+  }
+
+  recordArtifact({ id = null, campaignId, taskId = null, shardId = null, kind, path, sha256 = null,
+    bytes = null, producerRole = null, tool = null, inputHash = null } = {}) {
+    const aid = id || `ca_${randomBytes(4).toString('hex')}`
+    this.db.prepare(`
+      INSERT INTO campaign_artifact(id, campaign_id, task_id, shard_id, kind, path, sha256,
+        bytes, producer_role, tool, input_hash, created_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(aid, campaignId, taskId, shardId, String(kind), String(path), sha256,
+      Number.isFinite(bytes) ? bytes : null, producerRole, tool, inputHash, Date.now())
+    return aid
+  }
+
+  listArtifacts({ campaignId, kind = null } = {}) {
+    const params = [campaignId]
+    let sql = 'SELECT * FROM campaign_artifact WHERE campaign_id = ?'
+    if (kind) { sql += ' AND kind = ?'; params.push(kind) }
+    sql += ' ORDER BY created_at DESC'
+    return this.db.prepare(sql).all(...params)
+  }
+
+  appendEvent({ campaignId, shardId = null, kind, detail = null } = {}) {
+    const res = this.db.prepare(`
+      INSERT INTO campaign_event(campaign_id, shard_id, kind, detail_json, created_at)
+      VALUES(?,?,?,?,?)
+    `).run(campaignId, shardId, String(kind), detail === null ? null : JSON.stringify(detail), Date.now())
+    return Number(res.lastInsertRowid)
+  }
+
+  /** 先取最新 N 条再正序返回：调用方拿到的是时间线，不是倒序日志。 */
+  listEvents({ campaignId, limit = 200 } = {}) {
+    const rows = this.db.prepare(`
+      SELECT * FROM campaign_event WHERE campaign_id = ? ORDER BY id DESC LIMIT ?
+    `).all(campaignId, Math.max(1, Math.min(2000, limit)))
+    return rows.reverse().map(hydrateEvent)
+  }
+
+  campaignStats({ campaignId } = {}) {
+    const campaign = this.getCampaign(campaignId)
+    const t = this.db.prepare(`
+      SELECT COUNT(*) AS total, SUM(CASE WHEN state='done' THEN 1 ELSE 0 END) AS done
+      FROM campaign_task WHERE campaign_id = ?
+    `).get(campaignId)
+    const states = this.db.prepare(
+      'SELECT state, COUNT(*) AS n FROM campaign_shard WHERE campaign_id = ? GROUP BY state',
+    ).all(campaignId)
+    const byState = {}
+    for (const row of states) byState[row.state] = Number(row.n) || 0
+    const ev = this.db.prepare('SELECT COUNT(*) AS n FROM campaign_event WHERE campaign_id = ?').get(campaignId)
+    return {
+      campaign,
+      tasks: { total: Number(t?.total) || 0, done: Number(t?.done) || 0 },
+      shards: {
+        queued: byState.queued || 0,
+        leased: byState.leased || 0,
+        done: byState.done || 0,
+        failed: byState.failed || 0,
+        needsReview: byState['needs-review'] || 0,
+        needsHuman: byState['needs-human'] || 0,
+      },
+      spend: campaign?.spend ?? {},
+      events: Number(ev?.n) || 0,
+    }
+  }
+
+  /** 调度器决定要不要再拉 worker 的信号。 */
+  claimableCount({ campaignId, now = Date.now() } = {}) {
+    const row = this.db.prepare(`
+      SELECT COUNT(*) AS n FROM campaign_shard
+      WHERE campaign_id = ? AND state='queued' AND next_run_at <= ?
+    `).get(campaignId, now)
+    return Number(row?.n) || 0
+  }
+
   stats() {
     const paper = this.db.prepare('SELECT COUNT(*) AS n FROM paper').get()
     const oa = this.db.prepare("SELECT COUNT(*) AS n FROM paper WHERE oa_pdf_url IS NOT NULL").get()
@@ -1106,6 +1624,34 @@ function hydrateFrontierItem(row) {
     payload: safeJson(row.payload_json, null),
     fetchedAt: row.fetched_at,
   }
+}
+
+/** campaign 行 → 对外结构（三份 JSON 解成对象；坏数据给 null，不让读取方炸）。 */
+function hydrateCampaign(row) {
+  return {
+    ...row,
+    constraints: safeJson(row.constraints_json, null),
+    budget: safeJson(row.budget_json, null),
+    spend: safeJson(row.spend_json, null),
+  }
+}
+
+/** campaign_shard 行 → 对外结构。payload/gate/output 都可能不存在。 */
+function hydrateShard(row) {
+  return {
+    ...row,
+    payload: safeJson(row.payload_json, null),
+    gate: safeJson(row.gate_json, null),
+    output: safeJson(row.output_json, null),
+  }
+}
+
+function hydrateVote(row) {
+  return { ...row, payload: safeJson(row.payload_json, null) }
+}
+
+function hydrateEvent(row) {
+  return { ...row, detail: safeJson(row.detail_json, null) }
 }
 
 /** 短 id：前缀 + 时间 + 随机，便于肉眼区分实体类型。 */

@@ -31,9 +31,9 @@ function section(title) { console.log(`\n── ${title} ──`) }
 const store = new ScienceStore({ dbPath: join(home, 'verify.db') })
 
 /* ── schema ───────────────────────────────────────────────────────────── */
-section('schema v6')
-check('SCHEMA_VERSION 为 7', SCHEMA_VERSION === 7, String(SCHEMA_VERSION))
-check('迁移到 7', store.migrated === 7, String(store.migrated))
+section('schema v8')
+check('SCHEMA_VERSION 为 8', SCHEMA_VERSION === 8, String(SCHEMA_VERSION))
+check('迁移到 8', store.migrated === 8, String(store.migrated))
 const tables = new Set(store.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => r.name))
 for (const t of ['project', 'experiment', 'experiment_run', 'analysis', 'figure_spec', 'provenance']) {
   check(`表 ${t} 存在`, tables.has(t))

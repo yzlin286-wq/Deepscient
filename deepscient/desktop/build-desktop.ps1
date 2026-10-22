@@ -80,7 +80,7 @@ if ($Destination.StartsWith($Source + [System.IO.Path]::DirectorySeparatorChar, 
 }
 
 # 版本取自原 resources\app\package.json
-$sourceManifest = Get-Content -LiteralPath $sourceAppPkg -Raw | ConvertFrom-Json
+$sourceManifest = Get-Content -LiteralPath $sourceAppPkg -Raw -Encoding UTF8 | ConvertFrom-Json
 $productVersion = [string]$sourceManifest.version
 if (-not $productVersion) { throw "原 package.json 缺少 version 字段：$sourceAppPkg" }
 
@@ -196,6 +196,94 @@ if (Test-Path -LiteralPath $destAsar) {
 }
 if (-not (Test-Path -LiteralPath $destAsarDisabled)) { throw "缺少 $destAsarDisabled，Electron 可能仍会加载 app.asar" }
 
+# 内置插件：把两个本地包以源码形态放进 resources\deepscient，供打包形态装配 profile 使用
+Write-Step '内置插件 -> resources\deepscient'
+$bundleRoot = Join-Path $Destination 'resources\deepscient'
+New-Item -ItemType Directory -Force -Path $bundleRoot | Out-Null
+$pluginSpecs = @(
+  @{ Name = 'deepscient'; Source = (Join-Path $repoRoot 'deepscient') },
+  @{ Name = 'dsh-science'; Source = (Join-Path $repoRoot 'dsh-science') }
+)
+
+foreach ($spec in $pluginSpecs) {
+  $pluginSource = $spec.Source
+  $pluginTarget = Join-Path $bundleRoot $spec.Name
+  if (-not (Test-Path -LiteralPath (Join-Path $pluginSource 'package.json'))) {
+    throw "找不到内置插件源码：$pluginSource"
+  }
+  New-Item -ItemType Directory -Force -Path $pluginTarget | Out-Null
+  Write-Step ("复制插件 {0}" -f $spec.Name)
+  $pluginRcArgs = @(
+    $pluginSource,
+    $pluginTarget,
+    '/E',
+    '/MT:8',
+    '/R:1',
+    '/W:1',
+    '/NFL',
+    '/NDL',
+    '/NJH',
+    '/NJS',
+    '/NP',
+    '/XD', 'node_modules', 'dist', '.git', (Join-Path $pluginSource 'desktop\vendor'), 'skills-vendor', 'logs', 'backup',
+    '/XF', '*.log', 'local.patch.yml', '*.tgz', 'token.json', '.env', '.env.*', '*.pem', '*.key'
+  )
+  & robocopy @pluginRcArgs
+  $pluginRcExit = $LASTEXITCODE
+  if ($pluginRcExit -gt 7) { throw "robocopy 复制插件失败（exit=$pluginRcExit）：$pluginSource -> $pluginTarget" }
+}
+
+$requiredPluginFiles = @(
+  (Join-Path $bundleRoot 'deepscient\package.json'),
+  (Join-Path $bundleRoot 'dsh-science\package.json'),
+  (Join-Path $bundleRoot 'dsh-science\lib\science\orchestra\scheduler.js'),
+  (Join-Path $bundleRoot 'dsh-science\data\org\roles.json')
+)
+foreach ($requiredFile in $requiredPluginFiles) {
+  if (-not (Test-Path -LiteralPath $requiredFile)) { throw "内置插件缺少关键文件：$requiredFile" }
+}
+
+# CLI 垫片：让产物内可以直接 `dsh`（Electron 以 Node 模式跑壳内的 desktop-host CLI）
+$cliShimDir = Join-Path $bundleRoot 'cli'
+New-Item -ItemType Directory -Force -Path $cliShimDir | Out-Null
+$cliShimPath = Join-Path $cliShimDir 'dsh.cmd'
+$cliEntryRel = 'app\dsh\node_modules\@deepseek-ai\dsh-desktop-host\lib\cli.js'
+$cliEntryPath = Join-Path (Join-Path $Destination 'resources') $cliEntryRel
+if (-not (Test-Path -LiteralPath $cliEntryPath)) {
+  throw "CLI 垫片入口不存在：$cliEntryPath（既不是 app 解包目录，也没有对应的 app.asar.unpacked 路径）"
+}
+$cliShim = @'
+@echo off
+setlocal DisableDelayedExpansion
+set "ELECTRON_RUN_AS_NODE=1"
+set "entry=%~dp0..\..\app\dsh\node_modules\@deepseek-ai\dsh-desktop-host\lib\cli.js"
+if not exist "%entry%" set "entry=%~dp0..\..\app.asar.unpacked\dsh\node_modules\@deepseek-ai\dsh-desktop-host\lib\cli.js"
+"%~dp0..\..\..\DeepScient.exe" --expose-internals "%entry%" %*
+exit /b %errorlevel%
+'@
+Write-Utf8NoBom $cliShimPath (($cliShim -replace "`r`n", "`n") -replace "`n", "`r`n")
+Write-Step "已写入 CLI 垫片：$cliShimPath"
+
+# 应用根启动器（文件名中文，内容纯 ASCII）
+$launcherPath = Join-Path $Destination 'DeepScient 启动.cmd'
+$launcher = @"
+@echo off
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0resources\deepscient\deepscient\desktop\deepscient-desktop.ps1"
+"@
+Write-Utf8NoBom $launcherPath (($launcher -replace "`r`n", "`n") -replace "`n", "`r`n")
+Write-Step "已写入启动器：$launcherPath"
+
+# 硬约束自检：插件目录只含源码与随包数据（robocopy 已排除，这里再兜底一次）
+foreach ($spec in $pluginSpecs) {
+  $pluginTarget = Join-Path $bundleRoot $spec.Name
+  foreach ($bad in @('node_modules', 'skills-vendor')) {
+    if (Test-Path -LiteralPath (Join-Path $pluginTarget $bad)) { throw "插件目录里出现了不应存在的目录：$(Join-Path $pluginTarget $bad)" }
+  }
+  foreach ($badFile in @('token.json', '.env')) {
+    if (Test-Path -LiteralPath (Join-Path $pluginTarget $badFile)) { throw "插件目录里出现了不应存在的文件：$(Join-Path $pluginTarget $badFile)" }
+  }
+}
+
 # 硬约束自检：产物里不能有 profiles / 用户数据根
 foreach ($forbidden in @((Join-Path $Destination 'profiles'), (Join-Path $Destination 'resources\profiles'), (Join-Path $Destination '.deepscient'))) {
   if (Test-Path -LiteralPath $forbidden) { throw "产物里出现了不应存在的目录：$forbidden" }
@@ -241,7 +329,40 @@ $fileCount = $inventory.Count
 $totalBytes = [int64]0
 foreach ($file in $inventory) { $totalBytes += $file.Length }
 
-$excludedNote = '未复制任何用户数据或密钥：不含 %USERPROFILE%\.deepscient、profiles\、token.json、.env、私钥；仅派生桌面壳与 resources（app + runtime）。pip 内置的公共 CA 包 cacert.pem 不属于密钥，照常复制'
+$excludedNote = '未复制任何用户数据或密钥：不含 %USERPROFILE%\.deepscient、profiles\、token.json、.env、私钥；仅派生桌面壳与 resources（app + runtime）。pip 内置的公共 CA 包 cacert.pem 不属于密钥，照常复制。插件只含源码与随包数据，不含 node_modules / 用户数据 / 密钥'
+
+$bundledPlugins = @()
+foreach ($spec in $pluginSpecs) {
+  $pluginTarget = Join-Path $bundleRoot $spec.Name
+  $pluginManifestText = [System.IO.File]::ReadAllText((Join-Path $pluginTarget 'package.json'), [System.Text.Encoding]::UTF8)
+  $pluginManifest = $pluginManifestText | ConvertFrom-Json
+  $pluginMain = ''
+  $manifestProps = @($pluginManifest.PSObject.Properties.Name)
+  if ($manifestProps -contains 'main' -and $pluginManifest.main) {
+    $pluginMain = [string]$pluginManifest.main
+  } elseif ($manifestProps -contains 'exports' -and $pluginManifest.exports -and $pluginManifest.exports.PSObject.Properties['.']) {
+    $pluginMain = [string]$pluginManifest.exports.PSObject.Properties['.'].Value
+  }
+  if (-not $pluginMain) { $pluginMain = './lib/index.js' }
+  $pluginEntryRel = ($pluginMain -replace '/', '\').TrimStart('.', '\')
+  $pluginEntryPath = Join-Path $pluginTarget $pluginEntryRel
+  $pluginEntrySha = ''
+  if (Test-Path -LiteralPath $pluginEntryPath) {
+    $pluginEntrySha = (Get-FileHash -Algorithm SHA256 -LiteralPath $pluginEntryPath).Hash.ToLower()
+  }
+  $pluginFiles = @(Get-ChildItem -LiteralPath $pluginTarget -Recurse -File -Force)
+  $pluginBytes = [int64]0
+  foreach ($pluginFile in $pluginFiles) { $pluginBytes += $pluginFile.Length }
+  $bundledPlugins += [ordered]@{
+    name        = $spec.Name
+    version     = [string]$pluginManifest.version
+    files       = $pluginFiles.Count
+    bytes       = $pluginBytes
+    entry       = $pluginEntryRel
+    entrySha256 = $pluginEntrySha
+  }
+}
+
 $buildInfo = [ordered]@{
   source         = $Source
   destination    = $Destination
@@ -255,6 +376,7 @@ $buildInfo = [ordered]@{
     skippedFiles       = @($skippedSensitive)
     skippedDirectories = @('resources\app.dshpurge-prev')
   }
+  bundledPlugins = $bundledPlugins
 }
 Write-Utf8NoBom $buildInfoPath (($buildInfo | ConvertTo-Json -Depth 6) + "`n")
 

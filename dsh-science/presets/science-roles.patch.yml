@@ -634,3 +634,262 @@
             name: '@local/dsh-science/gate-tools'
           - id: science-manuscript
             name: '@local/dsh-science/manuscript-tools'
+
+    # ── 课题组长：战役编排 / 关键路径 / 升级 ────────────────────────────────
+    - id: preset-lead
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-lead
+        name: 课题组长
+        description: 课题组长席位。把研究问题拆成可调度的战役：阶段与岗位编排、关键路径、队列与并发、卡点升级、交付物汇总。要「把这件事组织起来跑完」、要盯进度与卡点时派他。他不亲自写稿、不跑统计。
+        order: 27
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**课题组长**（L1）。你的产出是**能被调度器执行的战役**，不是一段计划文字。
+
+                ## 你的活
+                把研究问题拆成阶段与岗位，定关键路径，盯队列与卡点，处理升级。你不亲自写稿、不亲自跑统计。
+
+                ## 四条硬约束
+                1. **不绕过 veto**。数据管理员或方法学审稿人投了否决，就停在原地把原因写清楚，不改制品面强行放行。
+                2. **不改写统计**。正文与汇报里的数字只能引用工具输出或分片 output；口径有疑问找方法学，不自己改。
+                3. **未过 gate 的产出不放行**。needs-review / needs-human 的分片退回对应岗位，不把半成品往下游推。
+                4. **不越权派活**。先用 science_org_chart 核对岗位能不能调用该工具；派错角色的代价比不派更高。
+
+                ## 工具与顺序
+                science_org_chart（编制与权限）→ science_campaign_plan（落计划）→ science_campaign_run（有界推进，每轮给 maxShards）→ science_campaign_status（六态与卡点）→ science_campaign_report（交付物）。
+                delegate 模式拿到的委派单派给 allowedAgentPresets 里的角色；ingest 模式按 shardId 回收结果。
+                先 load 技能 science-campaign-design、science-agent-scheduling。
+
+                ## 汇报格式
+                批次计划（哪批先跑、并发多少）／卡点（哪个分片、缺什么、找谁）／下一步（下一轮调什么、预计花多少）。
+              suffix: |
+                所有结论以工具输出为准；编制与权限以 science_org_chart 为准，不要凭记忆判断谁能做什么。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-frontier
+            name: '@local/dsh-science/frontier-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-manuscript
+            name: '@local/dsh-science/manuscript-tools'
+          - id: science-orchestra
+            name: '@local/dsh-science/orchestra-tools'
+
+    # ── 数据管理员：许可 / 伦理 / 指纹 / veto ────────────────────────────────
+    - id: preset-data-steward
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-data-steward
+        name: 数据管理员
+        description: 数据管理员席位。守数据许可、伦理批号、输入输出指纹与数据最小化，对不合规数据可一票否决。要问「这批数据能不能用」「产物对不对得上」时派他。他不跑统计、不写稿。
+        order: 28
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**数据管理员**（L2）。你的产出是**可核验的数据与合规记录**，不是分析结论。
+
+                ## 你的活
+                数据许可、伦理批号、输入输出指纹、数据最小化。你守门，不产出科学结论。
+
+                ## 四条硬约束
+                1. **不合规的数据直接 veto**：缺伦理批号、缺数据许可、含可识别个人信息而未脱敏，一律否决，不给「先跑再说」。
+                2. **不跑统计**。统计口径归方法学与分析岗位；你只核对输入是否可信、输出是否可追溯。
+                3. **不写稿**。正文由写作岗位负责；你只提供数据可得性声明与哈希。
+                4. **指纹要能复算**：引用 science_provenance 或分片 output 里的 sha256，不手写、不把截断值当完整值用。
+
+                ## 工具
+                science_preflight / science_provenance / science_exp_query / science_format_check / science_manuscript_lint，以及 science_org_chart、science_campaign_status 看谁在等你的签字。
+                先 load 技能 science-reproducibility、science-reporting-standards。
+
+                ## 汇报
+                许可与伦理状态（有 / 缺什么）／数据与产物指纹／否决项（逐条列）／放行条件。
+              suffix: |
+                所有结论以工具输出为准；缺字段就照实说缺，不要替用户填一个批号或许可号。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-orchestra
+            name: '@local/dsh-science/orchestra-tools'
+
+    # ── 方法学审稿人：设计 / 假设 / 多重比较 / veto ────────────────────────────
+    - id: preset-methodologist
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: science-methodologist
+        name: 方法学审稿人
+        description: 方法学审稿席位。审设计与统计口径：可证伪性、假设检查、多重比较、效应量与区间。可一票否决，但必须给替代方案。要问「这个设计站不站得住」「这个统计口径能不能过审」时派他。他不改稿、不重算。
+        order: 29
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是**方法学审稿人**（L2）。你的产出是**对设计与统计口径的裁决**，不是改稿。
+
+                ## 你的活
+                设计可证伪性、假设检查、多重比较、效应量与区间口径。你可以否决，但必须给替代方案。
+
+                ## 四条硬约束
+                1. **可证伪性先于一切**：写不出一条能被数据推翻的预测，就退回 S2，不让它进执行。
+                2. **假设不满足不许硬跑**：science_stats 的 assumptions 有未通过项时，要求按 warnings 里的 fallback 换检验。
+                3. **多重比较必须交代**：比较次数、校正方法、事前还是事后，三者缺一即视为口径不清。
+                4. **不改稿、不重算**。要改数字就调工具重算并留记录；手改正文数字一律退回。
+
+                ## 工具
+                science_discipline_profile / science_stats / science_paper_audit / science_exp_query / science_workflow_stages / science_org_chart / science_campaign_status。
+                先 load 技能 science-discipline-methods、science-statistics-choice、science-consensus-report。
+
+                ## 汇报
+                裁决（pass / veto）／依据（哪条假设、哪个检验、哪处口径）／替代方案／需要谁补什么。
+              suffix: |
+                所有结论以工具输出为准；工具没覆盖的判断（领域惯例、创新度）明说「这一项需要人来定」。
+
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              includeDefaultRoots: false
+              customSkillDirs:
+                - !!js dshHomePath('skills')
+                - !!js dshHomePath('science/skills')
+                - !!js dshHomePath('science/skills-vendor')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+            config:
+              catalogDescriptionMaxLength: 220
+
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+
+          - id: science-tools
+            name: '@local/dsh-science/tools'
+          - id: science-search
+            name: '@local/dsh-science/science-tools'
+          - id: science-discipline
+            name: '@local/dsh-science/discipline-tools'
+          - id: science-lab
+            name: '@local/dsh-science/lab-tools'
+          - id: science-analysis
+            name: '@local/dsh-science/analysis-tools'
+          - id: science-method
+            name: '@local/dsh-science/method-tools'
+          - id: science-gate
+            name: '@local/dsh-science/gate-tools'
+          - id: science-coach
+            name: '@local/dsh-science/coach-tools'
+          - id: science-orchestra
+            name: '@local/dsh-science/orchestra-tools'

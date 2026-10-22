@@ -1,0 +1,304 @@
+{
+  "version": 1,
+  "generatedFor": "dsh-science/orchestra",
+  "layers": {
+    "L0": {
+      "name": "课题主持人",
+      "purpose": "对课题方向、终稿与对外结论负最终责任；只在需要拍板时出手，不做日常执行。"
+    },
+    "L1": {
+      "name": "课题组长",
+      "purpose": "把课题拆成 Campaign 与阶段，编排岗位、发租约、收 gate 结果，对交付质量负责。"
+    },
+    "L2": {
+      "name": "岗位专家",
+      "purpose": "在一个专业面上独立作业并出可复核的产物；只在自己权限内做判断。"
+    },
+    "L3": {
+      "name": "任务专员",
+      "purpose": "执行单个分片任务，按幂等键交付，不解释、不扩范围、不自行改设计。"
+    }
+  },
+  "roles": [
+    {
+      "id": "pi",
+      "name": "课题主持人（PI）",
+      "layer": "L0",
+      "reportsTo": null,
+      "duty": "定课题方向与终稿去留，对全部对外结论负最终责任",
+      "authority": ["decide", "approve", "review", "veto"],
+      "skills": ["science-org-roles", "science-campaign-design", "science-study-coach-flow", "science-reproducibility"],
+      "toolSurface": [
+        "science_org_chart",
+        "science_campaign_plan",
+        "science_campaign_run",
+        "science_campaign_status",
+        "science_campaign_report",
+        "science_study_coach",
+        "science_workflow_stages",
+        "science_journal_readiness",
+        "science_paper_audit",
+        "science_preflight"
+      ],
+      "capacity": 1,
+      "costTier": "high"
+    },
+    {
+      "id": "lead",
+      "name": "课题组长",
+      "layer": "L1",
+      "reportsTo": "pi",
+      "duty": "把课题拆成 Campaign 与阶段，编排岗位并验收跨岗位交付",
+      "authority": ["decide", "approve", "review", "schedule"],
+      "skills": ["science-campaign-design", "science-agent-scheduling", "science-study-coach-flow", "science-reproducibility"],
+      "toolSurface": [
+        "science_org_chart",
+        "science_campaign_plan",
+        "science_campaign_run",
+        "science_campaign_status",
+        "science_campaign_report",
+        "science_study_coach",
+        "science_workflow_stages",
+        "science_provenance",
+        "science_paper_audit"
+      ],
+      "capacity": 3,
+      "costTier": "high",
+      "preset": "science-lead"
+    },
+    {
+      "id": "project-manager",
+      "name": "项目管理员",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "排期、派单、盯租约与预算，让任务不在队列里枯死",
+      "authority": ["schedule", "review", "execute"],
+      "skills": ["science-campaign-design", "science-agent-scheduling", "science-org-roles"],
+      "toolSurface": [
+        "science_org_chart",
+        "science_campaign_plan",
+        "science_campaign_run",
+        "science_campaign_status",
+        "science_campaign_report",
+        "science_workflow_stages",
+        "science_preflight",
+        "science_source_status",
+        "science_exp_query"
+      ],
+      "capacity": 2,
+      "costTier": "medium"
+    },
+    {
+      "id": "survey",
+      "name": "文献情报员",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "多源检索、拿全文、画缺口矩阵，交付带 DOI 的证据清单",
+      "authority": ["execute", "review"],
+      "skills": ["science-literature-search", "science-source-matrix", "science-fulltext-hunting", "science-journal-intel"],
+      "toolSurface": [
+        "science_search",
+        "science_lit_query",
+        "science_retrieval_doctor",
+        "science_source_status",
+        "science_gap_matrix",
+        "science_novelty",
+        "science_journal_intel",
+        "science_frontier_scan"
+      ],
+      "capacity": 64,
+      "costTier": "medium",
+      "preset": "science-survey"
+    },
+    {
+      "id": "strategist",
+      "name": "选题与选刊参谋",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "把兴趣变成可证伪的问题，并给 reach/target/safe 三档选刊",
+      "authority": ["execute", "review"],
+      "skills": ["science-discipline-methods", "science-journal-selection", "science-journal-intel", "science-frontier-to-paper"],
+      "toolSurface": [
+        "science_discipline_profile",
+        "science_discipline_list",
+        "science_contribution_design",
+        "science_gap_matrix",
+        "science_paper_plan",
+        "science_journal_fit",
+        "science_journal_intel",
+        "science_journal_refresh",
+        "science_frontier_scan",
+        "science_knowledge_distill"
+      ],
+      "capacity": 8,
+      "costTier": "medium",
+      "preset": "science-strategist"
+    },
+    {
+      "id": "experimenter",
+      "name": "实验执行者",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "按方案执行并留痕，产出可原样重跑的运行记录",
+      "authority": ["execute", "review"],
+      "skills": ["science-experiment-runbook", "science-reproducibility"],
+      "toolSurface": [
+        "science_preflight",
+        "science_project_open",
+        "science_exp_plan",
+        "science_exp_run",
+        "science_exp_query",
+        "science_provenance",
+        "local_compute_devices",
+        "local_numeric",
+        "local_symbolic"
+      ],
+      "capacity": 16,
+      "costTier": "medium",
+      "preset": "science-experimenter"
+    },
+    {
+      "id": "analyst",
+      "name": "统计与作图",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "先查假设再选检验，报效应量与区间，出期刊规格的图",
+      "authority": ["execute", "review"],
+      "skills": ["science-statistics-choice", "science-stats-report", "science-figure-for-journal"],
+      "toolSurface": [
+        "science_stats",
+        "science_figure",
+        "science_exp_query",
+        "science_provenance",
+        "local_numeric",
+        "local_symbolic"
+      ],
+      "capacity": 32,
+      "costTier": "medium",
+      "preset": "science-analyst",
+      "gate": ["science_stats"]
+    },
+    {
+      "id": "data-steward",
+      "name": "数据管理员",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "守住数据与代码的版本、许可与复现包，可一票否决",
+      "authority": ["review", "veto", "execute"],
+      "skills": ["science-reproducibility", "science-reporting-standards", "science-org-roles"],
+      "toolSurface": [
+        "science_provenance",
+        "science_exp_query",
+        "science_preflight",
+        "science_format_check",
+        "science_manuscript_lint"
+      ],
+      "capacity": 8,
+      "costTier": "medium",
+      "preset": "science-data-steward"
+    },
+    {
+      "id": "methodologist",
+      "name": "方法学审稿人",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "审设计与统计口径是否符合学科规范，可一票否决",
+      "authority": ["review", "veto", "execute"],
+      "skills": ["science-discipline-methods", "science-statistics-choice", "science-reporting-standards", "science-consensus-report"],
+      "toolSurface": [
+        "science_stats",
+        "science_paper_audit",
+        "science_discipline_profile",
+        "science_exp_query",
+        "science_workflow_stages"
+      ],
+      "capacity": 8,
+      "costTier": "high",
+      "preset": "science-methodologist",
+      "gate": ["science_stats", "science_paper_audit"]
+    },
+    {
+      "id": "writer",
+      "name": "写作与编辑",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "把定稿结论写成人话，排成目标刊可投的四件套",
+      "authority": ["execute", "review"],
+      "skills": ["science-top-journal-writing", "science-manuscript-formatting", "science-reporting-standards"],
+      "toolSurface": [
+        "science_manuscript_new",
+        "science_manuscript_lint",
+        "science_manuscript_build",
+        "science_manuscript_assemble",
+        "science_reference_add",
+        "science_format_check",
+        "science_proofread",
+        "science_figure",
+        "science_similarity_check"
+      ],
+      "capacity": 32,
+      "costTier": "medium",
+      "preset": "science-writer",
+      "gate": ["science_manuscript_lint"]
+    },
+    {
+      "id": "critic",
+      "name": "审稿人",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "按顶刊审稿标准挑刺，只出分级整改清单，不改稿",
+      "authority": ["review", "execute"],
+      "skills": ["science-reporting-standards", "science-stats-report", "science-consensus-report"],
+      "toolSurface": [
+        "science_paper_audit",
+        "science_similarity_check",
+        "science_journal_readiness",
+        "science_proofread",
+        "science_stats",
+        "science_exp_query",
+        "science_study_coach"
+      ],
+      "capacity": 32,
+      "costTier": "medium",
+      "preset": "science-critic",
+      "gate": ["science_paper_audit"]
+    },
+    {
+      "id": "rebuttal",
+      "name": "返修答辩",
+      "layer": "L2",
+      "reportsTo": "lead",
+      "duty": "逐条拆解审稿意见：能改的改，不能改的论证，写 response letter",
+      "authority": ["execute", "review"],
+      "skills": ["science-rebuttal-playbook", "science-reporting-standards"],
+      "toolSurface": [
+        "science_rebuttal",
+        "science_journal_intel",
+        "science_cover_letter",
+        "science_manuscript_lint",
+        "science_similarity_check"
+      ],
+      "capacity": 8,
+      "costTier": "medium",
+      "preset": "science-rebuttal"
+    },
+    {
+      "id": "shard-worker",
+      "name": "任务专员",
+      "layer": "L3",
+      "reportsTo": "lead",
+      "duty": "执行单个分片任务，按幂等键交付并上报状态，不扩范围",
+      "authority": ["execute"],
+      "skills": ["science-agent-scheduling", "science-consensus-report"],
+      "toolSurface": [
+        "science_search",
+        "science_exp_query",
+        "science_stats",
+        "science_figure",
+        "science_manuscript_lint"
+      ],
+      "capacity": 20000,
+      "costTier": "low"
+    }
+  ]
+}

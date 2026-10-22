@@ -22,6 +22,13 @@ if (-not $DshHome) {
 $DshHome = [System.IO.Path]::GetFullPath($DshHome)
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSCommandPath))
+
+# 打包形态：本脚本位于 <App>\resources\deepscient\deepscient\desktop，向上 4 层是 <App>
+$packagedAppRoot = $PSScriptRoot
+1..4 | ForEach-Object { $packagedAppRoot = Split-Path -Parent $packagedAppRoot }
+$packagedExe = Join-Path $packagedAppRoot 'DeepScient.exe'
+$isPackaged = Test-Path -LiteralPath $packagedExe
+
 $logsDir = Join-Path $DshHome 'logs'
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
@@ -74,39 +81,66 @@ $iconPath = Join-Path $PSScriptRoot 'icon.ico'
 $desktopDir = [Environment]::GetFolderPath('Desktop')
 $thisScript = Join-Path $PSScriptRoot 'deepscient-desktop.ps1'
 
+# 快捷方式工作目录：打包形态用应用根，仓库形态用仓库根
+$shortcutWorkDir = if ($isPackaged) { $packagedAppRoot } else { $repoRoot }
+
 if ($CreateShortcuts) {
-  if (-not (Test-Path -LiteralPath $iconPath)) { $iconPath = $installedExe }
+  if (-not (Test-Path -LiteralPath $iconPath)) {
+    $iconPath = if ($isPackaged) { $packagedExe } else { $installedExe }
+  }
   New-Shortcut -Path (Join-Path $desktopDir 'DeepScient 科研工作台.lnk') `
     -Target "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
     -Arguments ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $thisScript + '"') `
-    -WorkDir $repoRoot -Icon $iconPath -Description 'DeepScient 科研工作台（桌面壳）'
+    -WorkDir $shortcutWorkDir -Icon $iconPath -Description 'DeepScient 科研工作台（桌面壳）'
   Write-Log "已生成快捷方式：DeepScient 科研工作台"
 
-  if (Test-Path -LiteralPath $derivedExe) {
+  $appExe = ''
+  $appWorkDir = ''
+  if ($isPackaged) {
+    $appExe = $packagedExe
+    $appWorkDir = $packagedAppRoot
+  } elseif (Test-Path -LiteralPath $derivedExe) {
+    $appExe = $derivedExe
+    $appWorkDir = Split-Path -Parent $derivedExe
+  }
+  if ($appExe) {
     New-Shortcut -Path (Join-Path $desktopDir 'DeepScient 科研工作台 - 桌面版.lnk') `
-      -Target $derivedExe -Arguments '' -WorkDir (Split-Path -Parent $derivedExe) `
-      -Icon $derivedExe -Description 'DeepScient 科研工作台（独立桌面应用）'
+      -Target $appExe -Arguments '' -WorkDir $appWorkDir `
+      -Icon $appExe -Description 'DeepScient 科研工作台（独立桌面应用）'
     Write-Log "已生成快捷方式：DeepScient 科研工作台 - 桌面版"
   } else {
-    Write-Log '未找到 dist\DeepScient\DeepScient.exe，跳过独立桌面版快捷方式（先跑 build-desktop.ps1）'
+    Write-Log '未找到 DeepScient.exe，跳过独立桌面版快捷方式（先跑 build-desktop.ps1）'
   }
   exit 0
 }
 
 Write-Log 'DeepScient 桌面入口'
 Write-Log "DSH_HOME : $DshHome"
+Write-Log ("形态     : " + $(if ($isPackaged) { '打包' } else { '仓库' }))
 
-$profileManifest = Join-Path $DshHome 'profiles\desktop\package.json'
-if (-not $NoAssemble -and -not (Test-Path -LiteralPath $profileManifest)) {
+$profileDir = Join-Path $DshHome 'profiles\desktop'
+$profileManifest = Join-Path $profileDir 'package.json'
+$scienceLink = Join-Path $profileDir 'node_modules\@local\dsh-science\package.json'
+$needAssemble = $false
+$reason = ''
+if (-not (Test-Path -LiteralPath $profileManifest)) {
+  $needAssemble = $true
+  $reason = 'profile 尚未装配'
+} elseif (-not (Test-Path -LiteralPath $scienceLink)) {
+  $needAssemble = $true
+  $reason = 'profile 依赖缺失（node_modules\@local\dsh-science 不存在），重新装配'
+}
+if (-not $NoAssemble -and $needAssemble) {
   $assemble = Join-Path $PSScriptRoot 'assemble-profile.ps1'
   if (Test-Path -LiteralPath $assemble) {
-    Write-Log 'profile 尚未装配，先运行 assemble-profile.ps1'
+    Write-Log $reason
     & $assemble -DshHome $DshHome
     if ($LASTEXITCODE -ne 0) { throw "assemble-profile.ps1 失败（exit=$LASTEXITCODE）" }
   }
 }
 
 $exe = $Executable
+if (-not $exe -and $isPackaged) { $exe = $packagedExe }
 if (-not $exe -and (Test-Path -LiteralPath $derivedExe)) { $exe = $derivedExe }
 if (-not $exe -and (Test-Path -LiteralPath $installedExe)) { $exe = $installedExe }
 if (-not $exe) { throw "找不到桌面壳：$installedExe（或用 -Executable 指定）" }

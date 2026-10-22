@@ -1,10 +1,10 @@
-# 工具清单：33 个工具，按"你会什么时候用到它"排
+# 工具清单：38 个工具，按"你会什么时候用到它"排
 
 每个工具都在 `lib/*-tools.js` 里注册。这份清单是给人看的索引，
 权威定义在代码与 `data/tools/registry.json`。
 
 **读法**：先看「阶段」列——它对应 `data/workflow.json` 的 S0–S11。
-你不需要记住全部 33 个，只需要知道当前阶段该调哪几个。`science_study_coach` 会直接告诉你。
+你不需要记住全部 38 个，只需要知道当前阶段该调哪几个。`science_study_coach` 会直接告诉你。
 
 ---
 
@@ -108,6 +108,20 @@
 | 工具 | 阶段 | 做什么 |
 | --- | --- | --- |
 | `science_rebuttal` | S11 | 按审稿意见逐条生成回应草稿 |
+
+## M7 多智能体调度（5 个）
+
+| 工具 | 阶段 | 输入要点 | 输出要点 | 不做什么 |
+| --- | --- | --- | --- | --- |
+| `science_org_chart` | S0（全流程可查） | 空参列全部岗位；可选 `role`；再给 `tool`（支持 `science_*` 前缀通配）或 `action`（decide / approve / review / execute / veto / schedule）做越权检查 | 13 个岗位的层级、职责、权限、容量与工具面，一票否决席位与批策略；检查时给通过/不通过与上报路径 | 不改编制、不派人；编制只从 `data/org/roles.json` 与 `org-chart.json` 读，不在这里判断科学问题 |
+| `science_campaign_plan` | S0 | `question`（必填）；`discipline`、`seed`、`projectId`、`example`、`literatureCount` / `dataColumns` / `figureCount` / `sections` / `votes` / `budgetUsd` / `maxWallClockMin` | `campaignId`、`planHash`、7 个 Workstream / 12 个 Task / 分片数（默认 138）、按岗位的分片预算、批次数与关键路径 | 不执行分片；同 `planHash` 默认复用已有战役，只有 `force:true` 才换一整套 id 另起一轮 |
+| `science_campaign_run` | S0–S9 | `campaignId`（必填）；`mode`（local / delegate / ingest / auto）、`maxShards`、`localConcurrency`、`llmConcurrency`、`delegateBatch`、`highWatermark`；ingest 另给 `results[]` | 本轮 processed / done / failed / needsReview / needsHuman、队列剩余、吞吐、花费与委派单（最多 6 条） | 不生成结论、不判科学对错；delegate 只出 brief 不执行，ingest 只落库并投票，不替人决定证据够不够 |
+| `science_campaign_status` | S0–S9 | `campaignId`；省略则列最近 10 个战役 | 进度百分比、六态分片计数（queued / leased / done / failed / needs-review / needs-human）、花费、按执行器与岗位分布、最近事件 | 不改状态、不推进调度；也不把 `needs-review` 当成 done 报 |
+| `science_campaign_report` | S9 | `campaignId`（必填）；可选 `outDir` | `report.md` / `paper.md` / `evidence.json` / `manifest.json` 与图件副本，逐文件 sha256；`idempotent` 表示与上次逐字节相同 | 不补造数字：只汇总已完成分片，缺证据写进 gaps；战役没跑完就照实标缺口，不填占位 DOI |
+
+`science_campaign_run` 的三种委派语义：`mode:"delegate"` 返回委派单，`mode:"ingest"` 回收结果，`local` 只跑确定性分片，`auto` 先 local 再返回一批委派单。
+
+三条边界：上万个智能体指上万个**逻辑智能体槽位**（agent slot / shard），不是同时发一万个 LLM 请求；LLM 产出必须过 task 声明的 gate 工具，否则停在 `needs-review`；默认不联网，文献类任务无网络时复用本地参考并标记缺口，不生成占位 DOI。
 
 ---
 

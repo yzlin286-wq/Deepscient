@@ -58,6 +58,7 @@ dsh-science/
 ├─ lib/lab-tools.js          # 课题 / 方案 / 受控执行 / 查询 / 溯源（M6b 五工具）
 ├─ lib/analysis-tools.js     # 统计检验 / 期刊尺寸作图（M6c 两工具）
 ├─ lib/coach-tools.js        # 流程教练 / 流程本体（M6d 两工具）
+├─ lib/orchestra-tools.js    # 编制 / 战役计划 / 调度 / 状态 / 交付物（M7 五工具）
 ├─ lib/science/
 │  ├─ http/                  # client（Cookie/代理/curl 双传输）/ limits（限速+预算+熔断）/ cache（SQLite 响应缓存）
 │  ├─ sources/free.js        # 10 个无 key 源适配器
@@ -71,6 +72,7 @@ dsh-science/
 │  ├─ frontier/              # M4：github / index / distill / gap / contribution / plan
 │  ├─ discipline/            # M6a：index（学科匹配）；M6d：coach（S0–S11 门判定）
 │  ├─ lab/                   # M6b：project / power / runner / plan / query / provenance；M6c：stats / figures
+│  ├─ orchestra/             # M7：chart / plan / scheduler / executors / consensus / report
 │  └─ format/                # M5：yaml / markdown / source / cite / formats / latex / docx / jats / html / lint / build
 ├─ data/
 │  ├─ journals.json          # 53 本期刊画像
@@ -96,6 +98,9 @@ dsh-science/
 ├─ scripts/verify-discipline.mjs # 学科方法库验收（1050 项）
 ├─ scripts/verify-lab.mjs      # 实验层验收（189 项）
 ├─ scripts/verify-stats.mjs    # 分析与作图验收（152 项）
+├─ scripts/verify-orchestra.mjs # 调度层验收（63 项）
+├─ scripts/scale-orchestra.mjs  # 压测：12000 分片有界并发调度
+├─ scripts/demo-campaign.mjs    # 端到端演示：问题 → 战役 → 交付物
 ├─ scripts/smoke-frontier.mjs  # 真实链路冒烟（消耗 GitHub 与十源配额）
 ├─ scripts/smoke-manuscript-tools.mjs # 工具层冒烟（67 项）
 ├─ scripts/smoke-discipline-tools.mjs # 学科工具冒烟（53 项）
@@ -104,9 +109,9 @@ dsh-science/
 ├─ docs/source-notes.md       # 渠道实测笔记（状态码/限额/坑）
 ├─ docs/market-scan.md        # M5 竞品调研与借鉴清单（含许可边界）
 ├─ docs/discipline-methods.md # 学科包与统计库的导读（数据权威，文档导读）
-├─ docs/tool-registry.md      # 33 个工具按阶段索引
+├─ docs/tool-registry.md      # 38 个工具按阶段索引
 ├─ docs/onboarding-tutorial.md # 从零到投稿的十步教程
-└─ skills/science/*/SKILL.md  # 随包技能（17 个）
+└─ skills/science/*/SKILL.md  # 随包技能（21 个）
 ```
 
 ## 已实现
@@ -340,7 +345,7 @@ GUI-only 工具（`minimalScript: "（图形界面）"`）不能代点，只能�
 
 三份文档：
 [docs/discipline-methods.md](docs/discipline-methods.md)（学科包与统计库导读）、
-[docs/tool-registry.md](docs/tool-registry.md)（33 个工具按阶段索引）、
+[docs/tool-registry.md](docs/tool-registry.md)（38 个工具按阶段索引）、
 [docs/onboarding-tutorial.md](docs/onboarding-tutorial.md)（从零到投稿十步）。
 新手入口技能：[skills/science/science-study-coach-flow/SKILL.md](skills/science/science-study-coach-flow/SKILL.md)。
 
@@ -376,6 +381,94 @@ S1 与 S3 没过是**正确结果**：演示里没有真的检索文献库，也
 | 骨架注释被当成正文 | 每篇新稿都凭空多出"引用不存在""交叉引用悬空"两条 block | 解析前剥 HTML 注释 |
 | 上限为 0 被当成上限 | "正文 355 词，超过上限 0 词的 25%" | `words`/`figures`/`refs` 的 0 一律视为不设上限 |
 
+### M7 多智能体调度（orchestra）（已完成，验收 60/60，压测 12,000 分片）
+
+M6 结束时，工具、流程、门都齐了，但执行方式仍是**一个 PI 手动点角色**：一次推进一个任务，岗位边界靠人记，失败靠人重启，所谓并行只是"多开几次"。M7 把这一层换成调度层——**有编制、有队列、有租约、有质检**：
+
+- **编制**：13 个岗位分 4 级，权限、工具面、容量写进 `data/org/roles.json`；越权在派单前就被拦住。
+- **队列**：Campaign → Workstream → Task → Shard 四层落库，每个分片一个幂等键。
+- **租约**：谁在跑、租到什么时候、心跳还在不在，全在库里；进程崩了按库恢复。
+- **质检**：LLM 的产出必须过 task 声明的 gate 工具，否则停在 `needs-review`。
+
+组织架构（`data/org/roles.json` 4 级 13 岗 + `data/org/org-chart.json`；一票否决席位 `methodologist`、`data-steward`，直达 PI 而不是被组长过滤）：
+
+| 岗位 id | 岗位 | 层级 | 权限 | 容量 |
+|---|---|---|---|---|
+| `pi` | 课题主持人（PI） | L0 | decide / approve / review / veto | 1 |
+| `lead` | 课题组长 | L1 | decide / approve / review / schedule | 3 |
+| `project-manager` | 项目管理员 | L2 | schedule / review / execute | 2 |
+| `survey` | 文献情报员 | L2 | execute / review | 64 |
+| `strategist` | 选题与选刊参谋 | L2 | execute / review | 8 |
+| `experimenter` | 实验执行者 | L2 | execute / review | 16 |
+| `analyst` | 统计与作图 | L2 | execute / review | 32 |
+| `data-steward` | 数据管理员 | L2 | review / veto / execute | 8 |
+| `methodologist` | 方法学审稿人 | L2 | review / veto / execute | 8 |
+| `writer` | 写作与编辑 | L2 | execute / review | 32 |
+| `critic` | 审稿人 | L2 | review / execute | 32 |
+| `rebuttal` | 返修答辩 | L2 | execute / review | 8 |
+| `shard-worker` | 任务专员 | L3 | execute | 20000 |
+
+容量是**逻辑槽位上限**，不是进程数。四个层级：L0 课题主持人、L1 课题组长、L2 岗位专家、L3 任务专员。
+
+五个工具：
+
+| 工具 | 阶段 | 作用 |
+|---|---|---|
+| `science_org_chart` | S0 起，全流程可查 | 读编制：岗位、层级、权限、容量、工具面；传 `role`+`tool` / `role`+`action` 做越权检查并给上报路径 |
+| `science_campaign_plan` | S0 | 一句可证伪的问题 → 落库 DAG：7 个 Workstream、12 个 Task、默认 138 个 Shard；同 `planHash` 复用而不是重复建 |
+| `science_campaign_run` | S0–S9 | 推一轮：local 执行确定性分片 / delegate 出委派单 / ingest 回收结果 / auto 先本地再委派 |
+| `science_campaign_status` | S0–S9 | 进度、六态分片计数、花费、按执行器与岗位分布、最近事件；不带 id 则列最近 10 个战役 |
+| `science_campaign_report` | S9 | 证据 → `report.md` / `paper.md` / `evidence.json` / `manifest.json` 与图件副本 |
+
+编排模型：**Campaign → Workstream（S0/S1/S2/S6/S7/S8/S9）→ Task（12 个）→ Shard（默认 138 个）**。
+
+调度语义（`lib/science/orchestra/scheduler.js`）：
+
+- **原子领取**：`BEGIN IMMEDIATE` 先拿写锁，再按 `state='queued' AND next_run_at <= now` 领取并写租约；多进程同时抢也不会把同一片派两次。
+- **租约 + 心跳**：默认租期 120 s，执行中每 30 s 续一次；过期由 `reapExpiredLeases` 收回——未到上限回队列，到上限直接 `failed`。
+- **指数退避**：1 s → 2 s → 4 s → …，封顶 5 分钟（300 s），下游故障时不会把队列打成全速重试。
+- **最大尝试后进死信**：`maxAttempts` 默认 3，用尽后停在 `failed`，不再被领取；错误原文留在分片行上。
+- **队列高水位背压**：排队超过 `highWatermark`（默认 20000）暂停本轮并记 `backpressure` 事件。
+- **预算熔断**：战役预算默认 $25 / 480 分钟；花费达到上限即停，`budget-tripped` 落库。
+- **优先级老化**：每 20 轮把 queued 分片的 priority 减 1（下限 10），长尾任务不会饿死。
+- **崩溃恢复**：进度只认库；重启后同一个 campaign 继续跑，已 done 的分片按幂等键不会再执行。
+- **逻辑并发 vs 物理并发**：Shard 是调度单位，不是请求单位。local 执行器按 CPU 核数−1 开 worker，llm 执行器按 `llmConcurrency`（默认 6）分批委派。
+
+三条边界（写死在实现里，不是建议）：
+
+1. **「上万个智能体」= 上万个逻辑智能体槽位（agent slot / shard）**，不是同时发一万个 LLM 请求；local 执行器按 CPU 并发（默认核数−1），llm 执行器按 `llmConcurrency`（默认 6）分批委派。
+2. **LLM 产出不算完成**：必须通过 task 声明的 gate 工具复核，否则停在 `needs-review`。
+3. **本地优先**：默认不联网；文献类任务无网络时复用本地参考并标记缺口，不生成占位 DOI。
+
+三种 llm 委派模式：`mode:"delegate"` 返回委派单（`brief` + 预估 tokens，不执行），`mode:"ingest"` 回收结果（按 `shardId` 落库、投票、过 gate），`local` 只跑确定性分片，`auto` 先 local 再返回一批委派单。
+
+新增 3 个角色 preset：`science-lead`（课题组长）、`science-data-steward`（数据管理员）、`science-methodologist`（方法学审稿人）；`allowedAgentPresets` 现为 10 个。新增 4 个技能：`science-org-roles`、`science-campaign-design`、`science-agent-scheduling`、`science-consensus-report`。
+
+存储：SQLite schema v8，新增 8 张表 `campaign / campaign_workstream / campaign_task / campaign_shard / campaign_agent / campaign_vote / campaign_artifact / campaign_event`。
+
+运行：
+
+```bash
+node dsh-science/scripts/demo-campaign.mjs --example sleep-wm --seed 42
+node dsh-science/scripts/verify-orchestra.mjs
+node dsh-science/scripts/scale-orchestra.mjs --shards 12000
+```
+
+`demo-campaign` 产出 `report.md / paper.md / evidence.json / manifest.json / figures/*.pdf,png`；实测 n=22、t(21)=5.2858、p=3.06e-5、Cohen's dz=1.1269，同 seed 重跑 `idempotent=true`。
+
+压测（12,000 分片、并发 8）：
+
+| 指标 | 实测 |
+|---|---|
+| 完成 / 失败 / 重复副作用 / 缺失 | 12000 / 0 / 0 / 0 |
+| 装库 | 117 ms |
+| 调度 | 16,899 ms（总 17,016 ms，即 17.0 s） |
+| 吞吐 | **710.1 shard/s** |
+| P50 / P95 | **0.465 ms** / **2.867 ms** |
+| 峰值 RSS | **62.8 MB** |
+
+验收 `verify-orchestra.mjs` **63 项全部通过**；运行中实例 `/deepscient/api/tools` 的工具数从 **42 增至 47**。
+
 ## 里程碑
 - **M1.0 检索层 ✅**：十源扇出、限速/预算/熔断/缓存、DSL 翻译、三路去重、SQLite v2 + FTS5、四个检索工具。
 - **M2 发表方法论层 ✅**：53 刊画像、54 条审计规则、加速路径日历、scoop check、cover letter 与审稿分类，六个工具。
@@ -383,6 +476,7 @@ S1 与 S3 没过是**正确结果**：演示里没有真的检索文献库，也
 - **M4 知识转化层 ✅**：GitHub 前沿扫描（领域门 + 六信号信誉 + 类型折扣）、散文→claim 提炼、五方向缺口矩阵、七类贡献×三档证据清单、论文骨架（断言标题 + 摘要槽 + 图序），五个工具，schema v5。
 - **M5 排版导出层 ✅**：`paper.md` 单一源 → 文档模型 → 四渲染器（LaTeX/PDF、DOCX、JATS、HTML）；13 版式族 + 46 出版社别名；6 种引文风格一次解析四路同源；要件检查 15 类；编译失败结构化诊断与类自动补装降级，四个工具。
 - **M6 学科方法与实验层 ✅**：12 学科包 + generic、44 检验 / 28 效应量的统计库、60+ 工具注册表、13 条实验协议；SQLite v6/v7（实验/分析/图/溯源/伦理六表）；受控执行（断网钩子 + 输入输出哈希 + 环境快照 + seed）；25 检验族与 9 种期刊尺寸图型；S0–S11 流程与 55 个门；九个新工具，schema v7。
+- **M7 多智能体调度层 ✅**：4 级 13 岗组织编制、Campaign → Workstream → Task → Shard 四层战役、SQLite v8 八表、原子领取 + 租约 + 退避 + 背压 + 预算熔断、N 版投票与 gate 复核、真实交付物（报告 / 稿件 / 图 / 证据 / 清单），五个新工具；12,000 分片压测 0 重复副作用。
 - **M1.1 全文与证据链**：`resolve/chain` 九级回退（Europe PMC JATS → PMC efetch → arXiv/PLOS/Frontiers/bioRxiv 直链 → 出版商 Cookie 两步 → CF 源）、`science_fulltext`（`evidence` 表已就位，只等全文链往里写 `file_hash`/页码/quote）。
 - **M1.2 中文库**：CNKI 海外入口（`chn.oversea.cnki.net`，实测 200 SSR）、万方 XHR 逆向、维普 `__NUXT__` 解析、`science_cn_search`。
 - **M1.3 受限源**：S2 退避与 key、Scholar 住宅代理、Sci-Hub ALTCHA 求解、`science_snowball` 引文网络。

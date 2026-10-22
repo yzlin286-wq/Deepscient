@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "root": "pi",
+  "layers": ["L0", "L1", "L2", "L3"],
+  "reporting": {
+    "pi": [],
+    "lead": ["pi"],
+    "project-manager": ["lead"],
+    "survey": ["lead"],
+    "strategist": ["lead"],
+    "experimenter": ["lead"],
+    "analyst": ["lead"],
+    "data-steward": ["lead"],
+    "methodologist": ["lead"],
+    "writer": ["lead"],
+    "critic": ["lead"],
+    "rebuttal": ["lead"],
+    "shard-worker": ["lead"]
+  },
+  "escalation": ["shard-worker", "survey", "lead", "pi"],
+  "vetoRoles": ["methodologist", "data-steward"],
+  "vetoEscalation": {
+    "methodologist": ["pi"],
+    "data-steward": ["pi"],
+    "note": "veto 不经 lead 过滤：方法学与数据管理的一票否决直接送达 PI。lead 仍收到副本，但无权撤销。"
+  },
+  "batchPolicy": {
+    "maxShardsPerCampaign": 50000,
+    "maxShardsPerBatch": 2000,
+    "defaultVotes": 3,
+    "voteThreshold": 0.66,
+    "defaultMaxAttempts": 3,
+    "leaseMs": 120000,
+    "llmConcurrency": 6
+  },
+  "routing": {
+    "literature": "survey",
+    "design": "strategist",
+    "execution": "experimenter",
+    "analysis": "analyst",
+    "data": "data-steward",
+    "methods": "methodologist",
+    "writing": "writer",
+    "review": "critic",
+    "rebuttal": "rebuttal",
+    "scheduling": "project-manager"
+  }
+}

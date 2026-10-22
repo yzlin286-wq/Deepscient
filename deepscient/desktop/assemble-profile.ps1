@@ -26,6 +26,10 @@ $packages = @(
 )
 $bundleNames = @('@local/deepscient', '@local/dsh-science')
 
+# 打包形态：本脚本位于 <App>\resources\deepscient\deepscient\desktop，CLI 垫片在 <App>\resources\deepscient\cli\dsh.cmd
+$packagedCli = Join-Path $repoRoot 'cli\dsh.cmd'
+$script:DshCliSource = ''
+
 $logsDir = Join-Path $DshHome 'logs'
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 $script:LogPath = Join-Path $logsDir ('assemble-profile-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
@@ -44,13 +48,27 @@ function Write-Utf8NoBom([string]$Path, [string]$Text) {
 function Resolve-DshCli {
   if ($DshCli) {
     if (-not (Test-Path -LiteralPath $DshCli)) { throw "指定的 -DshCli 不存在：$DshCli" }
+    $script:DshCliSource = '参数 -DshCli'
     return (Resolve-Path -LiteralPath $DshCli).Path
   }
-  if ($env:DSH_CLI -and (Test-Path -LiteralPath $env:DSH_CLI)) { return (Resolve-Path -LiteralPath $env:DSH_CLI).Path }
+  if ($env:DSH_CLI -and (Test-Path -LiteralPath $env:DSH_CLI)) {
+    $script:DshCliSource = '环境变量 DSH_CLI'
+    return (Resolve-Path -LiteralPath $env:DSH_CLI).Path
+  }
+  if (Test-Path -LiteralPath $packagedCli) {
+    $script:DshCliSource = '打包垫片 resources\deepscient\cli\dsh.cmd'
+    return $packagedCli
+  }
   $candidate = Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'
-  if (Test-Path -LiteralPath $candidate) { return $candidate }
+  if (Test-Path -LiteralPath $candidate) {
+    $script:DshCliSource = 'DeepSeek Harness 运行时'
+    return $candidate
+  }
   $cmd = Get-Command dsh -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
+  if ($cmd) {
+    $script:DshCliSource = 'PATH 中的 dsh'
+    return $cmd.Source
+  }
   throw '找不到 dsh。安装 DeepSeek Harness 桌面版，或用 -DshCli 指向 dsh.cmd。'
 }
 
@@ -58,7 +76,16 @@ Write-Log "DeepScient desktop profile 装配开始"
 Write-Log "DSH_HOME : $DshHome"
 Write-Log "profile  : $Profile"
 Write-Log "repoRoot : $repoRoot"
+Write-Log "packageRoot : $repoRoot"
 Write-Log "log      : $script:LogPath"
+
+# 打包形态缺少内置插件时，直接指出要重新构建安装包（仓库形态行为不变）
+if ($repoRoot -like '*\resources\deepscient') {
+  $missingPackages = @($packages | Where-Object { -not (Test-Path -LiteralPath (Join-Path $_ 'package.json')) })
+  if ($missingPackages.Count -gt 0) {
+    throw ("打包形态缺少 resources\deepscient\{deepscient,dsh-science}，请重新构建安装包。缺失：{0}" -f ($missingPackages -join ', '))
+  }
+}
 
 foreach ($packageDir in $packages) {
   $manifest = Join-Path $packageDir 'package.json'
@@ -66,7 +93,7 @@ foreach ($packageDir in $packages) {
 }
 
 $dsh = Resolve-DshCli
-Write-Log "dsh CLI  : $dsh"
+Write-Log "dsh CLI  : $dsh（来源：$script:DshCliSource）"
 
 $profileDir = Join-Path (Join-Path $DshHome 'profiles') $Profile
 $manifestPath = Join-Path $profileDir 'package.json'
@@ -113,7 +140,7 @@ foreach ($packageDir in $packages) {
   }
 }
 
-$manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $bundles = @()
 if ($manifest.dsh -and $manifest.dsh.profile -and $manifest.dsh.profile.bundles) { $bundles = @($manifest.dsh.profile.bundles) }
 
@@ -155,7 +182,7 @@ if (-not $SkipProviders) {
     model: deepseek-v4.1-flash
 '@
 
-  $patchText = Get-Content -LiteralPath $patchPath -Raw
+  $patchText = Get-Content -LiteralPath $patchPath -Raw -Encoding UTF8
   if (-not $patchText) { $patchText = '' }
   $normalized = ($patchText -replace "`r`n", "`n").Trim()
 
@@ -194,7 +221,7 @@ $desktopBlock = @'
 '@
 
 $currentPatch = ''
-if (Test-Path -LiteralPath $patchPath) { $currentPatch = Get-Content -LiteralPath $patchPath -Raw }
+if (Test-Path -LiteralPath $patchPath) { $currentPatch = Get-Content -LiteralPath $patchPath -Raw -Encoding UTF8 }
 if (-not $currentPatch) { $currentPatch = '' }
 if ($currentPatch -match 'id:\s*account-controller') {
   Write-Log '桌面覆写已包含 account-controller / deepseek-account，跳过'

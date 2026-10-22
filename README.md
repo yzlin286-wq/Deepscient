@@ -21,7 +21,15 @@ DeepScient 是一个跑在 [DeepSeek Harness](https://github.com/deepseek-ai)（
 
 ## 桌面版（Windows）
 
-想双击即开、不占浏览器标签页，用桌面版：
+**不想折腾环境**：下载自包含安装包，解压即用——不需要 clone 仓库，也不需要单独安装 DeepSeek Harness。
+
+1. 下载 [`DeepScient-desktop-v0.12.0.zip`](https://github.com/yzlin286-wq/Deepscient/releases/tag/desktop-v0.12.0)（约 635 MB）；
+2. 解压到短路径（如 `D:\DeepScient`，不要放在很深的目录里）；
+3. 双击根目录 `DeepScient 启动.cmd`。首启自动装配桌面 profile（实测约 30–40 秒），点「登录 DeepScient」在浏览器完成授权即进入工作台。
+
+安装包内含 `deepscient` 0.12.0 与 `dsh-science` 0.5.0，带调度层（M7）：**5 个工具**（`science_org_chart`、`science_campaign_plan`、`science_campaign_run`、`science_campaign_status`、`science_campaign_report`）与 **4 级 13 岗**编制。数据写在 `%USERPROFILE%\.deepscient`，不写 `~/.dsh`。
+
+从源码构建（开发者形态，复用本机已装的 DeepSeek Harness 桌面壳）：
 
 ```powershell
 git clone https://github.com/yzlin286-wq/Deepscient.git
@@ -32,7 +40,6 @@ powershell -File deepscient/desktop/deepscient-desktop.ps1 -CreateShortcuts
 ```
 
 - 完整步骤、登录流程、数据隔离与常见问题见 **[docs/desktop-install.md](docs/desktop-install.md)**；
-- 打包好的安装包在 [Releases](https://github.com/yzlin286-wq/Deepscient/releases)；
 - 桌面版额外带三个**本地科学计算工具**：`local_compute_devices`（CUDA → MPS → CPU 后端探测）、`local_numeric`（numpy/scipy）、`local_symbolic`（sympy）。
 
 ---
@@ -61,8 +68,8 @@ powershell -File deepscient/desktop/deepscient-desktop.ps1 -CreateShortcuts
 
 | 包 | 版本 | 作用 | 依赖 |
 |---|---|---|---|
-| [`deepscient/`](deepscient/) | 0.4.0 | 产品壳：启动器、Host API、Web 界面、技能与 MCP 装配、验收脚本 | dsh 运行时 + `dsh-science` |
-| [`dsh-science/`](dsh-science/) | 0.1.0 | 科研内核：工具、学科数据、流程定义、preset、技能 | 只需 dsh（`@deepseek-ai/cordis`） |
+| [`deepscient/`](deepscient/) | 0.12.0 | 产品壳：启动器、Host API、Web 界面、调度层、技能与 MCP 装配、验收脚本 | dsh 运行时 + `dsh-science` |
+| [`dsh-science/`](dsh-science/) | 0.5.0 | 科研内核：工具、学科数据、流程定义、preset、调度（orchestra） | 只需 dsh（`@deepseek-ai/cordis`） |
 
 ## 快速开始
 
@@ -127,7 +134,7 @@ deepscient\bin\deepscient.cmd
 │  ├─ README.md               文档总索引（两张包各自的 docs 都在这张表里）
 │  ├─ spec.md                 技术规格：实例形态、组合、验收口径
 │  └─ third-party.md          81 条第三方技能的来源、许可与署名
-├─ deepscient/                产品壳（0.4.0）
+├─ deepscient/                产品壳（0.12.0）
 │  ├─ bin/                    启动器（PowerShell，必须带 BOM）
 │  ├─ host/                   Host API：/health /skills /presets /projects …
 │  ├─ client/                 界面
@@ -135,7 +142,7 @@ deepscient\bin\deepscient.cmd
 │  ├─ scripts/                验收与技能安装（零依赖）
 │  ├─ cordis.patch.yml        组合层
 │  └─ mcp.patch.yml           MCP 层（默认不加载）
-├─ dsh-science/               科研内核（0.1.0）
+├─ dsh-science/               科研内核（0.5.0）
 │  ├─ lib/                    工具注册与流程引擎（ESM）
 │  ├─ data/                   55 门学科、统计口径、期刊情报、流程定义
 │  ├─ presets/                科研模式 preset

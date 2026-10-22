@@ -768,9 +768,9 @@ if (existsSync(dshCli)) {
   }
   check('能 dump 出本实例的合成配置', () => assert.ok(dump.length > 1000, `${dump.length} 字节`))
   const scienceEntries = [...new Set([...dump.matchAll(/@local\/dsh-science\/[a-z-]+/g)].map((m) => m[0]))]
-  check('科研插件挂了 12 个', () => assert.equal(scienceEntries.length, 12, scienceEntries.join(',')))
-  check('10 个插件就是 dsh-science 导出的那 10 个入口', () => {
-    for (const name of ['tools', 'science-tools', 'method-tools', 'discipline-tools', 'lab-tools', 'analysis-tools', 'local-compute', 'manuscript-tools', 'coach-tools', 'frontier-tools']) {
+  check('科研插件挂了 13 个', () => assert.equal(scienceEntries.length, 13, scienceEntries.join(',')))
+  check('13 个插件就是 dsh-science 导出的那 13 个入口', () => {
+    for (const name of ['tools', 'science-tools', 'method-tools', 'discipline-tools', 'lab-tools', 'analysis-tools', 'local-compute', 'manuscript-tools', 'coach-tools', 'frontier-tools', 'gate-tools', 'brief-tools', 'orchestra-tools']) {
       assert.ok(scienceEntries.includes(`@local/dsh-science/${name}`), name)
     }
   })
@@ -1145,7 +1145,7 @@ check('英文文档没有回退到中文', () => assert.equal(quickstartEn.body.
 
 const skills = await get('/deepscient/api/skills')
 check('skills 200', () => assert.equal(skills.status, 200))
-check('随包技能 17 个', () => assert.equal(skills.body.counts?.bundled, 17, `实际 ${skills.body.counts?.bundled}`))
+check('随包技能 21 个', () => assert.equal(skills.body.counts?.bundled, 21, `实际 ${skills.body.counts?.bundled}`))
 check('items = 随包 + vendor + 用户', () => {
   const counts = skills.body.counts ?? {}
   assert.equal(skills.body.items.length, (counts.bundled ?? 0) + (counts.vendor ?? 0) + (counts.user ?? 0))
@@ -1249,10 +1249,10 @@ check('新建会话挂上了科研需求向导', () => {
     assert.deepEqual(zk, ek)
     assert.ok(zk.length >= 30, `向导 key 偏少：${zk.length}`)
   })
-  check('军团八个预设：主预设 + 七个角色', () => assert.equal(presetsApi.body.items.length, 8, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
-  check('七个角色都在名册里', () => {
+  check('军团十一个预设：主预设 + 十个角色', () => assert.equal(presetsApi.body.items.length, 11, JSON.stringify(presetsApi.body.items.map((p) => p.id))))
+  check('十个角色都在名册里', () => {
     const ids = presetsApi.body.items.map((p) => p.id)
-    for (const role of ['science-survey', 'science-strategist', 'science-experimenter', 'science-analyst', 'science-writer', 'science-critic', 'science-rebuttal']) {
+    for (const role of ['science-survey', 'science-strategist', 'science-experimenter', 'science-analyst', 'science-writer', 'science-critic', 'science-rebuttal', 'science-lead', 'science-data-steward', 'science-methodologist']) {
       assert.ok(ids.includes(role), `缺角色 ${role}，实际：${ids.join(',')}`)
     }
   })

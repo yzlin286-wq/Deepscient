@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-science",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "科研版 harness：以证据链与可复现为一等公民的 dsh 科研工作台",
@@ -20,7 +20,9 @@
     "./analysis-tools": "./lib/analysis-tools.js",
     "./local-compute": "./lib/local-compute.js",
     "./coach-tools": "./lib/coach-tools.js",
-    "./brief-tools": "./lib/brief-tools.js"
+    "./brief-tools": "./lib/brief-tools.js",
+    "./orchestra-tools": "./lib/orchestra-tools.js",
+    "./orchestra/*": "./lib/science/orchestra/*.js"
   },
   "files": [
     "lib",

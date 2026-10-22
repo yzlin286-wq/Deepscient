@@ -218,6 +218,9 @@
                     - science-writer
                     - science-critic
                     - science-rebuttal
+                    - science-lead
+                    - science-data-steward
+                    - science-methodologist
               - id: tool-subagent-fork
                 name: '@deepseek-ai/dsh-tool-subagent'
                 disabled: false
@@ -299,6 +302,9 @@
           # 本地算力层：算力/后端探测（CUDA → MPS → CPU）、numpy/scipy 数值、sympy 符号
           - id: science-local-compute
             name: '@local/dsh-science/local-compute'
+          # 调度层：组织编制 / 战役计划 / 有界并发调度 / 状态 / 交付物
+          - id: science-orchestra
+            name: '@local/dsh-science/orchestra-tools'
           # 需求梳理层：把模糊描述变成可开工的研究需求书（缺口是算出来的）
           - id: science-brief
             name: '@local/dsh-science/brief-tools'

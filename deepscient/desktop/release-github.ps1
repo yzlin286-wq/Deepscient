@@ -74,15 +74,29 @@ $body = @{
   prerelease       = $false
   generate_release_notes = $false
   body             = @'
-DeepScient 桌面版（Windows x64）安装包。
+DeepScient 桌面版（Windows x64）自包含安装包 v0.12.0。
 
-## 安装
-1. 解压到任意短路径目录（**不要放在很深的目录里**：Chromium 解析壳内 node_modules 会突破 MAX_PATH，进程会在开窗前退出）；
-2. 确保已安装 DeepSeek Harness 桌面端，并已按仓库 `docs/desktop-install.md` 装配过一次 profile；
-3. 双击 `DeepScient.exe`，或把 `deepscient/desktop/deepscient-desktop.ps1` 建成快捷方式；
-4. 点「登录 DeepScient」在浏览器完成官网授权，窗口会自动进入工作台。
+## 三步开始
+1. 解压到短路径（如 D:\DeepScient；不要放在很深的中文目录，Chromium 会触发 MAX_PATH）；
+2. 双击根目录 `DeepScient 启动.cmd`（首次会自动装配桌面 profile，约 30–40 秒）；
+3. 点「登录 DeepScient」在浏览器完成官网授权，窗口自动进入工作台。
 
-数据根：`%USERPROFILE%\.deepscient`（与 Web 形态共用；不要和 Web 形态同时开）。
+## 这个包包含什么
+- Electron 桌面壳（DeepScient.exe）与运行时；
+- `resources\deepscient\deepscient` 与 `resources\deepscient\dsh-science`：DeepScient 宿主与科研/调度插件；
+- 5 个调度工具（science_org_chart / science_campaign_plan / science_campaign_run / science_campaign_status / science_campaign_report）与 13 个岗位编制；
+- 打包专用 CLI：`resources\deepscient\cli\dsh.cmd`。
+
+## 数据与隔离
+- 数据根：`%USERPROFILE%\.deepscient`（默认）；不会写 `~/.dsh`，也不改已装的 DeepSeek Harness；
+- 首次启动若 profile 缺失或依赖丢失，会自动重新装配，日志在 `%USERPROFILE%\.deepscient\logs\`。
+
+## 离线演示
+```
+node "resources\deepscient\dsh-science\scripts\demo-campaign.mjs" --example sleep-wm --seed 42
+```
+产出报告、稿件、图、证据与清单到 `%USERPROFILE%\.deepscient\science\campaigns\<id>\deliverables\`。
+
 完整说明见仓库 `docs/desktop-install.md`。
 '@
 } | ConvertTo-Json -Depth 4
