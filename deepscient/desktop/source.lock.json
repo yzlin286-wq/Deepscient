@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "source": "installed-unpacked",
+  "sourceDetail": {
+    "note": "官方仓库可达，但桌面壳发行包本身即为构建产物，直接以已安装的已解包 Electron 应用为基线，避免仓库源码与二进制不一致。",
+    "upstreamRepo": "https://github.com/deepseek-ai/deepseek-harness",
+    "upstreamHead": "687f282e8625c6b8d11ff58211a90524be2e4317",
+    "upstreamHeadCheckedAt": "2026-10-22",
+    "cloneSkipped": true,
+    "cloneSkipReason": "desktop shell is a build artifact; upstream HEAD does not contain the packaged runtime"
+  },
+  "productVersion": "0.2.1-rc.2",
+  "productName": "DeepSeek Harness",
+  "appId": "com.deepseek.dsh",
+  "buildCommit": "332895e0f7c9d4dbfb29729f5eb367fa263ff986",
+  "buildDirty": false,
+  "installRoot": "C:\\Users\\vision-1\\AppData\\Local\\Programs\\DeepSeek Harness",
+  "executable": "DeepSeek Harness.exe",
+  "resources": {
+    "app": "resources/app",
+    "appAsar": "resources/app.asar",
+    "appAsarBytes": 182794869,
+    "runtime": "resources/runtime",
+    "cli": "resources/runtime/cli/bin/dsh.cmd"
+  },
+  "runtime": {
+    "hostProtocolVersion": 4,
+    "nodeVersion": "24.21.0",
+    "pnpmVersion": "11.28.5",
+    "platform": "win32",
+    "arch": "x64",
+    "sharedPackages": 304,
+    "files": 17261
+  },
+  "files": [
+    {
+      "path": "resources/app/package.json",
+      "bytes": 797,
+      "sha256": "53ee01d3b1accfbd037d245fb4752fb5fa5f8e2a76b7de634a4223558ee54bb9"
+    },
+    {
+      "path": "resources/app/lib/main.js",
+      "bytes": 519679,
+      "sha256": "9881bccc215aae2416a832147acc58e87d305637ed83bae75fea59128701808f"
+    },
+    {
+      "path": "resources/app/dsh/package.json",
+      "bytes": 17100,
+      "sha256": "b67a65b9719272b2eb54093b63c121d05907da062a1393e8c9f871e1cd18f94e"
+    }
+  ],
+  "collectedAt": "2026-10-22"
+}

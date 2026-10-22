@@ -145,12 +145,25 @@ function parseCookies(req) {
   return out
 }
 
+/**
+ * 桌面形态标记：由 `desktop/deepscient-desktop.ps1` 写进环境变量。
+ *
+ * 桌面壳转发请求时用设备 cookie 覆盖 Cookie 头（`forwardWebRequest`），OAuth 回调又落在
+ * 系统浏览器里，`deepscient_session` 根本没有通路进到后端。桌面形态本来就是「单用户、
+ * 本机、设备级 cookie 已由桌面壳认证」，所以这里以磁盘 token 作为本机身份；
+ * Web 形态（未设该变量）行为完全不变。
+ */
+export function desktopDevice() {
+  return String(process.env.DEEPSCIENT_DESKTOP ?? '').trim() === '1'
+}
+
 /** cookie 里的会话号必须和磁盘上那份 token 记录对得上，才算这个浏览器登录了。 */
 export function currentLogin(req) {
   const auth = read()
   if (!auth) return null
   const token = parseCookies(req)[COOKIE]
-  return token && token === auth.sessionId ? auth : null
+  if (token && token === auth.sessionId) return auth
+  return desktopDevice() ? auth : null
 }
 
 export function currentUser(req) {

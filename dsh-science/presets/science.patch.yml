@@ -296,6 +296,9 @@
           # 分析层：统计检验（假设检查+效应量+CI）与期刊尺寸作图
           - id: science-analysis
             name: '@local/dsh-science/analysis-tools'
+          # 本地算力层：算力/后端探测（CUDA → MPS → CPU）、numpy/scipy 数值、sympy 符号
+          - id: science-local-compute
+            name: '@local/dsh-science/local-compute'
           # 需求梳理层：把模糊描述变成可开工的研究需求书（缺口是算出来的）
           - id: science-brief
             name: '@local/dsh-science/brief-tools'

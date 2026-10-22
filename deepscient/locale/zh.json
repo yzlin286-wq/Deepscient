@@ -2,7 +2,7 @@
   "app": {
     "localData": "数据来自本机研究库",
     "project": "课题 {id}",
-    "title": "DeepScient 科研工作台"
+    "title": "DeepScient · 科研工作台"
   },
   "auth": {
     "accountHint": "在「设置 → 账号」里查看与刷新额度。",
@@ -14,12 +14,15 @@
     "email": "邮箱",
     "expired": "登录已过期，请重新登录。",
     "expiresAt": "登录有效期至",
+    "eyebrow": "DEEPSCIENT · 账号",
     "failed": "没能完成，再试一次。",
+    "footnote": "登录由 deepscient.com 提供 · 本机不保存密码",
+    "freeBadge": "科研应用永久免费 · 不收订阅费",
     "gateHint": "登录会打开官网授权页；没有账号先去官网注册。密码不经过本机。",
     "gateIntro": "账号由官网 deepscient.com 管理。这里不注册、不存密码；登录只为读取你的 API 额度与充值入口。",
     "gateTitle": "登录 DeepScient",
     "loading": "读取中…",
-    "loginWith": "通过 DeepScient 登录",
+    "loginWith": "登录 DeepScient",
     "logout": "登出",
     "manage": "去官网管理额度",
     "notLoggedIn": "还没有登录。",
@@ -31,12 +34,19 @@
     "role": "角色",
     "settings": "账号",
     "stateMismatch": "这次登录已失效，请重新发起。",
+    "step1Desc": "在 deepscient.com 登录或注册",
+    "step1Title": "官网账号",
+    "step2Desc": "确认把本机应用连接到你的账号",
+    "step2Title": "浏览器授权",
+    "step3Desc": "授权完成后自动进入工作台，密码不经过本机",
+    "step3Title": "自动返回",
     "timeout": "授权窗口没有回来。重新点一次登录，或检查浏览器是否拦截了弹窗。",
     "unreachable": "连不上账号服务，检查网络或实例是否还在运行。",
     "unreachableTitle": "连不上账号服务",
     "updatedAt": "更新于",
     "waiting": "等待官网确认授权…完成后会自动进入。",
-    "website": "打开官网（注册 · 额度 · 充值）"
+    "waitingShort": "等待授权…",
+    "website": "打开 deepscient.com"
   },
   "billing": {
     "attribution": "你的实际用量在这把 key 上扣费；本页的 token 是本机日志的同口径汇总，金额是按价目算的预估，账单以中转站为准。",
@@ -227,6 +237,7 @@
     "guideTitle": "使用引导与接入",
     "introPrefix": "这些是偏好，不是能力开关。改完立刻生效，落在本实例自己的数据根里（",
     "introSuffix": "）。",
+    "loading": "读取中…",
     "ph": {
       "billingBaseUrl": "https://<你的 New API 中转站地址>",
       "billingConsoleUrl": "https://<中转站>/panel/token",
@@ -249,6 +260,8 @@
     "reopenGuide": "重新打开使用引导",
     "restore": "还原",
     "savedAt": "已保存 {at}",
+    "saveFailed": "保存失败",
+    "saving": "保存中…",
     "skillsCatalog": "目录进系统提示约 {tokens} tokens（描述按 260 字截断）。host 平面视图 {host} 条 —— 会话跑在科研预设里，以「会话里应有」为准。",
     "skillsCheck": "检查已装技能",
     "skillsCheckBad": "有 {n} 处问题",
@@ -281,8 +294,11 @@
     "noCredential": "无需凭据",
     "notConfigured": "未配置",
     "pasteKey": "粘贴 key 后保存",
+    "saved": "已保存 {at}",
     "savedAt": "已保存 {id} {at}",
+    "saving": "保存中…",
     "test": "测试",
+    "testing": "测试中…",
     "wired": {
       "declared": "已保存·工具侧尚未读取",
       "none": "免凭据",
@@ -339,6 +355,7 @@
       "line": "- {label}：{value}"
     },
     "needQuestion": "至少填「研究问题」才能生成任务书。",
+    "noTarget": "这个界面没有可写入的输入框，内容已保留在面板里。",
     "open": "科研需求",
     "openHint": "先花两分钟说清要研究什么，再开工",
     "ph": {
@@ -386,6 +403,8 @@
       "stateUnavailable": "未就绪 — {reason}",
       "waiting": "等待读取"
     },
+    "copyFailed": "复制失败，请手动选择文本。",
+    "creating": "建题中…",
     "model": {
       "foot": "每个 provider 的 key 就是计费主体；账单在中转站，本页只做同口径统计。",
       "goBilling": "看计费与 key 归属",
@@ -410,6 +429,7 @@
       "three": "阶段没过是门没开，不是模型偷懒：去「流程」看是哪一道，它会告诉你补什么。",
       "two": "数据、代码、图、环境指纹都留痕；重跑要能复现同一张图。"
     },
+    "saving": "保存中…",
     "session": {
       "copied": "已复制",
       "copy": "复制",
@@ -429,6 +449,7 @@
       "starting": "正在开会话…"
     },
     "skip": "跳过引导",
+    "skipConfirm": "跳过引导后可以随时在设置里重新打开。确定跳过？",
     "sources": {
       "foot": "填完关掉面板页就能回到这里，再点下一步。",
       "go": "去填 API",
@@ -453,7 +474,8 @@
         "text": "我在做「<方向>」。先用 science_frontier_scan 扫近两年的前沿锚点，再用 science_novelty 给三个候选选题打新颖性分，最后只告诉我哪一个值得做成一篇、为什么。"
       }
     },
-    "title": "开始你的第一个课题"
+    "title": "开始你的第一个课题",
+    "errorTitle": "引导遇到问题"
   },
   "net": {
     "notJson": "返回的不是 JSON（{status}）",

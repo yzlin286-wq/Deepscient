@@ -14,7 +14,10 @@
     "email": "Email",
     "expired": "Your sign-in expired. Please sign in again.",
     "expiresAt": "Signed in until",
+    "eyebrow": "DEEPSCIENT · ACCOUNT",
     "failed": "That did not work. Try again.",
+    "footnote": "Sign-in is provided by deepscient.com · no password is stored locally",
+    "freeBadge": "Free for research · no subscription fees",
     "gateHint": "Signing in opens the authorization page on deepscient.com. No account yet? Sign up there first. Your password never reaches this app.",
     "gateIntro": "Accounts live on deepscient.com. This app does not register users or store passwords; signing in only lets it read your API balance and top-up entry.",
     "gateTitle": "Sign in to DeepScient",
@@ -31,12 +34,19 @@
     "role": "Role",
     "settings": "Account",
     "stateMismatch": "This sign-in attempt is no longer valid. Please start again.",
+    "step1Desc": "Sign in or sign up at deepscient.com",
+    "step1Title": "Website account",
+    "step2Desc": "Approve connecting this app to your account",
+    "step2Title": "Browser approval",
+    "step3Desc": "The workbench opens automatically; your password never reaches this app",
+    "step3Title": "Return automatically",
     "timeout": "The authorization window did not return. Try again, or check whether the browser blocked the popup.",
     "unreachable": "Could not reach the account service. Check your connection or whether the instance is still running.",
     "unreachableTitle": "Cannot reach the account service",
     "updatedAt": "Updated",
     "waiting": "Waiting for approval on deepscient.com… this will continue automatically.",
-    "website": "Open deepscient.com (sign up · balance · top-up)"
+    "waitingShort": "Waiting…",
+    "website": "Open deepscient.com"
   },
   "billing": {
     "attribution": "Actual usage is billed to this key; the tokens here are aggregated from local logs, the amount is an estimate from the price table, and the relay invoice is authoritative.",
@@ -227,6 +237,7 @@
     "guideTitle": "Onboarding and integrations",
     "introPrefix": "These are preferences, not capability switches. Changes apply immediately and are stored in the data root of this instance (",
     "introSuffix": ").",
+    "loading": "Loading…",
     "ph": {
       "billingBaseUrl": "https://<your New API relay URL>",
       "billingConsoleUrl": "https://<relay>/panel/token",
@@ -249,6 +260,8 @@
     "reopenGuide": "Reopen the onboarding guide",
     "restore": "Revert",
     "savedAt": "Saved {at}",
+    "saveFailed": "Save failed",
+    "saving": "Saving…",
     "skillsCatalog": "The catalog adds about {tokens} tokens to the system prompt (descriptions truncated at 260 characters). The host-level view lists {host} — sessions run in the research preset, so expected in session is authoritative.",
     "skillsCheck": "Check installed skills",
     "skillsCheckBad": "Issues found: {n}",
@@ -281,8 +294,11 @@
     "noCredential": "No credential required",
     "notConfigured": "Not configured",
     "pasteKey": "Paste a key, then save",
+    "saved": "Saved {at}",
     "savedAt": "Saved {id} at {at}",
+    "saving": "Saving…",
     "test": "Test",
+    "testing": "Testing…",
     "wired": {
       "declared": "Saved; tools have not read it yet",
       "none": "No credential needed",
@@ -339,6 +355,7 @@
       "line": "- {label}: {value}"
     },
     "needQuestion": "The research question is the one field required to build a mandate.",
+    "noTarget": "This shell has no input target; your text stays in the panel.",
     "open": "Research brief",
     "openHint": "Spend two minutes saying what you want to study, before any work starts",
     "ph": {
@@ -386,6 +403,8 @@
       "stateUnavailable": "Not ready — {reason}",
       "waiting": "waiting to read"
     },
+    "copyFailed": "Copy failed; select the text manually.",
+    "creating": "Creating…",
     "model": {
       "foot": "Each provider key is the billing entity; the bill lives in the relay, and this page only reports on the same basis.",
       "goBilling": "See billing and key attribution",
@@ -410,6 +429,7 @@
       "three": "A stage not passing means a gate is closed, not that the model is lazy: open Stages to see which gate it is, and it will tell you what to add.",
       "two": "Data, code, figures and environment fingerprints are all recorded; a rerun must reproduce the same figure."
     },
+    "saving": "Saving…",
     "session": {
       "copied": "Copied",
       "copy": "Copy",
@@ -429,6 +449,7 @@
       "starting": "Starting session…"
     },
     "skip": "Skip guide",
+    "skipConfirm": "You can reopen the guide in Settings. Skip now?",
     "sources": {
       "foot": "After saving, close the panel to return here, then click Next.",
       "go": "Fill in API keys",
@@ -453,7 +474,8 @@
         "text": "I am working on \"<direction>\". Start with science_frontier_scan to map frontier anchors from the last two years, then use science_novelty to score three candidate topics for novelty, and finally tell me only which one is worth a paper and why."
       }
     },
-    "title": "Start your first project"
+    "title": "Start your first project",
+    "errorTitle": "Something went wrong"
   },
   "net": {
     "notJson": "The response was not JSON ({status})",

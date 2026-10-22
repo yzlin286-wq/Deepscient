@@ -564,7 +564,10 @@
       ],
       "tools": [
         "science_stats",
-        "science_discipline_profile"
+        "science_discipline_profile",
+        "local_compute_devices",
+        "local_numeric",
+        "local_symbolic"
       ],
       "artifacts": [
         "analysis 记录",

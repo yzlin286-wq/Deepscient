@@ -18,6 +18,7 @@
     "./discipline-tools": "./lib/discipline-tools.js",
     "./lab-tools": "./lib/lab-tools.js",
     "./analysis-tools": "./lib/analysis-tools.js",
+    "./local-compute": "./lib/local-compute.js",
     "./coach-tools": "./lib/coach-tools.js",
     "./brief-tools": "./lib/brief-tools.js"
   },

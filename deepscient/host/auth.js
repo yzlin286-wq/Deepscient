@@ -76,7 +76,7 @@ function originOf(req, ctx) {
 }
 
 function page(res, code, heading, body, ok) {
-  const color = ok ? '#1f6f5c' : '#b3261e'
+  const color = ok ? '#1d44dc' : '#c2410c'
   const html = [
     '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -84,7 +84,7 @@ function page(res, code, heading, body, ok) {
     '<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;',
     'font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff;color:#111}',
     'main{max-width:420px;padding:28px}h1{font-size:18px;margin:0 0 8px;color:' + color + '}',
-    'p{margin:0 0 18px;opacity:.7}a{color:#1f6f5c}</style></head><body><main>',
+    'p{margin:0 0 18px;opacity:.7}a{color:#1d44dc}</style></head><body><main>',
     '<h1>' + heading + '</h1><p>' + body + '</p>',
     '<a href="/">返回工作台 · Back to workbench</a>',
     '</main></body></html>',

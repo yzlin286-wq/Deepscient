@@ -768,9 +768,9 @@ if (existsSync(dshCli)) {
   }
   check('能 dump 出本实例的合成配置', () => assert.ok(dump.length > 1000, `${dump.length} 字节`))
   const scienceEntries = [...new Set([...dump.matchAll(/@local\/dsh-science\/[a-z-]+/g)].map((m) => m[0]))]
-  check('科研插件挂了 11 个', () => assert.equal(scienceEntries.length, 11, scienceEntries.join(',')))
-  check('9 个插件就是 dsh-science 导出的那 9 个入口', () => {
-    for (const name of ['tools', 'science-tools', 'method-tools', 'discipline-tools', 'lab-tools', 'analysis-tools', 'manuscript-tools', 'coach-tools', 'frontier-tools']) {
+  check('科研插件挂了 12 个', () => assert.equal(scienceEntries.length, 12, scienceEntries.join(',')))
+  check('10 个插件就是 dsh-science 导出的那 10 个入口', () => {
+    for (const name of ['tools', 'science-tools', 'method-tools', 'discipline-tools', 'lab-tools', 'analysis-tools', 'local-compute', 'manuscript-tools', 'coach-tools', 'frontier-tools']) {
       assert.ok(scienceEntries.includes(`@local/dsh-science/${name}`), name)
     }
   })

@@ -19,6 +19,24 @@ DeepScient 是一个跑在 [DeepSeek Harness](https://github.com/deepseek-ai)（
 
 ---
 
+## 桌面版（Windows）
+
+想双击即开、不占浏览器标签页，用桌面版：
+
+```powershell
+git clone https://github.com/yzlin286-wq/Deepscient.git
+cd Deepscient
+powershell -File deepscient/desktop/assemble-profile.ps1   # 装配 ~/.deepscient/profiles/desktop
+powershell -File deepscient/desktop/build-desktop.ps1      # 派生独立应用（约 1.5 GB）
+powershell -File deepscient/desktop/deepscient-desktop.ps1 -CreateShortcuts
+```
+
+- 完整步骤、登录流程、数据隔离与常见问题见 **[docs/desktop-install.md](docs/desktop-install.md)**；
+- 打包好的安装包在 [Releases](https://github.com/yzlin286-wq/Deepscient/releases)；
+- 桌面版额外带三个**本地科学计算工具**：`local_compute_devices`（CUDA → MPS → CPU 后端探测）、`local_numeric`（numpy/scipy）、`local_symbolic`（sympy）。
+
+---
+
 ## 它长什么样
 
 ```

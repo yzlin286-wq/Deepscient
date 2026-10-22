@@ -14,7 +14,7 @@ window.__ModuleLoader__.load({
     const DICT_ZH = {
       "app.localData": "数据来自本机研究库",
       "app.project": "课题 {id}",
-      "app.title": "DeepScient 科研工作台",
+      "app.title": "DeepScient · 科研工作台",
       "auth.accountHint": "在「设置 → 账号」里查看与刷新额度。",
       "auth.accountMenu": "账号",
       "auth.balanceLabel": "API 额度",
@@ -24,12 +24,15 @@ window.__ModuleLoader__.load({
       "auth.email": "邮箱",
       "auth.expired": "登录已过期，请重新登录。",
       "auth.expiresAt": "登录有效期至",
+      "auth.eyebrow": "DEEPSCIENT · 账号",
       "auth.failed": "没能完成，再试一次。",
+      "auth.footnote": "登录由 deepscient.com 提供 · 本机不保存密码",
+      "auth.freeBadge": "科研应用永久免费 · 不收订阅费",
       "auth.gateHint": "登录会打开官网授权页；没有账号先去官网注册。密码不经过本机。",
       "auth.gateIntro": "账号由官网 deepscient.com 管理。这里不注册、不存密码；登录只为读取你的 API 额度与充值入口。",
       "auth.gateTitle": "登录 DeepScient",
       "auth.loading": "读取中…",
-      "auth.loginWith": "通过 DeepScient 登录",
+      "auth.loginWith": "登录 DeepScient",
       "auth.logout": "登出",
       "auth.manage": "去官网管理额度",
       "auth.notLoggedIn": "还没有登录。",
@@ -41,12 +44,19 @@ window.__ModuleLoader__.load({
       "auth.role": "角色",
       "auth.settings": "账号",
       "auth.stateMismatch": "这次登录已失效，请重新发起。",
+      "auth.step1Desc": "在 deepscient.com 登录或注册",
+      "auth.step1Title": "官网账号",
+      "auth.step2Desc": "确认把本机应用连接到你的账号",
+      "auth.step2Title": "浏览器授权",
+      "auth.step3Desc": "授权完成后自动进入工作台，密码不经过本机",
+      "auth.step3Title": "自动返回",
       "auth.timeout": "授权窗口没有回来。重新点一次登录，或检查浏览器是否拦截了弹窗。",
       "auth.unreachable": "连不上账号服务，检查网络或实例是否还在运行。",
       "auth.unreachableTitle": "连不上账号服务",
       "auth.updatedAt": "更新于",
       "auth.waiting": "等待官网确认授权…完成后会自动进入。",
-      "auth.website": "打开官网（注册 · 额度 · 充值）",
+      "auth.waitingShort": "等待授权…",
+      "auth.website": "打开 deepscient.com",
       "billing.attribution": "你的实际用量在这把 key 上扣费；本页的 token 是本机日志的同口径汇总，金额是按价目算的预估，账单以中转站为准。",
       "billing.basis": "计费口径",
       "billing.byModel": "按模型",
@@ -125,6 +135,9 @@ window.__ModuleLoader__.load({
       "guide.check.stateLoaded": "已装载（{mode}）",
       "guide.check.stateUnavailable": "未就绪 — {reason}",
       "guide.check.waiting": "等待读取",
+      "guide.copyFailed": "复制失败，请手动选择文本。",
+      "guide.creating": "建题中…",
+      "guide.errorTitle": "引导遇到问题",
       "guide.model.foot": "每个 provider 的 key 就是计费主体；账单在中转站，本页只做同口径统计。",
       "guide.model.goBilling": "看计费与 key 归属",
       "guide.model.intro": "模型和它的 key 决定你能干活、以及账记在谁头上。",
@@ -143,6 +156,7 @@ window.__ModuleLoader__.load({
       "guide.rules.one": "每个结论都要能在原文里指出来 —— 没有出处的断言算阻塞，不算「差不多」。",
       "guide.rules.three": "阶段没过是门没开，不是模型偷懒：去「流程」看是哪一道，它会告诉你补什么。",
       "guide.rules.two": "数据、代码、图、环境指纹都留痕；重跑要能复现同一张图。",
+      "guide.saving": "保存中…",
       "guide.session.copied": "已复制",
       "guide.session.copy": "复制",
       "guide.session.errorCreate": "建课题失败",
@@ -160,6 +174,7 @@ window.__ModuleLoader__.load({
       "guide.session.startedDetail": "会话已开好，提示词已放进输入框；按回车就开跑。",
       "guide.session.starting": "正在开会话…",
       "guide.skip": "跳过引导",
+      "guide.skipConfirm": "跳过引导后可以随时在设置里重新打开。确定跳过？",
       "guide.sources.foot": "填完关掉面板页就能回到这里，再点下一步。",
       "guide.sources.go": "去填 API",
       "guide.sources.intro": "文献/检索 API：已配置 {ready}/{total}。全部可以不填，先用公开池也能跑。",
@@ -282,6 +297,7 @@ window.__ModuleLoader__.load({
       "settings.guideTitle": "使用引导与接入",
       "settings.introPrefix": "这些是偏好，不是能力开关。改完立刻生效，落在本实例自己的数据根里（",
       "settings.introSuffix": "）。",
+      "settings.loading": "读取中…",
       "settings.ph.billingBaseUrl": "https://<你的 New API 中转站地址>",
       "settings.ph.billingConsoleUrl": "https://<中转站>/panel/token",
       "settings.ph.model": "模型名或 *",
@@ -302,6 +318,8 @@ window.__ModuleLoader__.load({
       "settings.reopenGuide": "重新打开使用引导",
       "settings.restore": "还原",
       "settings.savedAt": "已保存 {at}",
+      "settings.saveFailed": "保存失败",
+      "settings.saving": "保存中…",
       "settings.skillsCatalog": "目录进系统提示约 {tokens} tokens（描述按 260 字截断）。host 平面视图 {host} 条 —— 会话跑在科研预设里，以「会话里应有」为准。",
       "settings.skillsCheck": "检查已装技能",
       "settings.skillsCheckBad": "有 {n} 处问题",
@@ -336,8 +354,11 @@ window.__ModuleLoader__.load({
       "sources.notConfigured": "未配置",
       "sources.noteDefault": "密钥只写入本机 science/config.json。",
       "sources.pasteKey": "粘贴 key 后保存",
+      "sources.saved": "已保存 {at}",
       "sources.savedAt": "已保存 {id} {at}",
+      "sources.saving": "保存中…",
       "sources.test": "测试",
+      "sources.testing": "测试中…",
       "sources.verifyOk": "通 {ms}ms",
       "sources.wired.declared": "已保存·工具侧尚未读取",
       "sources.wired.none": "免凭据",
@@ -379,6 +400,7 @@ window.__ModuleLoader__.load({
       "wizard.mandate.intro": "我要开一个新课题，先把需求说清楚：",
       "wizard.mandate.line": "- {label}：{value}",
       "wizard.needQuestion": "至少填「研究问题」才能生成任务书。",
+      "wizard.noTarget": "这个界面没有可写入的输入框，内容已保留在面板里。",
       "wizard.open": "科研需求",
       "wizard.openHint": "先花两分钟说清要研究什么，再开工",
       "wizard.ph.data": "数据集名称、来源、许可；没有就写「无」",
@@ -409,7 +431,10 @@ window.__ModuleLoader__.load({
       "auth.email": "Email",
       "auth.expired": "Your sign-in expired. Please sign in again.",
       "auth.expiresAt": "Signed in until",
+      "auth.eyebrow": "DEEPSCIENT · ACCOUNT",
       "auth.failed": "That did not work. Try again.",
+      "auth.footnote": "Sign-in is provided by deepscient.com · no password is stored locally",
+      "auth.freeBadge": "Free for research · no subscription fees",
       "auth.gateHint": "Signing in opens the authorization page on deepscient.com. No account yet? Sign up there first. Your password never reaches this app.",
       "auth.gateIntro": "Accounts live on deepscient.com. This app does not register users or store passwords; signing in only lets it read your API balance and top-up entry.",
       "auth.gateTitle": "Sign in to DeepScient",
@@ -426,12 +451,19 @@ window.__ModuleLoader__.load({
       "auth.role": "Role",
       "auth.settings": "Account",
       "auth.stateMismatch": "This sign-in attempt is no longer valid. Please start again.",
+      "auth.step1Desc": "Sign in or sign up at deepscient.com",
+      "auth.step1Title": "Website account",
+      "auth.step2Desc": "Approve connecting this app to your account",
+      "auth.step2Title": "Browser approval",
+      "auth.step3Desc": "The workbench opens automatically; your password never reaches this app",
+      "auth.step3Title": "Return automatically",
       "auth.timeout": "The authorization window did not return. Try again, or check whether the browser blocked the popup.",
       "auth.unreachable": "Could not reach the account service. Check your connection or whether the instance is still running.",
       "auth.unreachableTitle": "Cannot reach the account service",
       "auth.updatedAt": "Updated",
       "auth.waiting": "Waiting for approval on deepscient.com… this will continue automatically.",
-      "auth.website": "Open deepscient.com (sign up · balance · top-up)",
+      "auth.waitingShort": "Waiting…",
+      "auth.website": "Open deepscient.com",
       "billing.attribution": "Actual usage is billed to this key; the tokens here are aggregated from local logs, the amount is an estimate from the price table, and the relay invoice is authoritative.",
       "billing.basis": "Billing basis",
       "billing.byModel": "By model",
@@ -510,6 +542,9 @@ window.__ModuleLoader__.load({
       "guide.check.stateLoaded": "Loaded ({mode})",
       "guide.check.stateUnavailable": "Not ready — {reason}",
       "guide.check.waiting": "waiting to read",
+      "guide.copyFailed": "Copy failed; select the text manually.",
+      "guide.creating": "Creating…",
+      "guide.errorTitle": "Something went wrong",
       "guide.model.foot": "Each provider key is the billing entity; the bill lives in the relay, and this page only reports on the same basis.",
       "guide.model.goBilling": "See billing and key attribution",
       "guide.model.intro": "The model and its key decide what you can do and who gets billed.",
@@ -528,6 +563,7 @@ window.__ModuleLoader__.load({
       "guide.rules.one": "Every claim must be pointable in the source — an assertion without a citation is a blocker, not close enough.",
       "guide.rules.three": "A stage not passing means a gate is closed, not that the model is lazy: open Stages to see which gate it is, and it will tell you what to add.",
       "guide.rules.two": "Data, code, figures and environment fingerprints are all recorded; a rerun must reproduce the same figure.",
+      "guide.saving": "Saving…",
       "guide.session.copied": "Copied",
       "guide.session.copy": "Copy",
       "guide.session.errorCreate": "Failed to create the project",
@@ -545,6 +581,7 @@ window.__ModuleLoader__.load({
       "guide.session.startedDetail": "Session started and the prompt is in the input box; press Enter to run.",
       "guide.session.starting": "Starting session…",
       "guide.skip": "Skip guide",
+      "guide.skipConfirm": "You can reopen the guide in Settings. Skip now?",
       "guide.sources.foot": "After saving, close the panel to return here, then click Next.",
       "guide.sources.go": "Fill in API keys",
       "guide.sources.intro": "Literature / search APIs: {ready}/{total} configured. All are optional — the public pool works without them.",
@@ -667,6 +704,7 @@ window.__ModuleLoader__.load({
       "settings.guideTitle": "Onboarding and integrations",
       "settings.introPrefix": "These are preferences, not capability switches. Changes apply immediately and are stored in the data root of this instance (",
       "settings.introSuffix": ").",
+      "settings.loading": "Loading…",
       "settings.ph.billingBaseUrl": "https://<your New API relay URL>",
       "settings.ph.billingConsoleUrl": "https://<relay>/panel/token",
       "settings.ph.model": "Model name or *",
@@ -687,6 +725,8 @@ window.__ModuleLoader__.load({
       "settings.reopenGuide": "Reopen the onboarding guide",
       "settings.restore": "Revert",
       "settings.savedAt": "Saved {at}",
+      "settings.saveFailed": "Save failed",
+      "settings.saving": "Saving…",
       "settings.skillsCatalog": "The catalog adds about {tokens} tokens to the system prompt (descriptions truncated at 260 characters). The host-level view lists {host} — sessions run in the research preset, so expected in session is authoritative.",
       "settings.skillsCheck": "Check installed skills",
       "settings.skillsCheckBad": "Issues found: {n}",
@@ -721,8 +761,11 @@ window.__ModuleLoader__.load({
       "sources.notConfigured": "Not configured",
       "sources.noteDefault": "Credentials are written only to the local science/config.json.",
       "sources.pasteKey": "Paste a key, then save",
+      "sources.saved": "Saved {at}",
       "sources.savedAt": "Saved {id} at {at}",
+      "sources.saving": "Saving…",
       "sources.test": "Test",
+      "sources.testing": "Testing…",
       "sources.verifyOk": "OK {ms}ms",
       "sources.wired.declared": "Saved; tools have not read it yet",
       "sources.wired.none": "No credential needed",
@@ -764,6 +807,7 @@ window.__ModuleLoader__.load({
       "wizard.mandate.intro": "I am opening a new project. Here is the need, stated up front:",
       "wizard.mandate.line": "- {label}: {value}",
       "wizard.needQuestion": "The research question is the one field required to build a mandate.",
+      "wizard.noTarget": "This shell has no input target; your text stays in the panel.",
       "wizard.open": "Research brief",
       "wizard.openHint": "Spend two minutes saying what you want to study, before any work starts",
       "wizard.ph.data": "Dataset name, source, licence; write \"none\" if you have none",
@@ -1001,6 +1045,9 @@ window.__ModuleLoader__.load({
       brandHover: 'var(--ds-brand-hover)',
       onBrand: 'var(--ds-on-brand)',
       brandSoft: 'var(--ds-brand-soft)',
+      cobalt: 'var(--ds-brand)',
+      mist: 'var(--ds-surface-2)',
+      line: 'var(--ds-border)',
       ok: 'var(--ds-ok)',
       okSoft: 'var(--ds-ok-soft)',
       warn: 'var(--ds-warn)',
@@ -1012,6 +1059,7 @@ window.__ModuleLoader__.load({
       radiusSm: 'var(--ds-radius-sm)',
       radiusMd: 'var(--ds-radius-md)',
       radiusLg: 'var(--ds-radius-lg)',
+      radiusXl: 'var(--ds-radius-xl)',
       radiusPill: 'var(--ds-radius-pill)',
       space1: 'var(--ds-space-1)',
       space2: 'var(--ds-space-2)',
@@ -1026,6 +1074,7 @@ window.__ModuleLoader__.load({
       textXl: 'var(--ds-text-xl)',
       shadow1: 'var(--ds-shadow-1)',
       shadow2: 'var(--ds-shadow-2)',
+      shadowBrand: 'var(--ds-shadow-brand)',
       dur: 'var(--ds-dur)',
     }
 
@@ -1080,52 +1129,57 @@ window.__ModuleLoader__.load({
     const S = {
       panel: { display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, color: 'inherit' },
       header: {
-        display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
+        display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px',
         borderBottom: `1px solid ${V.border}`, flexWrap: 'wrap',
       },
-      title: { fontSize: V.textLg, fontWeight: 600, letterSpacing: 0.2 },
-      sub: { fontSize: V.textSm, opacity: 0.6 },
+      title: { fontSize: V.textLg, fontWeight: 600, letterSpacing: '-0.02em' },
+      sub: { fontSize: V.textSm, color: V.fg2, lineHeight: 1.6 },
       spacer: { flex: 1 },
-      body: { flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 20px 40px' },
+      body: { flex: 1, minHeight: 0, overflow: 'auto', padding: '18px 22px 44px' },
       card: {
-        border: `1px solid ${V.border}`, borderRadius: V.radiusLg, padding: 14,
-        marginBottom: 12, background: V.surface,
+        border: `1px solid ${V.border}`, borderRadius: V.radiusLg, padding: 18,
+        marginBottom: 14, background: V.surface, boxShadow: '0 1px 2px rgba(7,20,38,.04)',
       },
       row: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
       chip: (tone) => ({
-        fontSize: V.textXs, padding: '2px 7px', borderRadius: V.radiusPill, border: '1px solid',
-        borderColor: tone === 'pass' ? V.ok : tone === 'fail' ? V.err : V.borderStrong,
+        fontSize: V.textXs, padding: '2px 7px', borderRadius: V.radiusPill, border: 'none',
         color: tone === 'pass' ? V.ok : tone === 'fail' ? V.err : 'inherit',
         opacity: tone === 'skip' ? 0.6 : 1,
       }),
       ladder: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
       step: (state) => ({
-        display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 8, fontSize: V.textSm,
+        display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: V.radiusMd, fontSize: V.textSm,
         border: `1px dashed ${V.borderStrong}`,
         background: state === 'pass' ? V.okSoft : state === 'fail' ? V.errSoft : 'transparent',
         borderStyle: state === 'manual' ? 'dotted' : 'solid',
         cursor: state === 'idle' ? 'default' : 'pointer',
       }),
       table: { width: '100%', borderCollapse: 'collapse', fontSize: 12.5 },
-      th: { textAlign: 'left', padding: '6px 8px', borderBottom: `1px solid ${V.borderStrong}`, fontWeight: 600, opacity: 0.75 },
-      td: { padding: '6px 8px', borderBottom: `1px solid ${V.border}`, verticalAlign: 'top' },
+      th: {
+        textAlign: 'left', padding: '8px 10px', background: V.surface2,
+        borderBottom: `1px solid ${V.border}`, fontWeight: 600, color: V.fg2,
+        fontSize: V.textXs, letterSpacing: '.04em', whiteSpace: 'nowrap',
+      },
+      td: { padding: '8px 10px', borderBottom: `1px solid ${V.border}`, verticalAlign: 'top', lineHeight: 1.5 },
       mono: { fontFamily: V.fontMono, fontSize: V.textSm },
       button: {
-        fontSize: V.textSm, padding: '5px 10px', borderRadius: 7, cursor: 'pointer',
-        border: `1px solid ${V.borderStrong}`, background: V.surface2, color: 'inherit',
+        height: 32, padding: '0 14px', borderRadius: V.radiusPill, cursor: 'pointer',
+        border: `1px solid ${V.line || V.border}`, background: V.bg, color: 'inherit',
+        fontSize: V.textSm, fontWeight: 500,
       },
       select: {
-        fontSize: 12.5, padding: '5px 8px', borderRadius: 7, color: 'inherit',
-        border: `1px solid ${V.borderStrong}`, background: V.surface2,
+        fontSize: 12.5, minHeight: 38, padding: '9px 14px', borderRadius: V.radiusLg, color: 'inherit',
+        border: `1px solid ${V.border}`, background: V.bg,
       },
       input: {
-        fontSize: 12.5, padding: '5px 9px', borderRadius: 7, color: 'inherit', minWidth: 180,
-        border: `1px solid ${V.borderStrong}`, background: V.surface2,
+        fontSize: 12.5, minHeight: 38, padding: '9px 14px', borderRadius: V.radiusLg, color: 'inherit', minWidth: 180,
+        border: `1px solid ${V.border}`, background: V.bg,
       },
-      notice: { fontSize: 12.5, opacity: 0.75, lineHeight: 1.6 },
+      notice: { fontSize: 12.5, color: V.fg2, lineHeight: 1.65 },
       pre: {
-        fontFamily: V.fontMono, fontSize: V.textSm,
-        padding: 10, borderRadius: 8, background: V.surface2, overflow: 'auto',
+        fontFamily: V.fontMono, fontSize: 12,
+        padding: 14, borderRadius: V.radiusMd, background: V.surface2,
+        border: `1px solid ${V.border}`, overflow: 'auto',
       },
     }
 
@@ -1251,10 +1305,10 @@ window.__ModuleLoader__.load({
       // 双层轨道 + 中心点：科研的"复现"母题，原创图形，不复用官方字形。
       return h(
         'svg',
-        { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block' } },
-        h('ellipse', { cx: 12, cy: 12, rx: 10, ry: 4.4, fill: 'none', stroke: 'currentColor', strokeOpacity: 0.5, strokeWidth: 1.4, transform: 'rotate(-28 12 12)' }),
-        h('ellipse', { cx: 12, cy: 12, rx: 10, ry: 4.4, fill: 'none', stroke: 'currentColor', strokeOpacity: 0.28, strokeWidth: 1.2, transform: 'rotate(32 12 12)' }),
-        h('circle', { cx: 12, cy: 12, r: 2.6, fill: '#1f6f5c' }),
+        { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, style: { display: 'block', color: V.brand } },
+        h('ellipse', { cx: 12, cy: 12, rx: 10, ry: 4.4, fill: 'none', stroke: 'currentColor', strokeOpacity: 0.55, strokeWidth: 1.4, transform: 'rotate(-28 12 12)' }),
+        h('ellipse', { cx: 12, cy: 12, rx: 10, ry: 4.4, fill: 'none', stroke: 'currentColor', strokeOpacity: 0.3, strokeWidth: 1.2, transform: 'rotate(32 12 12)' }),
+        h('circle', { cx: 12, cy: 12, r: 2.4, fill: V.brand }),
       )
     }
 
@@ -1262,9 +1316,9 @@ window.__ModuleLoader__.load({
       useLocaleRevision()
       return h(
         'span',
-        { style: { display: 'inline-flex', alignItems: 'baseline', gap: 6, fontWeight: 600, letterSpacing: 0.2 } },
-        h('span', null, 'DeepScient'),
-        h('span', { style: { fontSize: '0.72em', fontWeight: 400, opacity: 0.55 } }, tf('brand.tagline')),
+        { className: 'ds-wordmark', style: { display: 'inline-flex', alignItems: 'baseline', gap: 2, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.1 } },
+        'DeepScient',
+        h('span', { className: 'ds-wordmark__dot' }, '.com'),
       )
     }
 
@@ -1416,7 +1470,7 @@ window.__ModuleLoader__.load({
                   h('div', { style: { fontSize: 13 } }, `${current.id} ${current.label}`),
                   counters.map(([tone, key, n]) => h(Chip, { key, status: tone }, tf(key, { n }))),
                   h('div', { style: S.spacer }),
-                  h('button', { style: S.button, onClick: () => onJump(current.id) }, tf('overview.jump')),
+                  h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', onClick: () => onJump(current.id) }, tf('overview.jump')),
                 ),
                 current.goal ? h('div', { style: S.sub }, current.goal) : null,
               )
@@ -1457,7 +1511,7 @@ window.__ModuleLoader__.load({
                     h(Chip, { status: REASON_TONE[a.reason] ?? 'skip' }, reasonLabel(a.reason)),
                     h('div', { style: { fontSize: 13 } }, a.label ?? a.gate ?? tf('reason.todo')),
                     h('div', { style: S.spacer }),
-                    target ? h('button', { style: S.button, onClick: () => onJump(target) }, tf('overview.jump')) : null,
+                    target ? h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', onClick: () => onJump(target) }, tf('overview.jump')) : null,
                   ),
                   a.fix ? h('div', { style: { ...S.sub, marginTop: 3 } }, a.fix) : null,
                 )
@@ -1535,7 +1589,7 @@ window.__ModuleLoader__.load({
           h('td', { className: 'ds-mono' },
             g.id,
             g.label ? h('div', { className: 'ds-sub' }, g.label) : null),
-          h('td', null, h(Chip, { status: REASON_TONE[g.severity] ?? 'skip' }, reasonLabel(g.severity))),
+          h('td', null, h(Chip, { status: REASON_TONE[g.severity] ?? 'skip' }, reasonLabel(g.severity ?? (g.status === 'manual' ? 'self-check' : 'todo')))),
           h('td', null, h(Chip, { status: tone }, tf(known ? STATUS_KEY[g.status] : 'gate.status.unknown'))),
           h('td', null,
             fix || detail || '—',
@@ -1846,7 +1900,7 @@ window.__ModuleLoader__.load({
       const plans = data.plans ?? []
       const orders = data.orders ?? []
       const disabled = Boolean(busy)
-      const actionStyle = disabled ? { ...S.button, opacity: 0.55 } : S.button
+      const actionStyle = disabled ? { opacity: 0.55 } : undefined
 
       /** 所有按钮共用一套 busy/error/notice 口径，避免每个动作各写一遍 setState。 */
       const act = async (key, fn) => {
@@ -1904,9 +1958,9 @@ window.__ModuleLoader__.load({
           h('div', { style: S.spacer }),
           configured
             ? h('div', { style: S.row },
-                h('button', { style: actionStyle, disabled, onClick: testPing }, tf('relay.test')),
-                h('button', { style: actionStyle, disabled, onClick: syncAccount }, tf('relay.sync')),
-                h('button', { style: actionStyle, disabled, onClick: openAccount }, tf('relay.account')),
+                h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', style: actionStyle, disabled, onClick: testPing }, tf('relay.test')),
+                h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', style: actionStyle, disabled, onClick: syncAccount }, tf('relay.sync')),
+                h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', style: actionStyle, disabled, onClick: openAccount }, tf('relay.account')),
                 pingInfo ? h(Chip, { status: 'pass' }, tf('relay.pingOk', { ms: pingInfo.latencyMs ?? '—' })) : null)
             : null),
         h('div', { style: { ...S.sub, marginTop: 4 } }, tf('relay.subtitle')),
@@ -1945,7 +1999,7 @@ window.__ModuleLoader__.load({
         h('div', { style: { ...S.row, marginBottom: 8 } },
           h('div', { style: { fontSize: 13, fontWeight: 600 } }, tf('relay.plans')),
           h('div', { style: S.spacer }),
-          h('button', { style: actionStyle, disabled, onClick: () => status.reload() }, tf('relay.refresh'))),
+          h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', style: actionStyle, disabled, onClick: () => status.reload() }, tf('relay.refresh'))),
         data.plansError
           // 拉套餐失败就说失败，绝不退回本地的假套餐：价格错一块钱都是事故。
           ? h('div', { style: { color: V.err } }, h(Notice, null, data.plansError.message || '—'))
@@ -1968,7 +2022,7 @@ window.__ModuleLoader__.load({
                   h('td', { style: S.td }, plan.quotaValue === null || plan.quotaValue === undefined || plan.quotaValue === '' ? '—' : String(plan.quotaValue)),
                   h('td', { style: S.td }, plan.group || '—'),
                   h('td', { style: S.td },
-                    h('button', { style: actionStyle, disabled, onClick: buyPlan(plan.planId) }, tf('relay.buy'))))))),
+                    h('button', { className: 'ds-btn ds-btn--primary ds-btn--sm', style: actionStyle, disabled, onClick: buyPlan(plan.planId) }, tf('relay.buy'))))))),
         h('div', { style: { ...S.sub, marginTop: 8 } }, tf('relay.planNote')),
       )
 
@@ -1991,7 +2045,7 @@ window.__ModuleLoader__.load({
                 h('td', { style: S.td }, order.status || '—'),
                 h('td', { style: S.td }, formatTime(order.startTime)),
                 h('td', { style: S.td },
-                  h('button', { style: actionStyle, disabled, onClick: queryOrder(order.tradeNo) }, tf('relay.query'))))))),
+                  h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', style: actionStyle, disabled, onClick: queryOrder(order.tradeNo) }, tf('relay.query'))))))),
         orderInfo
           ? h('div', { style: { ...S.notice, marginTop: 8 } },
               tf('relay.orderStatus', { tradeNo: orderInfo.order?.tradeNo ?? '—', status: orderInfo.order?.status ?? '—' }))
@@ -2000,7 +2054,7 @@ window.__ModuleLoader__.load({
 
       return h('div', null,
         headerCard,
-        error ? h('div', { style: { ...S.card, borderColor: 'rgba(190,70,60,0.5)' } }, h(Notice, null, error)) : null,
+        error ? h('div', { style: { ...S.card, borderColor: V.err } }, h(Notice, null, error)) : null,
         notice ? h('div', { style: S.card }, h(Notice, null, notice)) : null,
         bindingCard,
         webhookCard,
@@ -2098,7 +2152,10 @@ window.__ModuleLoader__.load({
     function sourceInputCell(item, draft, setDraft) {
       if (!item.path) return h('span', { style: { opacity: 0.5 } }, tf('sources.noCredential'))
       return h('input', {
-        style: { ...S.input, minWidth: 150 },
+        id: 'src-' + item.id,
+        className: 'ds-input',
+        style: { minWidth: 150 },
+        'aria-label': tf('sources.colFill') + ': ' + item.name,
         type: item.kind === 'email' ? 'email' : 'password',
         placeholder: item.kind === 'email' ? 'pi@lab.example' : tf('sources.pasteKey'),
         value: draft[item.id] ?? '',
@@ -2107,7 +2164,8 @@ window.__ModuleLoader__.load({
     }
 
     function verifyChip(result) {
-      if (!result || !result.status || result.status === 'busy') return null
+      if (!result || !result.status) return null
+      if (result.status === 'busy') return h(Chip, { status: 'manual' }, tf('sources.testing'))
       const good = result.status === 'ok' || result.status === 'ready'
       const text = result.status === 'ok'
         ? tf('sources.verifyOk', { ms: result.ms ?? '?' })
@@ -2119,34 +2177,55 @@ window.__ModuleLoader__.load({
       return h(Chip, { status: good ? 'pass' : 'fail' }, text)
     }
 
-    function sourceActionCell(item, onSave, onTest, result) {
+    function sourceActionCell(item, onSave, onTest, result, busyKind, savedAt) {
+      const busy = Boolean(busyKind)
       const nodes = []
-      if (item.path) nodes.push(h('button', { key: 'save', style: S.button, onClick: () => onSave(item.id) }, tf('common.save')))
-      nodes.push(h('button', { key: 'test', style: S.button, onClick: () => onTest(item.id) }, tf('sources.test')))
+      if (item.path) {
+        nodes.push(h('button', {
+          key: 'save',
+          className: 'ds-btn ds-btn--sm',
+          disabled: busy,
+          onClick: () => onSave(item.id),
+        }, busyKind === 'save' ? tf('sources.saving') : tf('common.save')))
+      }
+      nodes.push(h('button', {
+        key: 'test',
+        className: 'ds-btn ds-btn--sm',
+        disabled: busy,
+        onClick: () => onTest(item.id),
+      }, busyKind === 'test' ? tf('sources.testing') : tf('sources.test')))
       const chip = verifyChip(result)
       if (chip) nodes.push(h('span', { key: 'chip' }, chip))
       if (result && result.hint) nodes.push(h('div', { key: 'hint', style: { fontSize: 11, opacity: 0.65, width: '100%' } }, result.hint))
+      if (savedAt) nodes.push(h('span', { key: 'saved', className: 'ds-sub' }, tf('sources.saved', { at: savedAt })))
       return h('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' } }, nodes)
     }
 
-    function sourceRow(item, draft, setDraft, onSave, onTest, result) {
+    function sourceRow(item, draft, setDraft, onSave, onTest, result, busyKind, savedAt) {
       return h('tr', { key: item.id },
         h('td', { style: S.td },
-          h('a', { href: item.applyUrl, target: '_blank', rel: 'noreferrer', style: { color: '#3fa07f' } }, item.name),
+          h('a', { href: item.applyUrl, target: '_blank', rel: 'noreferrer', className: 'ds-link' }, item.name),
           item.hint ? h('div', { style: { fontSize: 11, opacity: 0.6, marginTop: 2 } }, item.hint) : null),
         h('td', { style: S.td }, item.kind === 'none' ? tf('sources.kindNone') : item.kind === 'email' ? tf('sources.kindEmail') : tf('sources.kindKey')),
         h('td', { style: S.td }, sourceStatusCell(item)),
         h('td', { style: { ...S.td, ...S.mono, opacity: 0.8 } }, item.masked || '—'),
         h('td', { style: S.td }, sourceInputCell(item, draft, setDraft)),
-        h('td', { style: S.td }, sourceActionCell(item, onSave, onTest, result)))
+        h('td', { style: S.td }, sourceActionCell(item, onSave, onTest, result, busyKind, savedAt)))
     }
 
     function SourcesPanel({ sources }) {
       useLocaleRevision()
       const [draft, setDraft] = useState({})
       const [result, setResult] = useState({})
-      const [saved, setSaved] = useState('')
+      const [busy, setBusy] = useState({})
+      const [saved, setSaved] = useState({})
       const [error, setError] = useState('')
+      const timers = useRef({})
+
+      useEffect(() => () => {
+        Object.keys(timers.current).forEach((id) => clearTimeout(timers.current[id]))
+        timers.current = {}
+      }, [])
 
       if (sources.status === 'loading') return h(Loading)
       if (sources.status === 'error') return h(ErrorBox, { error: sources.error, onRetry: sources.reload })
@@ -2155,48 +2234,63 @@ window.__ModuleLoader__.load({
       const items = data.items ?? []
 
       const save = async (id) => {
+        if (busy[id]) return
+        setBusy((prev) => ({ ...prev, [id]: 'save' }))
         setError('')
         try {
           const payload = await sendJson('PUT', '/sources', { items: { [id]: draft[id] ?? '' } })
           if ((payload.rejected ?? []).length) throw new Error(payload.rejected.map((r) => r.reason).join('；'))
           setDraft((prev) => ({ ...prev, [id]: '' }))
-          setSaved(tf('sources.savedAt', { id, at: new Date().toLocaleTimeString() }))
+          setSaved((prev) => ({ ...prev, [id]: new Date().toLocaleTimeString() }))
+          if (timers.current[id]) clearTimeout(timers.current[id])
+          timers.current[id] = setTimeout(() => {
+            delete timers.current[id]
+            setSaved((prev) => ({ ...prev, [id]: '' }))
+          }, 4000)
           sources.reload()
         } catch (e) {
+          setResult((prev) => ({ ...prev, [id]: { status: 'fail', hint: e.message } }))
           setError(e.message)
+        } finally {
+          setBusy((prev) => ({ ...prev, [id]: '' }))
         }
       }
 
       const test = async (id) => {
+        if (busy[id]) return
+        setBusy((prev) => ({ ...prev, [id]: 'test' }))
         setResult((prev) => ({ ...prev, [id]: { status: 'busy' } }))
         try {
           const payload = await sendJson('POST', '/sources/verify', { id })
           setResult((prev) => ({ ...prev, [id]: payload }))
         } catch (e) {
           setResult((prev) => ({ ...prev, [id]: { status: 'fail', hint: e.message } }))
+        } finally {
+          setBusy((prev) => ({ ...prev, [id]: '' }))
         }
       }
 
-      const head = h('thead', null, h('tr', null,
-        h('th', { style: S.th }, tf('sources.colSource')),
-        h('th', { style: S.th }, tf('sources.colCredential')),
-        h('th', { style: S.th }, tf('sources.colStatus')),
-        h('th', { style: S.th }, tf('sources.colValue')),
-        h('th', { style: S.th }, tf('sources.colFill')),
-        h('th', { style: S.th }, tf('sources.colVerify'))))
+      const head = [
+        tf('sources.colSource'),
+        tf('sources.colCredential'),
+        tf('sources.colStatus'),
+        tf('sources.colValue'),
+        tf('sources.colFill'),
+        tf('sources.colVerify'),
+      ]
 
-      const rows = items.map((item) => sourceRow(item, draft, setDraft, save, test, result[item.id]))
+      const rows = items.map((item) => sourceRow(item, draft, setDraft, save, test, result[item.id], busy[item.id], saved[item.id]))
       const configured = items.filter((item) => item.configured).length
 
       return h('div', null,
         h('div', { key: 'title', style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, tf('sources.heading')),
+        sources.status === 'refreshing' ? h(Refreshing, { key: 'refreshing' }) : null,
         h(Notice, { key: 'note' },
           h('div', null, data.note ?? tf('sources.noteDefault')),
           h('div', { style: { ...S.mono, opacity: 0.7, marginTop: 4 } }, data.path ?? '')),
         h('div', { key: 'count', style: { ...S.sub, margin: '10px 0' } }, tf('sources.count', { ready: configured, total: items.length })),
-        h('table', { key: 'table', style: S.table }, head, h('tbody', null, rows)),
+        h(Table, { key: 'table', head, caption: tf('sources.heading') }, rows),
         error ? h(ErrorBox, { key: 'error', error }) : null,
-        saved ? h('div', { key: 'saved', style: { ...S.sub, marginTop: 8 } }, saved) : null,
         h('div', { key: 'foot', style: { ...S.sub, marginTop: 12 } }, tf('sources.foot')))
     }
 
@@ -2215,23 +2309,24 @@ window.__ModuleLoader__.load({
         background: V.bg, padding: '24px',
       },
       card: {
-        width: 'min(400px, 92vw)', padding: '24px', borderRadius: V.radiusLg,
-        border: `1px solid ${V.border}`,
-        boxShadow: V.shadow2, textAlign: 'left',
+        width: 'min(430px, 92vw)', padding: 28, borderRadius: V.radiusXl,
+        border: `1px solid ${V.line}`,
+        boxShadow: V.shadow1, textAlign: 'left',
       },
       brand: { fontSize: V.textSm, letterSpacing: '0.08em', opacity: 0.5, marginBottom: '6px' },
-      title: { fontSize: V.textXl, fontWeight: 650, marginBottom: '6px' },
+      title: { fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '6px' },
       intro: { fontSize: V.textSm, opacity: 0.65, lineHeight: 1.6, marginBottom: '18px' },
       row: { marginBottom: '12px' },
       label: { display: 'block', fontSize: V.textSm, fontWeight: 500, marginBottom: '4px' },
       input: {
-        width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: V.textMd,
-        borderRadius: '8px', border: `1px solid ${V.border}`,
-        background: 'transparent', color: 'inherit', fontFamily: 'inherit',
+        width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: V.textMd, minHeight: 38,
+        borderRadius: V.radiusLg, border: `1px solid ${V.line}`,
+        background: V.bg, color: 'inherit', fontFamily: 'inherit',
       },
       submit: {
-        width: '100%', padding: '10px', borderRadius: '9px', fontSize: V.textMd, cursor: 'pointer',
+        width: '100%', height: 44, padding: '0 16px', borderRadius: V.radiusPill, fontSize: V.textMd, cursor: 'pointer',
         border: `1px solid ${V.brand}`, background: V.brand, color: V.onBrand, fontWeight: 600,
+        boxShadow: V.shadowBrand,
       },
       submitOff: { opacity: 0.45, cursor: 'not-allowed' },
       error: {
@@ -2242,7 +2337,7 @@ window.__ModuleLoader__.load({
       codeBox: {
         fontFamily: V.fontMono, fontSize: '17px',
         letterSpacing: '0.12em', textAlign: 'center', padding: '14px 10px', margin: '4px 0 16px',
-        borderRadius: V.radiusMd, border: `1px dashed ${V.brand}`,
+        borderRadius: V.radiusLg, border: `1px dashed ${V.brand}`,
         background: V.brandSoft, userSelect: 'all', wordBreak: 'break-all',
       },
       link: {
@@ -2258,7 +2353,7 @@ window.__ModuleLoader__.load({
     const AE = {
       wide: {
         display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-        padding: '6px 8px', borderRadius: '8px', border: 'none', background: 'transparent',
+        padding: '6px 8px', borderRadius: V.radiusMd, border: 'none', background: 'transparent',
         color: 'inherit', cursor: 'pointer', font: 'inherit', textAlign: 'left', minWidth: 0,
       },
       narrow: {
@@ -2267,38 +2362,36 @@ window.__ModuleLoader__.load({
         border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer',
       },
       avatar: {
-        flex: '0 0 auto', width: '26px', height: '26px', borderRadius: '50%',
+        flex: '0 0 auto', width: '28px', height: '28px', borderRadius: '50%',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         background: V.brandSoft, color: V.brand, fontSize: V.textSm, fontWeight: 650,
         textTransform: 'uppercase',
       },
-      name: { fontSize: '12.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      name: { fontSize: V.textSm, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       backdrop: {
-        position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.18)',
+        position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(7,20,38,.45)',
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', padding: '24px',
       },
       panel: {
         position: 'relative',
-        width: 'min(320px, 92vw)', padding: '18px', borderRadius: V.radiusLg,
-        background: V.bg, border: `1px solid ${V.border}`,
+        width: 'min(360px, 92vw)', padding: 22, borderRadius: V.radiusXl,
+        background: V.surface, border: `1px solid ${V.line}`,
         boxShadow: V.shadow2,
       },
-      panelName: { fontSize: V.textLg, fontWeight: 650, marginBottom: '2px' },
-      panelSub: { fontSize: V.textSm, opacity: 0.6, marginBottom: '14px' },
+      panelName: { fontSize: V.textLg, fontWeight: 600, marginBottom: '2px' },
+      panelSub: { fontSize: V.textSm, color: V.fg2, marginBottom: '14px' },
       actions: { display: 'flex', flexDirection: 'column', gap: '8px' },
       action: {
-        padding: '8px 10px', borderRadius: '9px', fontSize: '12.5px', cursor: 'pointer',
-        border: `1px solid ${V.border}`, background: 'transparent',
-        color: 'inherit', font: 'inherit', textAlign: 'left',
+        width: '100%', justifyContent: 'flex-start', textAlign: 'left',
       },
-      danger: { borderColor: V.err, color: V.err },
       close: {
-        position: 'absolute', top: '8px', right: '8px', width: '24px', height: '24px',
-        display: 'grid', placeItems: 'center', padding: 0, borderRadius: '7px',
+        position: 'absolute', top: '8px', right: '8px', width: '28px', height: '28px',
+        display: 'grid', placeItems: 'center', padding: 0, borderRadius: V.radiusPill,
         border: 'none', background: 'transparent', color: 'inherit',
         cursor: 'pointer', fontSize: V.textLg, lineHeight: 1,
       },
-      note: { fontSize: '11.5px', opacity: 0.6, marginTop: '10px', lineHeight: 1.5 },
+      note: { fontSize: '11.5px', color: V.fg2, marginTop: '10px', lineHeight: 1.6 },
     }
 
     /** 这几个端点要带着 cookie，且要能读出服务端说的错误原因。 */
@@ -2346,6 +2439,8 @@ window.__ModuleLoader__.load({
         const [busy, setBusy] = useState(false)
         const [waiting, setWaiting] = useState(false)
         const [error, setError] = useState('')
+        const submitRef = useRef(null)
+        const retryRef = useRef(null)
         useLocaleRevision()
 
         // 只读状态、只写 state：探针没有闭包依赖，可以安全地给事件与重试按钮复用。
@@ -2377,6 +2472,24 @@ window.__ModuleLoader__.load({
           return () => window.removeEventListener('deepscient:unauthorized', onUnauthorized)
         }, [])
 
+        // 从浏览器授权完回到窗口（或窗口重新获得焦点）时对一次状态：
+        // 服务端已经登录就重载，让 mux 用新身份重连。轮询之外的兜底，
+        // 覆盖「授权窗口比 5 分钟轮询更久」「先在外面登录、再回窗口」这类顺序。
+        useEffect(() => {
+          const sync = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+            authCall('/state').then((result) => {
+              if (result.ok && result.data?.loggedIn && state.phase !== 'authed') window.location.reload()
+            }, () => {})
+          }
+          window.addEventListener('focus', sync)
+          document.addEventListener('visibilitychange', sync)
+          return () => {
+            window.removeEventListener('focus', sync)
+            document.removeEventListener('visibilitychange', sync)
+          }
+        }, [state.phase])
+
         // 授权在另一个窗口完成；这个页面自己发现登录态变了就重载，让 mux 用新身份重连。
         useEffect(() => {
           if (!waiting) return undefined
@@ -2391,6 +2504,12 @@ window.__ModuleLoader__.load({
           }, 5 * 60 * 1000)
           return () => { clearInterval(timer); clearTimeout(stop) }
         }, [waiting])
+
+        // 状态一亮出来就把焦点交给主按钮：加载结束或连接恢复后可以直接回车。
+        useEffect(() => {
+          if (state.phase === 'unreachable') retryRef.current?.focus()
+          else if (state.phase === 'anon') submitRef.current?.focus()
+        }, [state.phase])
 
         const login = async () => {
           if (busy || waiting) return
@@ -2407,6 +2526,13 @@ window.__ModuleLoader__.load({
               return
             }
             const opened = window.open(result.data.authorizeUrl, '_blank', 'noopener,noreferrer')
+            // 桌面壳把外链交给系统浏览器、同时拒绝创建窗口（window.open 返回 null），
+            // 而且 will-navigate 会拦下 location.href 跳转——所以桌面形态只能进入轮询等待，
+            // 绝不能导航（导航被拦后既不开浏览器也不轮询，账号状态就永远不同步）。
+            if (location.protocol === 'dsh-app:') {
+              setWaiting(true)
+              return
+            }
             // 弹窗被拦时退回同页跳转：官网回来会落在 /auth/callback，那一页再把人送回来。
             if (!opened) {
               window.location.href = result.data.authorizeUrl
@@ -2423,48 +2549,67 @@ window.__ModuleLoader__.load({
         if (state.phase === 'loading') return null
         if (state.phase === 'authed') return null
 
-        // 连不上服务时不摆登录按钮：授权也没法完成，先修连接。
-        if (state.phase === 'unreachable') {
-          return h('div', { style: AU.overlay, 'data-deepscient-auth': 'gate' },
-            h('div', {
-              style: AU.card, role: 'dialog', 'aria-modal': 'true', 'aria-label': tf('auth.unreachableTitle'),
-            },
-              h('div', { style: AU.brand }, 'DeepScient'),
-              h('div', { style: AU.title }, tf('auth.unreachableTitle')),
-              h('div', { style: AU.intro }, tf('auth.unreachable')),
-              h('button', {
-                type: 'button',
-                className: 'ds-btn ds-btn--primary',
-                style: { width: '100%' },
-                onClick: probe,
-              }, tf('common.retry')),
-            ),
-          )
-        }
-
+        // 连不上服务时不摆登录按钮：授权也没法完成，先修连接；重试按钮随 phase 变化接管焦点。
+        const unreachable = state.phase === 'unreachable'
         const site = authSite.site
-        return h('div', { style: AU.overlay, 'data-deepscient-auth': 'gate' },
+        return h('div', { className: 'ds-auth ds-veil', 'data-deepscient-auth': 'gate' },
           h('div', {
-            style: AU.card, role: 'dialog', 'aria-modal': 'true', 'aria-label': tf('auth.gateTitle'),
+            className: 'ds-auth__card',
+            role: 'dialog',
+            'aria-modal': 'true',
+            'aria-label': tf(unreachable ? 'auth.unreachableTitle' : 'auth.gateTitle'),
+            style: { margin: 'auto' },
           },
-            h('div', { style: AU.brand }, 'DeepScient'),
-            h('div', { style: AU.title }, tf('auth.gateTitle')),
-            h('div', { style: AU.intro }, tf('auth.gateIntro')),
-            h('button', {
-              type: 'button',
-              className: 'ds-btn ds-btn--primary',
-              style: busy || waiting ? { width: '100%', ...AU.submitOff } : { width: '100%' },
-              disabled: busy || waiting,
-              onClick: login,
-            }, busy ? tf('auth.opening') : tf('auth.loginWith')),
-            waiting ? h('div', { style: AU.hint }, tf('auth.waiting')) : null,
-            error ? h('div', { style: AU.error, role: 'alert' }, error) : null,
-            h('div', { style: AU.hint }, tf('auth.gateHint')),
-            site?.base
-              ? h('a', {
-                  href: site.base, target: '_blank', rel: 'noreferrer', style: AU.link,
+            h('div', { className: 'ds-auth__head' },
+              h('span', { className: 'ds-eyebrow' }, tf('auth.eyebrow')),
+              h('h2', { className: 'ds-auth__title' }, tf(unreachable ? 'auth.unreachableTitle' : 'auth.gateTitle')),
+              h('p', { className: 'ds-auth__intro' }, tf(unreachable ? 'auth.unreachable' : 'auth.gateIntro')),
+              unreachable ? null : h('span', { className: 'ds-auth__badge' }, tf('auth.freeBadge')),
+            ),
+            unreachable ? null : h('div', { className: 'ds-auth__steps', style: { marginTop: '18px' } },
+              h('div', { className: 'ds-auth__step' },
+                h('span', { className: 'ds-auth__num' }, '01'),
+                h('div', null,
+                  h('div', { className: 'ds-auth__stepTitle' }, tf('auth.step1Title')),
+                  h('div', { className: 'ds-auth__stepDesc' }, tf('auth.step1Desc')))),
+              h('div', { className: 'ds-auth__step' },
+                h('span', { className: 'ds-auth__num' }, '02'),
+                h('div', null,
+                  h('div', { className: 'ds-auth__stepTitle' }, tf('auth.step2Title')),
+                  h('div', { className: 'ds-auth__stepDesc' }, tf('auth.step2Desc')))),
+              h('div', { className: 'ds-auth__step' },
+                h('span', { className: 'ds-auth__num' }, '03'),
+                h('div', null,
+                  h('div', { className: 'ds-auth__stepTitle' }, tf('auth.step3Title')),
+                  h('div', { className: 'ds-auth__stepDesc' }, tf('auth.step3Desc')))),
+            ),
+            unreachable
+              ? h('button', {
+                  ref: retryRef, type: 'button', className: 'ds-auth__submit', style: { marginTop: '16px' }, onClick: probe,
+                }, tf('common.retry'))
+              : h('button', {
+                  ref: submitRef,
+                  type: 'button',
+                  className: 'ds-auth__submit',
+                  style: { marginTop: '16px' },
+                  disabled: busy || waiting,
+                  onClick: login,
+                }, busy ? tf('auth.opening') : waiting ? tf('auth.waitingShort') : tf('auth.loginWith')),
+            unreachable ? null : (site?.base
+              ? h('button', {
+                  type: 'button',
+                  className: 'ds-auth__secondary',
+                  style: { marginTop: '8px' },
+                  onClick: () => window.open(site.base, '_blank', 'noopener,noreferrer'),
                 }, tf('auth.website'))
+              : null),
+            waiting
+              ? h('div', { className: 'ds-auth__wait', style: { marginTop: '12px' } },
+                  h('span', { className: 'ds-spinner', 'aria-hidden': true }),
+                  h('span', null, tf('auth.waiting')))
               : null,
+            !unreachable && error ? h('div', { className: 'ds-auth__error', role: 'alert', style: { marginTop: '10px' } }, error) : null,
+            h('p', { className: 'ds-auth__foot', style: { marginTop: '16px' } }, tf('auth.footnote')),
           ),
         )
       }
@@ -2721,7 +2866,7 @@ window.__ModuleLoader__.load({
 
         if (!open || !user) return null
 
-        const actionStyle = { ...AE.action, width: '100%', justifyContent: 'flex-start' }
+        const actionStyle = AE.action
         return h('div', {
           style: AE.backdrop, 'data-deepscient-auth': 'menu', onClick: close,
         },
@@ -2766,26 +2911,26 @@ window.__ModuleLoader__.load({
     const WZ = {
       wrap: { position: 'relative', display: 'inline-flex', alignItems: 'center' },
       trigger: {
-        display: 'inline-flex', alignItems: 'center', gap: '6px',
-        padding: '5px 10px', borderRadius: '8px', cursor: 'pointer',
-        border: `1px solid ${V.border}`, background: 'transparent',
+        display: 'inline-flex', alignItems: 'center', gap: '6px', height: 30,
+        padding: '0 12px', borderRadius: V.radiusPill, cursor: 'pointer',
+        border: `1px solid ${V.border}`, background: V.bg,
         fontSize: V.textSm, lineHeight: 1.2, whiteSpace: 'nowrap',
       },
-      triggerOn: { borderColor: V.brand, color: V.brand },
+      triggerOn: { borderColor: V.brand, color: V.brand, background: V.brandSoft },
       panel: {
         position: 'absolute', bottom: 'calc(100% + 10px)', left: 0, zIndex: 60,
         width: 'min(560px, 92vw)', maxHeight: '70vh', overflowY: 'auto',
-        padding: '16px', borderRadius: '12px', background: V.bg,
-        border: `1px solid ${V.border}`,
-        boxShadow: V.shadow1, textAlign: 'left',
+        padding: 18, borderRadius: V.radiusXl, background: V.surface,
+        border: `1px solid ${V.line}`,
+        boxShadow: V.shadow2, textAlign: 'left',
       },
-      title: { fontSize: '14px', fontWeight: 600, marginBottom: '4px' },
-      hint: { fontSize: V.textSm, opacity: 0.65, lineHeight: 1.5, marginBottom: '12px' },
+      title: { fontSize: 15, fontWeight: 600, marginBottom: '4px' },
+      hint: { fontSize: V.textSm, color: V.fg2, lineHeight: 1.5, marginBottom: '12px' },
       row: { marginBottom: '10px' },
       label: { display: 'block', fontSize: V.textSm, fontWeight: 500, marginBottom: '3px' },
-      sub: { fontSize: V.textXs, opacity: 0.6, marginBottom: '4px', lineHeight: 1.45 },
+      sub: { fontSize: V.textXs, color: V.fg3, marginBottom: '4px', lineHeight: 1.45 },
       foot: { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' },
-      btnOff: { opacity: 0.4, cursor: 'not-allowed' },
+      btnOff: { opacity: 0.5, cursor: 'not-allowed' },
     }
 
     // id 拼字典 key；hint 是给人看的一句解释，回答「为什么问这个」；rows 走多行输入。
@@ -2985,7 +3130,7 @@ window.__ModuleLoader__.load({
             style: {
               display: 'inline-flex', alignItems: 'center', gap: 5, border: 'none', background: 'none',
               color: 'inherit', opacity: hover ? 0.92 : 0.6, cursor: 'pointer', fontSize: 11.5, padding: '2px 4px',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontFamily: V.fontMono,
             },
           },
           h('span', { key: 'dot', 'aria-hidden': true, style: { fontSize: 11 } }, '◇'),
@@ -3045,7 +3190,7 @@ window.__ModuleLoader__.load({
         nodes.push(h(Notice, { key: 'notice' }, tf('guide.model.noKeys')))
       }
       nodes.push(h('div', { key: 'row', style: S.row },
-        h('button', { style: S.button, onClick: () => openPanel('billing') }, tf('guide.model.goBilling'))))
+        h('button', { className: 'ds-btn ds-btn--ghost', onClick: () => openPanel('billing') }, tf('guide.model.goBilling'))))
       nodes.push(h('div', { key: 'foot', style: { ...S.sub, marginTop: 8 } }, tf('guide.model.foot')))
       return nodes
     }
@@ -3060,7 +3205,7 @@ window.__ModuleLoader__.load({
           h('li', null, tf('guide.sources.keys')),
           h('li', null, tf('guide.sources.secrets'))),
         h('div', { key: 'row', style: S.row },
-          h('button', { style: S.button, onClick: () => openPanel('sources') }, tf('guide.sources.go'))),
+          h('button', { className: 'ds-btn ds-btn--ghost', onClick: () => openPanel('sources') }, tf('guide.sources.go'))),
         h('div', { key: 'foot', style: { ...S.sub, marginTop: 8 } }, tf('guide.sources.foot')),
       ]
     }
@@ -3073,7 +3218,7 @@ window.__ModuleLoader__.load({
           h('input', { style: S.input, placeholder: tf('guide.project.domainPh'), value: form.domain, onChange: (e) => setForm({ ...form, domain: e.target.value }) }),
           h('input', { style: S.input, placeholder: tf('guide.project.journalPh'), value: form.journal, onChange: (e) => setForm({ ...form, journal: e.target.value }) })),
         h('div', { key: 'row', style: { ...S.row, marginTop: 10 } },
-          h('button', { style: S.button, onClick: createProject, disabled: creating || !form.title.trim() },
+          h('button', { className: 'ds-btn ds-btn--primary', onClick: createProject, disabled: creating || !form.title.trim() },
             creating ? tf('guide.creating') : tf('guide.project.create'))),
       ]
       if (created) {
@@ -3115,9 +3260,10 @@ window.__ModuleLoader__.load({
             h('div', { style: S.row },
               h('span', { style: { fontSize: 12.5, fontWeight: 600 } }, tag),
               h('div', { style: S.spacer }),
-              h('button', { style: { ...S.button, border: 'none', background: 'none', opacity: 0.7 }, onClick: () => copy(text, tag) }, copied === tag ? tf('guide.session.copied') : tf('guide.session.copy')),
+              h('button', { className: 'ds-btn ds-btn--ghost ds-btn--sm', onClick: () => copy(text, tag) }, copied === tag ? tf('guide.session.copied') : tf('guide.session.copy')),
               h('button', {
-                style: { ...S.button, borderColor: 'rgba(31,111,92,0.7)', opacity: busy || presetBroken ? 0.55 : 1 },
+                className: 'ds-btn ds-btn--primary ds-btn--sm',
+                style: { opacity: busy || presetBroken ? 0.55 : 1 },
                 disabled: busy || presetBroken,
                 onClick: () => view.start(text, tag),
               }, state === 'starting' ? tf('guide.session.starting') : state === 'started' ? tf('guide.session.started') : tf('guide.session.open'))),
@@ -3272,7 +3418,7 @@ window.__ModuleLoader__.load({
         try {
           const payload = await sendJson('POST', '/projects', form)
           if (!payload.ok) throw new Error(payload.message || payload.error || tf('guide.session.errorCreate'))
-          setCreated(payload.project)
+          setCreated({ ...payload.project, progress: payload.progress ?? null })
           openPanel('workbench')
         } catch (e) {
           setError(e?.message ?? String(e))
@@ -3380,7 +3526,7 @@ window.__ModuleLoader__.load({
 
       const progress = Array.from({ length: GUIDE_TOTAL }).map((_, i) => h('div', {
         key: i,
-        style: { height: 3, flex: 1, borderRadius: 999, background: i <= current ? V.brand : V.surface3 },
+        style: { height: 3, flex: 1, borderRadius: V.radiusPill, background: i <= current ? V.brand : V.surface3 },
       }))
 
       const card = h('div', {
@@ -3398,7 +3544,7 @@ window.__ModuleLoader__.load({
       h('div', { style: { display: 'flex', gap: 6, margin: '12px 0 16px' } }, progress),
       h('div', { style: { fontSize: 13, lineHeight: 1.75, minHeight: 150 } }, body),
       // 错误与保存状态都要被读屏念出来，否则失败只剩视觉上的一个红框。
-      h('div', { 'aria-live': 'polite' }, error ? h(ErrorBox, { error }) : null),
+      h('div', { 'aria-live': 'polite' }, error ? h(ErrorBox, { error, title: tf('guide.errorTitle') }) : null),
       h('div', { style: { ...S.row, marginTop: 16 } },
         current > 0 ? h('button', { className: 'ds-btn ds-btn--ghost', disabled: saving, onClick: () => go(current - 1) }, tf('guide.prev')) : null,
         h('div', { style: S.spacer }),
@@ -3510,17 +3656,30 @@ window.__ModuleLoader__.load({
     ]
 
     function fieldRow(draft, setDraft, key, label, kind) {
+      const id = 'ds-setting-' + key
       const value = draft[key]
       let control
       if (kind === 'bool') {
-        control = h('input', { type: 'checkbox', checked: Boolean(value), onChange: (e) => setDraft({ ...draft, [key]: e.target.checked }) })
+        control = h('input', { id, type: 'checkbox', checked: Boolean(value), onChange: (e) => setDraft({ ...draft, [key]: e.target.checked }) })
       } else if (Array.isArray(kind)) {
-        control = h('select', { style: S.select, value: value ?? '', onChange: (e) => setDraft({ ...draft, [key]: e.target.value }) },
+        control = h('select', { id, className: 'ds-select', style: S.select, value: value ?? '', onChange: (e) => setDraft({ ...draft, [key]: e.target.value }) },
           kind.map((v) => h('option', { key: v, value: v }, v)))
       } else if (kind === 'number') {
-        control = h('input', { style: { ...S.input, minWidth: 100 }, type: 'number', step: 0.01, min: 0.001, max: 0.5, value: value ?? '', onChange: (e) => setDraft({ ...draft, [key]: Number(e.target.value) }) })
+        control = h('input', {
+          id,
+          className: 'ds-input',
+          style: { ...S.input, minWidth: 100 },
+          type: 'number',
+          step: 0.01,
+          min: 0.001,
+          max: 0.5,
+          value: value ?? '',
+          onChange: (e) => setDraft({ ...draft, [key]: e.target.value === '' ? '' : Number(e.target.value) }),
+        })
       } else if (kind === 'url') {
         control = h('input', {
+          id,
+          className: 'ds-input',
           style: { ...S.input, minWidth: 260 },
           type: 'url',
           placeholder: key === 'billingBaseUrl' ? tf('settings.ph.billingBaseUrl') : tf('settings.ph.billingConsoleUrl'),
@@ -3528,10 +3687,16 @@ window.__ModuleLoader__.load({
           onChange: (e) => setDraft({ ...draft, [key]: e.target.value }),
         })
       } else {
-        control = h('input', { style: S.input, value: value ?? '', onChange: (e) => setDraft({ ...draft, [key]: e.target.value }) })
+        control = h('input', {
+          id,
+          className: 'ds-input',
+          style: S.input,
+          value: value ?? '',
+          onChange: (e) => setDraft({ ...draft, [key]: e.target.value }),
+        })
       }
       return h('div', { key, style: { display: 'flex', alignItems: 'center', gap: 12 } },
-        h('div', { style: { width: 150, fontSize: 12.5, opacity: 0.8 } }, label),
+        h('label', { htmlFor: id, className: 'ds-sub', style: { width: 150 } }, label),
         control)
     }
 
@@ -3546,6 +3711,8 @@ window.__ModuleLoader__.load({
         const [inspect, setInspect] = useState(null)
         const [skillCat, setSkillCat] = useState(null)
         const [skillCheck, setSkillCheck] = useState(null)
+        const [saving, setSaving] = useState(false)
+        const [pending, setPending] = useState('')
         const busy = useRef(false)
         useLocaleRevision()
 
@@ -3553,17 +3720,42 @@ window.__ModuleLoader__.load({
 
         const save = useCallback(async () => {
           if (!draft || busy.current) return
+          const alpha = draft.alpha === '' || draft.alpha === null || draft.alpha === undefined ? NaN : Number(draft.alpha)
+          if (!Number.isFinite(alpha) || alpha <= 0 || alpha >= 1) {
+            setError(tf('settings.alphaError'))
+            return
+          }
+          const priceRows = Array.isArray(draft.billingPriceTable) ? draft.billingPriceTable : []
+          const invalidRow = priceRows.some((row) => {
+            const named = String(row.provider ?? '').trim() !== '' || String(row.model ?? '').trim() !== ''
+            if (!named) return false
+            return [row.inputPerM, row.cacheReadPerM, row.outputPerM]
+              .every((v) => v === '' || v === null || v === undefined || Number(v) === 0)
+          })
+          if (invalidRow) {
+            setError(tf('settings.priceRowInvalid'))
+            return
+          }
           busy.current = true
+          setSaving(true)
           setError('')
           try {
             const body = await sendJson('PUT', '/settings', draft)
             setDraft(body.values)
             setRejected(body.rejected ?? [])
             setSaved(tf('settings.savedAt', { at: new Date().toLocaleTimeString() }))
+            if (body.values?.locale && body.values.locale !== state.data?.values?.locale) {
+              try {
+                i18n.ctx?.get?.('locale')?.setLocale?.(body.values.locale)
+              } catch {
+                // 切不动就等下次加载：服务端已经存下了，不下发全页刷新。
+              }
+            }
             state.reload()
           } catch (e) {
             setError(e.message)
           } finally {
+            setSaving(false)
             busy.current = false
           }
         }, [draft, state])
@@ -3587,11 +3779,18 @@ window.__ModuleLoader__.load({
         const addRow = () => setDraft({ ...draft, billingPriceTable: [...rows, { provider: '', model: '', inputPerM: 0, cacheReadPerM: 0, outputPerM: 0 }] })
         const removeRow = (index) => setDraft({ ...draft, billingPriceTable: rows.filter((_, i) => i !== index) })
 
+        const humanKey = (k) => {
+          const key = 'settings.field.' + k
+          const v = tf(key)
+          return v === key ? k : v
+        }
+
         return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 720 } },
           h('div', { style: { fontSize: 13, opacity: 0.75, lineHeight: 1.6 } },
             tf('settings.introPrefix'),
             h('code', { style: S.mono }, state.data?.path ?? ''),
             tf('settings.introSuffix')),
+          state.status === 'refreshing' ? h(Refreshing) : null,
           FIELDS.map(([key, label, kind]) => fieldRow(draft, setDraft, key, tf(label), kind)),
 
           h('div', { style: { ...S.card, marginTop: 6 } },
@@ -3599,22 +3798,57 @@ window.__ModuleLoader__.load({
             h('div', { style: { ...S.sub, marginBottom: 8 } },
               tf('settings.billingHint')),
             rows.length
-              ? h('table', { style: S.table },
-                  h('thead', null, h('tr', null,
-                    h('th', { style: S.th }, 'provider'), h('th', { style: S.th }, tf('billing.colModel')),
-                    h('th', { style: S.th }, tf('settings.colInput')), h('th', { style: S.th }, tf('settings.colCache')),
-                    h('th', { style: S.th }, tf('settings.colOutput')), h('th', { style: S.th }, ''))),
-                  h('tbody', null, rows.map((row, index) =>
-                    h('tr', { key: index },
-                      h('td', { style: S.td }, h('input', { style: { ...S.input, minWidth: 90 }, value: row.provider ?? '', placeholder: tf('settings.ph.provider'), onChange: (e) => patchRow(index, { provider: e.target.value }) })),
-                      h('td', { style: S.td }, h('input', { style: { ...S.input, minWidth: 120 }, value: row.model ?? '', placeholder: tf('settings.ph.model'), onChange: (e) => patchRow(index, { model: e.target.value }) })),
-                      h('td', { style: S.td }, h('input', { style: { ...S.input, minWidth: 70 }, type: 'number', step: '0.01', value: row.inputPerM ?? 0, onChange: (e) => patchRow(index, { inputPerM: Number(e.target.value) }) })),
-                      h('td', { style: S.td }, h('input', { style: { ...S.input, minWidth: 70 }, type: 'number', step: '0.01', value: row.cacheReadPerM ?? 0, onChange: (e) => patchRow(index, { cacheReadPerM: Number(e.target.value) }) })),
-                      h('td', { style: S.td }, h('input', { style: { ...S.input, minWidth: 70 }, type: 'number', step: '0.01', value: row.outputPerM ?? 0, onChange: (e) => patchRow(index, { outputPerM: Number(e.target.value) }) })),
-                      h('td', { style: S.td }, h('button', { style: S.button, onClick: () => removeRow(index) }, tf('settings.remove')))))))
+              ? h(Table, {
+                  head: ['provider', tf('billing.colModel'), tf('settings.colInput'), tf('settings.colCache'), tf('settings.colOutput'), ''],
+                }, rows.map((row, index) =>
+                  h('tr', { key: index },
+                    h('td', { style: S.td }, h('input', {
+                      className: 'ds-input',
+                      style: { minWidth: 90 },
+                      value: row.provider ?? '',
+                      placeholder: tf('settings.ph.provider'),
+                      'aria-label': `provider ${index + 1}`,
+                      onChange: (e) => patchRow(index, { provider: e.target.value }),
+                    })),
+                    h('td', { style: S.td }, h('input', {
+                      className: 'ds-input',
+                      style: { minWidth: 120 },
+                      value: row.model ?? '',
+                      placeholder: tf('settings.ph.model'),
+                      'aria-label': `${tf('billing.colModel')} ${index + 1}`,
+                      onChange: (e) => patchRow(index, { model: e.target.value }),
+                    })),
+                    h('td', { style: S.td }, h('input', {
+                      className: 'ds-input',
+                      style: { minWidth: 70 },
+                      type: 'number',
+                      step: '0.01',
+                      value: row.inputPerM ?? 0,
+                      'aria-label': `${tf('settings.colInput')} ${index + 1}`,
+                      onChange: (e) => patchRow(index, { inputPerM: e.target.value === '' ? '' : Number(e.target.value) }),
+                    })),
+                    h('td', { style: S.td }, h('input', {
+                      className: 'ds-input',
+                      style: { minWidth: 70 },
+                      type: 'number',
+                      step: '0.01',
+                      value: row.cacheReadPerM ?? 0,
+                      'aria-label': `${tf('settings.colCache')} ${index + 1}`,
+                      onChange: (e) => patchRow(index, { cacheReadPerM: e.target.value === '' ? '' : Number(e.target.value) }),
+                    })),
+                    h('td', { style: S.td }, h('input', {
+                      className: 'ds-input',
+                      style: { minWidth: 70 },
+                      type: 'number',
+                      step: '0.01',
+                      value: row.outputPerM ?? 0,
+                      'aria-label': `${tf('settings.colOutput')} ${index + 1}`,
+                      onChange: (e) => patchRow(index, { outputPerM: e.target.value === '' ? '' : Number(e.target.value) }),
+                    })),
+                    h('td', { style: S.td }, h('button', { className: 'ds-btn ds-btn--sm', onClick: () => removeRow(index) }, tf('settings.remove'))))))
               : h('div', { style: S.sub }, tf('settings.emptyPrice')),
             h('div', { style: { ...S.row, marginTop: 8 } },
-              h('button', { style: S.button, onClick: addRow }, tf('settings.addRow')),
+              h('button', { className: 'ds-btn ds-btn--sm', onClick: addRow }, tf('settings.addRow')),
               h('span', { style: S.sub }, tf('settings.wildcard'))),
           ),
 
@@ -3637,23 +3871,28 @@ window.__ModuleLoader__.load({
                 : tf('settings.presetNone')),
             h('div', { style: S.row },
               h('button', {
-                style: S.button,
+                className: 'ds-btn',
+                disabled: Boolean(pending),
                 onClick: async () => {
+                  if (pending) return
                   setError('')
+                  setPending('inspect')
                   try {
                     setInspect(await fetchJson('/presets/inspect'))
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    setPending('')
                   }
                 },
-              }, tf('settings.presetInspect'))),
+              }, pending === 'inspect' ? tf('settings.loading') : tf('settings.presetInspect'))),
             inspect
               ? h('div', { style: { marginTop: 8 } },
                   inspect.available === false
                     ? h('div', { style: S.sub }, tf('settings.presetUnavailable', { reason: inspect.reason ?? tf('settings.presetUnknown') }))
                     : (inspect.presets ?? []).map((p) => h('div', { key: p.id, style: { marginTop: 6 } },
                         h('div', { style: { fontSize: 12.5, fontWeight: 600 } }, `${p.name ?? p.id}${p.isDefault ? tf('settings.presetDefault') : ''}${p.broken ? tf('settings.presetFailed', { reason: p.broken }) : ''}`),
-                        h('div', { style: { ...S.mono, fontSize: 11.5, opacity: 0.85, marginTop: 4, lineHeight: 1.6 } },
+                        h('div', { style: { ...S.mono, fontSize: 11.5, opacity: 0.85, marginTop: 4, lineHeight: 1.6, whiteSpace: 'pre-wrap' } },
                           (p.rows ?? []).map((r) => `${r.fiberState ?? '?'}  ${r.moduleName}${r.entryId ? `#${r.entryId}` : ''}`).join('\n')))))
               : null),
 
@@ -3664,27 +3903,37 @@ window.__ModuleLoader__.load({
               tf('settings.skillsHint')),
             h('div', { style: S.row },
               h('button', {
-                style: S.button,
+                className: 'ds-btn',
+                disabled: Boolean(pending),
                 onClick: async () => {
+                  if (pending) return
                   setError('')
+                  setPending('skills')
                   try {
                     setSkillCat(await fetchJson('/skills'))
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    setPending('')
                   }
                 },
-              }, tf('settings.skillsShow')),
+              }, pending === 'skills' ? tf('settings.loading') : tf('settings.skillsShow')),
               h('button', {
-                style: S.button,
+                className: 'ds-btn',
+                disabled: Boolean(pending),
                 onClick: async () => {
+                  if (pending) return
                   setError('')
+                  setPending('check')
                   try {
                     setSkillCheck(await sendJson('POST', '/skills/check'))
                   } catch (e) {
                     setError(e.message)
+                  } finally {
+                    setPending('')
                   }
                 },
-              }, tf('settings.skillsCheck'))),
+              }, pending === 'check' ? tf('settings.loading') : tf('settings.skillsCheck'))),
             skillCat
               ? h('div', { style: { marginTop: 8 } },
                   h('div', { style: { fontSize: 12.5, fontWeight: 600 } },
@@ -3700,7 +3949,7 @@ window.__ModuleLoader__.load({
                       host: skillCat.counts?.hostCatalog ?? '?',
                     })),
                   (skillCat.items ?? []).filter((row) => row.source === 'vendor').length
-                    ? h('div', { style: { ...S.mono, fontSize: 11, opacity: 0.85, marginTop: 6, maxHeight: 220, overflow: 'auto', lineHeight: 1.7 } },
+                    ? h('div', { style: { ...S.mono, fontSize: 11, opacity: 0.85, marginTop: 6, maxHeight: 220, overflow: 'auto', lineHeight: 1.7, whiteSpace: 'pre-wrap' } },
                         (skillCat.items ?? [])
                           .filter((row) => row.source === 'vendor')
                           .map((row) => `${row.name}${row.vendor?.license ? `  [${row.vendor.license}]` : ''}${row.vendor?.repo ? `  ${row.vendor.repo.split('/').pop()}@${String(row.vendor.ref ?? '').slice(0, 7)}` : ''}`)
@@ -3719,18 +3968,19 @@ window.__ModuleLoader__.load({
                           rows: skillCheck.manifest?.rows ?? 0,
                         })
                       : tf('settings.skillsCheckBad', { n: (skillCheck.failed?.length ?? 0) + (skillCheck.problems?.length ?? 0) })),
-                  (skillCheck.failed ?? []).map((row) => h('div', { key: row.name, style: { ...S.sub, color: '#d06a5f' } }, tf('settings.skillsFailLine', { name: row.name, reason: row.reason }))),
-                  (skillCheck.problems ?? []).map((line, i) => h('div', { key: `p${i}`, style: { ...S.sub, color: '#d06a5f' } }, line)))
+                  (skillCheck.failed ?? []).map((row) => h('div', { key: row.name, style: { ...S.sub, color: V.err } }, tf('settings.skillsFailLine', { name: row.name, reason: row.reason }))),
+                  (skillCheck.problems ?? []).map((line, i) => h('div', { key: `p${i}`, style: { ...S.sub, color: V.err } }, line)))
               : null),
 
           h('div', { style: { ...S.row, marginTop: 6 } },
-            h('button', { style: S.button, onClick: save }, tf('common.save')),
-            h('button', { style: S.button, onClick: () => setDraft(state.data?.values ?? draft) }, tf('settings.restore')),
-            saved ? h('span', { style: S.sub }, saved) : null),
-          rejected.length
-            ? h('div', { style: { ...S.sub, color: '#d06a5f' } }, tf('settings.rejected', { keys: rejected.join(', ') }))
-            : null,
-          error ? h(ErrorBox, { error }) : null,
+            h('button', { className: 'ds-btn ds-btn--primary', disabled: saving, onClick: save }, saving ? tf('settings.saving') : tf('common.save')),
+            h('button', { className: 'ds-btn', onClick: () => setDraft(state.data?.values ?? draft) }, tf('settings.restore'))),
+          h('div', { 'aria-live': 'polite' },
+            saved ? h('span', { className: 'ds-sub', role: 'status' }, saved) : null,
+            rejected.length
+              ? h('div', { style: { ...S.sub, color: V.err } }, tf('settings.rejected', { keys: rejected.map(humanKey).join(', ') }))
+              : null,
+            error ? h(ErrorBox, { error, title: tf('settings.saveFailed') }) : null),
         )
       }
     }
@@ -3750,6 +4000,23 @@ window.__ModuleLoader__.load({
       const set = () => {
         const title = want()
         if (document.title !== title) document.title = title
+        // 桌面壳直接从本地 dist 出首屏，绕过 webServer.tapIndex 的 head 注入；
+        // 这里补一次同样的品牌标记，让两种形态看到同一份 HTML 语义。
+        if (!document.head.querySelector('meta[data-deepscient="brand"]')) {
+          const meta = document.createElement('meta')
+          meta.setAttribute('name', 'application-name')
+          meta.setAttribute('content', 'DeepScient')
+          meta.setAttribute('data-deepscient', 'brand')
+          document.head.appendChild(meta)
+        }
+        // 同理补视觉层：Web 形态由 tapIndex 内联 <style>，桌面形态没有，就链接到同一份 CSS。
+        if (!document.head.querySelector('style[data-deepscient="ui"], link[data-deepscient="ui"]')) {
+          const link = document.createElement('link')
+          link.setAttribute('rel', 'stylesheet')
+          link.setAttribute('href', '/deepscient/ui.css')
+          link.setAttribute('data-deepscient', 'ui')
+          document.head.appendChild(link)
+        }
       }
       set()
       if (typeof MutationObserver === 'undefined') return
