@@ -55,7 +55,8 @@ if ($SkipUpload) {
   exit 0
 }
 
-$token = String($env:GITHUB_TOKEN ?? '').Trim()
+# Windows PowerShell 5.1 不支持 ?? 运算符，这里用字符串拼接兜底空值
+$token = ('' + $env:GITHUB_TOKEN).Trim()
 if (-not $token) { throw '未设置 GITHUB_TOKEN 环境变量；zip 已生成，设置后重跑即可上传。' }
 
 $headers = @{
