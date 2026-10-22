@@ -67,7 +67,7 @@ $headers = @{
 }
 
 $api = 'https://api.github.com/repos/' + $Repo
-$body = @{
+$bodyObj = @{
   tag_name         = $Tag
   name             = 'DeepScient 桌面版 ' + $Tag
   draft            = $false
@@ -100,11 +100,14 @@ node "resources\deepscient\dsh-science\scripts\demo-campaign.mjs" --example slee
 完整说明见仓库 `docs/desktop-install.md`。
 '@
 } | ConvertTo-Json -Depth 4
+# Windows PowerShell 5.1 的 Invoke-RestMethod 会把字符串按系统 ANSI 编码发出，中文会变成 ?；
+# 这里显式转成 UTF-8 字节再发，保证 Release 正文与标题不失真。
+$bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyObj)
 
 Write-Step "创建 Release：$Tag"
 $release = $null
 try {
-  $release = Invoke-RestMethod -Uri ($api + '/releases') -Method Post -Headers $headers -Body $body -ContentType 'application/json' -TimeoutSec 60
+  $release = Invoke-RestMethod -Uri ($api + '/releases') -Method Post -Headers $headers -Body $bodyBytes -ContentType 'application/json; charset=utf-8' -TimeoutSec 60
 } catch {
   $message = $_.Exception.Message
   if ($message -match '422') {
