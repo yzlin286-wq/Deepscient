@@ -42,6 +42,30 @@ powershell -File deepscient/desktop/deepscient-desktop.ps1 -CreateShortcuts
 - 完整步骤、登录流程、数据隔离与常见问题见 **[docs/desktop-install.md](docs/desktop-install.md)**；
 - 桌面版额外带三个**本地科学计算工具**：`local_compute_devices`（CUDA → MPS → CPU 后端探测）、`local_numeric`（numpy/scipy）、`local_symbolic`（sympy）。
 
+## 桌面版（macOS）
+
+**Apple Silicon 用户**：下载自包含安装包，拖进「应用程序」即用——不需要 Node.js、pnpm，也不需要单独安装 DeepSeek Harness。
+
+1. 下载 [`DeepScient-0.12.0-mac-arm64.dmg`](https://github.com/yzlin286-wq/Deepscient/releases/tag/desktop-v0.12.0-macos)（479 MB；同页也有 499 MB 的 `.zip`）；
+2. 挂载后把 `DeepScient.app` 拖进 `Applications`；
+3. 首次打开会被 Gatekeeper 拦一次（未签名构建）：右键 →「打开」→「打开」，或执行 `xattr -dr com.apple.quarantine /Applications/DeepScient.app`；
+4. 打开后首启自动装配桌面 profile（约 30–60 秒），点「登录 DeepScient」在浏览器完成授权即进入工作台。
+
+数据同样写在 `~/.deepscient`，与 Windows 版共用同一套课题结构，不写 `~/.dsh`。
+
+从源码构建（macOS 桌面壳由 `deepseek-harness` 源码构建，再派生应用）：
+
+```bash
+git clone https://github.com/yzlin286-wq/Deepscient.git
+cd Deepscient
+bash deepscient/desktop/build-desktop.sh --shell "/path/to/DeepSeek Harness.app"
+bash deepscient/desktop/assemble-profile.sh
+bash deepscient/desktop/deepscient-desktop.sh
+```
+
+- 完整安装、Gatekeeper、日志、卸载与排错见 **[docs/desktop-install-macos.md](docs/desktop-install-macos.md)**；
+- macOS 构建链（官方壳源码构建、helper 改名、asar 解包、ad-hoc 重签）见 **[deepscient/desktop/README-macos.md](deepscient/desktop/README-macos.md)**。
+
 ---
 
 ## 它长什么样
