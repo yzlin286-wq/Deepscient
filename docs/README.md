@@ -33,6 +33,8 @@
 
 | 文档 | 内容 |
 |---|---|
+| [desktop-install.md](desktop-install.md) | Windows 桌面版：安装包、首启装配、登录流程与排错 |
+| [desktop-install-macos.md](desktop-install-macos.md) | macOS 桌面版：dmg/zip 安装、Gatekeeper 放行、首启登录、升级与卸载 |
 | [spec.md](spec.md) | 技术规格：实例形态、组合方式、验收口径、边界 |
 | [third-party.md](third-party.md) | 81 条第三方技能的来源仓库、许可与署名 |
 | [../README.md](../README.md) | 项目总览与快速开始 |

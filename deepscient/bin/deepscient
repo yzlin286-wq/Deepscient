@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# DeepScient 启动器（macOS Web 形态）—— 独立 home、独立 profile、独立端口。
+#
+# 与 bin/launch.ps1 等价：只做四件事——定 home、定 patch 层、挑一个空闲端口、把参数原样交给 dsh。
+# 桌面形态见 desktop/deepscient-desktop.sh；两者共用 ~/.deepscient 下的数据。
+#
+# 用法：
+#   deepscient/bin/deepscient [--port <n>] [--no-open] [--no-model-layer] [--dump-config] [...其余参数交给 dsh]
+set -euo pipefail
+
+port=0
+open_browser=1
+model_layer=1
+dump_config=0
+rest=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --port) port="${2:-0}"; shift 2 ;;
+    --no-open) open_browser=0; shift ;;
+    --no-model-layer) model_layer=0; shift ;;
+    --dump-config) dump_config=1; shift ;;
+    -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
+    *) rest+=("$1"); shift ;;
+  esac
+done
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+pkg_dir=$(cd "$script_dir/.." && pwd)
+
+resolve_dsh_cli() {
+  if [ -n "${DSH_CLI:-}" ] && [ -x "${DSH_CLI}" ]; then printf '%s\n' "$DSH_CLI"; return; fi
+  local candidate
+  for candidate in \
+    "$pkg_dir/desktop/../../dist/DeepScient.app/Contents/Resources/deepscient/cli/dsh" \
+    "/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
+    "$HOME/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"; do
+    if [ -x "$candidate" ]; then printf '%s\n' "$candidate"; return; fi
+  done
+  if command -v dsh >/dev/null 2>&1; then command -v dsh; return; fi
+  echo '找不到 dsh。设 DSH_CLI 指向 dsh，或把 dsh 放进 PATH。' >&2
+  exit 1
+}
+
+port_free() {
+  node -e '
+    const net = require("node:net")
+    const port = Number(process.argv[1])
+    const server = net.createServer()
+    server.once("error", () => process.exit(1))
+    server.listen(port, "127.0.0.1", () => server.close(() => process.exit(0)))
+  ' "$1" >/dev/null 2>&1
+}
+
+dsh=$(resolve_dsh_cli)
+if [ -n "${DEEPSCIENT_HOME:-}" ]; then
+  DSH_HOME="$DEEPSCIENT_HOME"
+else
+  DSH_HOME="${DSH_HOME:-$HOME/.deepscient}"
+fi
+export DSH_HOME
+mkdir -p "$DSH_HOME"
+
+patch_args=()
+patch_file="$pkg_dir/local.patch.yml"
+if [ "$model_layer" -eq 1 ]; then
+  if [ -f "$patch_file" ]; then
+    patch_args=(--patch "$patch_file")
+  else
+    echo "[DeepScient] 警告：没有 ${patch_file}，本次不叠加供应商层。先在仓库根跑：node scripts/deepscient-sync-models.mjs" >&2
+  fi
+fi
+
+# MCP 工具层：默认不叠加。DSH_ENABLE_MCP=1 才起外部 MCP 服务器（第一次需要联网）。
+mcp_patch="$pkg_dir/mcp.patch.yml"
+if [ "${DSH_ENABLE_MCP:-}" = '1' ] && [ -f "$mcp_patch" ]; then
+  mcp_npmrc="$DSH_HOME/science/mcp-npmrc"
+  if [ ! -f "$mcp_npmrc" ]; then
+    mkdir -p "$(dirname "$mcp_npmrc")"
+    cat >"$mcp_npmrc" <<'NPMRC'
+# DeepScient 为 MCP 子进程生成的 npm 配置。
+# 你的 ~/.npmrc 里如果配了没在监听的代理，npx 会直接失败、MCP 工具全部缺席，所以这里显式清空。
+# 网络确实要走代理时，把下面两行改成你的代理地址。
+registry=https://registry.npmjs.org/
+proxy=
+https-proxy=
+fund=false
+audit=false
+loglevel=error
+NPMRC
+    echo "[DeepScient] MCP npmrc: ${mcp_npmrc}（已生成）"
+  fi
+  patch_args+=(--patch "$mcp_patch")
+fi
+
+chosen=$port
+if [ "$chosen" -le 0 ]; then
+  for p in $(seq 3081 3099); do
+    if port_free "$p"; then chosen=$p; break; fi
+  done
+  if [ "$chosen" -le 0 ]; then
+    echo '3081-3099 全被占用，指定一个端口：--port <n>' >&2
+    exit 1
+  fi
+fi
+
+app_args=(--port "$chosen" --host 127.0.0.1)
+if [ "$open_browser" -eq 0 ]; then app_args+=(--no-open); fi
+if [ "${#rest[@]}" -gt 0 ]; then app_args+=("${rest[@]}"); fi
+
+echo "[DeepScient] home   : $DSH_HOME"
+echo "[DeepScient] profile: deepscient"
+echo "[DeepScient] url    : http://127.0.0.1:$chosen"
+if [ "${#patch_args[@]}" -gt 0 ]; then echo "[DeepScient] 补丁层 : ${patch_args[*]}"; fi
+if [ "${DSH_ENABLE_MCP:-}" = '1' ]; then echo '[DeepScient] MCP 层  : 开'; else echo '[DeepScient] MCP 层  : 关（DSH_ENABLE_MCP=1 打开）'; fi
+
+all_args=(--profile deepscient)
+if [ "${#patch_args[@]}" -gt 0 ]; then all_args+=("${patch_args[@]}"); fi
+if [ "$dump_config" -eq 1 ]; then
+  all_args+=(--dump-config)
+else
+  all_args+=("${app_args[@]}")
+fi
+
+exec "$dsh" "${all_args[@]}"
