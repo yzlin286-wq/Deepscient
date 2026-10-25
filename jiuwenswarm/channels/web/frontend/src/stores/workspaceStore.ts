@@ -254,11 +254,28 @@ function shouldKeepPendingLocalSession(session: Session): boolean {
     || runtime?.isPaused === true;
 }
 
+/**
+ * 「未命名空会话」= 没有任何消息、没有标题、用户没重命名过、也不属于任何 AgentGroup 的会话。
+ *
+ * 这类会话只是新建会话时的残留，侧边栏不应为它留一行「未命名对话」；但服务端数据保留，
+ * 聊天区仍可按 session_id 正常打开。发送首条消息（message_count > 0）或后端生成标题后，
+ * 该判断不再成立，会话会自动回到列表。
+ */
+export function isUntitledEmptySession(session: Session): boolean {
+  if ((session.message_count ?? 0) > 0) return false;
+  if (session.is_custom_title === true) return false;
+  if (session.agent_group_name?.trim()) return false;
+  return !getSessionTitle(session);
+}
+
 function reconcileVisibleProjectSessions(serverSessions: Session[], visibleSessions: Session[]): Session[] {
-  const mergedServerSessions = mergeVisibleSessionTitles(serverSessions, visibleSessions);
+  const mergedServerSessions = mergeVisibleSessionTitles(serverSessions, visibleSessions)
+    .filter((session) => !isUntitledEmptySession(session));
   const serverSessionIds = new Set(serverSessions.map((session) => session.session_id));
   const pendingLocalSessions = visibleSessions.filter(
-    (session) => !serverSessionIds.has(session.session_id) && shouldKeepPendingLocalSession(session),
+    (session) => !serverSessionIds.has(session.session_id)
+      && !isUntitledEmptySession(session)
+      && shouldKeepPendingLocalSession(session),
   );
   return [...pendingLocalSessions, ...mergedServerSessions];
 }
@@ -403,6 +420,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const visibleProjectIds = new Set(projects.map((project) => project.project_id));
       set({
         pinnedSessions: mergeLocalSessionTitles(payload.sessions || [])
+          .filter((session) => !isUntitledEmptySession(session))
           .filter((session) => {
             if (session.work_mode) return session.work_mode === workMode;
             if (session.project_id) return visibleProjectIds.has(session.project_id);

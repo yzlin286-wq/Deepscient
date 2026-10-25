@@ -28,6 +28,8 @@ export interface JiuwenElectronDesktopApi {
   closeWindow: () => Promise<boolean>;
   getCloseAction: () => Promise<'ask' | 'hide' | 'quit' | null>;
   setCloseAction: (action: 'ask' | 'hide' | 'quit') => Promise<boolean>;
+  /** 交给系统浏览器打开 https 外链（主进程白名单校验，拒绝时返回 false）。 */
+  openExternalUrl: (url: string) => Promise<boolean>;
   downloadFile: (url: string, filename: string) => Promise<boolean>;
   installUpdate: (installerPath: string) => Promise<boolean>;
   saveDataUrl: (dataUrl: string, filename: string) => Promise<{ ok: boolean; cancelled?: boolean }>;

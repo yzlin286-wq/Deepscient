@@ -3,12 +3,13 @@
  *
  * 三条约定：
  * 1. 未配置 secret 时只说明「未配置」与需要的环境变量名，不摆出错误样式；
- * 2. `buy-url` / `account-url` 是一次性链接，拿到就立刻 `window.open`，绝不入 state；
+ * 2. `buy-url` / `account-url` 是一次性链接，拿到就立刻打开、绝不持久化（失败时
+ *    只在内存里留一次供复制）；
  * 3. 失败只用语义色提示（`--color-feedback-danger*` / `--color-feedback-warning*`），
  *    不把上游原文当样式开关。
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Select, Tag } from '../../../../components/ui';
@@ -28,6 +29,12 @@ import {
 } from '../../../../services/partnerClient';
 import { useAuthStore } from '../../../../stores/authStore';
 import { SettingRow, SettingsSection } from '../../components';
+import {
+  billingBalanceKey,
+  billingLinkErrorKey,
+  formatBillingBalance,
+  isAllowedBillingUrl,
+} from './billingLinks';
 import {
   backfillHintKey,
   backfillStatusKey,
@@ -50,6 +57,8 @@ interface OrderDetail {
 export function PartnerSettings() {
   const { t, i18n } = useTranslation();
   const userName = useAuthStore((state) => state.userName);
+  const balance = useAuthStore((state) => state.balance);
+  const refreshAccount = useAuthStore((state) => state.refreshAccount);
 
   const [status, setStatus] = useState<PartnerStatus | null>(null);
   const [binding, setBinding] = useState<PartnerBinding | null>(null);
@@ -63,6 +72,11 @@ export function PartnerSettings() {
   const [models, setModels] = useState<string[]>([]);
   const [modelsFetched, setModelsFetched] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
+  const [linkErrorKey, setLinkErrorKey] = useState('');
+  const [openFailed, setOpenFailed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  /** 一次性链接只在内存里留最后一条，供「打开失败」时复制；不进 state、不落存储。 */
+  const pendingLink = useRef('');
 
   const locale = i18n.language || 'zh-CN';
 
@@ -157,21 +171,91 @@ export function PartnerSettings() {
     }
   };
 
-  /** 一次性链接：拿到即打开，失败只提示，不缓存 URL。 */
+  /** 重新拉取配置状态、套餐与订单（支付返回后可看到最新结果）。 */
+  const handleRefresh = async () => {
+    setBusy('refresh');
+    setErrorKey('');
+    setLinkErrorKey('');
+    setOpenFailed(false);
+    try {
+      await loadStatus();
+      // 余额与登录态有关，顺手向官网再拉一次；未登录时 store 会直接跳过。
+      void refreshAccount();
+    } finally {
+      setBusy('');
+    }
+  };
+
+  /** 无 Electron 桥时的兜底：新标签页打开；拿不到句柄时再探一次是否被拦截。 */
+  const openInNewTab = (url: string): boolean => {
+    try {
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (opened) return true;
+      // noopener 下浏览器会返回 null，不能据此判定失败：再用 about:blank 探一次。
+      const probe = window.open('about:blank', '_blank');
+      if (!probe) return false;
+      probe.opener = null;
+      probe.location.href = url;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /**
+   * 打开中转站下发的一次性链接：
+   * 前端先校验 https + host 白名单 → Electron 走系统浏览器 → 否则退回新标签页。
+   */
+  const openExternalSafe = async (url: string): Promise<boolean> => {
+    if (!isAllowedBillingUrl(url)) {
+      setLinkErrorKey(billingLinkErrorKey('invalid-link'));
+      return false;
+    }
+    const desktop = window.jiuwenDesktop;
+    if (desktop?.openExternalUrl) {
+      try {
+        if (await desktop.openExternalUrl(url)) return true;
+      } catch {
+        /* 桥调用失败：继续退回新标签页 */
+      }
+    }
+    if (openInNewTab(url)) return true;
+    pendingLink.current = url;
+    setLinkErrorKey(billingLinkErrorKey('open-failed'));
+    setOpenFailed(true);
+    return false;
+  };
+
+  const handleCopyLink = async () => {
+    const url = pendingLink.current;
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  /** 一次性链接：拿到即打开，失败只提示，不持久化 URL。 */
   const openOnce = async (kind: 'buy' | 'account', planId?: number) => {
     const tag = kind === 'buy' ? `buy:${planId ?? ''}` : 'account';
     setBusy(tag);
     setErrorKey('');
+    setLinkErrorKey('');
+    setOpenFailed(false);
+    setCopied(false);
     try {
       const result = kind === 'buy' ? await createPartnerBuyUrl(planId) : await createPartnerAccountUrl();
       const url = typeof result?.url === 'string' ? result.url.trim() : '';
       if (!url) {
-        setErrorKey('settingsPanel.billing.errors.linkFailed');
+        setLinkErrorKey('settingsPanel.billing.errors.linkFailed');
         return;
       }
-      window.open(url, '_blank', 'noopener,noreferrer');
+      await openExternalSafe(url);
     } catch (error) {
       reportError(error);
+      setLinkErrorKey(partnerErrorKey(classifyPartnerError(error)));
     } finally {
       setBusy('');
     }
@@ -311,6 +395,15 @@ export function PartnerSettings() {
                       : 'settingsPanel.billing.syncAccount',
                   )}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  onClick={() => void handleRefresh()}
+                  loading={busy === 'refresh'}
+                  data-testid="partner-refresh"
+                >
+                  {t(busy === 'refresh' ? 'common.refreshing' : 'common.refresh')}
+                </Button>
                 {latencyMs !== null && (
                   <span className="partner-settings__ok" data-testid="partner-latency">
                     {t('settingsPanel.billing.latency', { ms: latencyMs })}
@@ -322,6 +415,21 @@ export function PartnerSettings() {
                   </span>
                 )}
               </div>
+            }
+          />
+        </div>
+        <div className="settings-page__item">
+          <SettingRow
+            title={t('settingsPanel.billing.balance')}
+            description={t('settingsPanel.billing.balanceHint')}
+            meta={
+              <span
+                className="partner-settings__meta"
+                data-testid="partner-balance"
+                data-balance-key={billingBalanceKey(balance)}
+              >
+                {formatBillingBalance(balance, t('settingsPanel.billing.balanceUnknown'))}
+              </span>
             }
           />
         </div>
@@ -451,6 +559,25 @@ export function PartnerSettings() {
               {t('settingsPanel.billing.accountPage')}
             </Button>
           </div>
+          {(linkErrorKey || openFailed) && (
+            <div className="partner-settings__actions partner-settings__actions--start">
+              {linkErrorKey && (
+                <span className="partner-settings__error" data-testid="partner-link-error">
+                  {t(linkErrorKey)}
+                </span>
+              )}
+              {openFailed && (
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  onClick={() => void handleCopyLink()}
+                  data-testid="partner-copy-link"
+                >
+                  {t(copied ? 'settingsPanel.billing.copied' : 'settingsPanel.billing.copyLink')}
+                </Button>
+              )}
+            </div>
+          )}
           {planRows.length === 0 ? (
             <p className="partner-settings__hint" data-testid="partner-plans-empty">
               {t('settingsPanel.billing.plansEmpty')}

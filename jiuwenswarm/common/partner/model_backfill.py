@@ -15,8 +15,8 @@
 
 基址统一经 :func:`normalize_api_base` 归一到 ``.../v1`` 后再拼 ``/models``。
 
-凭据纪律：落盘前用 :class:`ExtensionRegistry` 的 crypto provider 加密；provider
-不可用时写明文并留一条 **不含 Key** 的 warn。对外只返回前 3 + 后 4 的掩码。
+凭据纪律：落盘前用 :class:`ExtensionRegistry` 的 crypto provider 加密（没有扩展时
+落到默认本地组件）；加密组件确实不可用时拒绝写入明文。对外只返回前 3 + 后 4 的掩码。
 """
 
 from __future__ import annotations
@@ -96,17 +96,39 @@ def build_ccagent_entry(
     }
 
 
-def _encrypt_api_key(plain: str) -> str:
-    """加密凭据；加密组件不可用时拒绝落盘，避免明文 Key 进入配置文件。"""
-    if not plain:
-        return ""
-    provider = None
+def _crypto_provider() -> Any:
+    """取加密组件：扩展注册表优先，其次全局默认，最后本地组件。
+
+    注册表在 Gateway/AgentServer 启动时创建；登录后静默同步可能跑在没有初始化
+    注册表的进程里，那里不能直接判定「加密组件不可用」。
+    """
     try:
         from jiuwenswarm.extensions.registry import ExtensionRegistry
 
         provider = ExtensionRegistry.get_instance().get_crypto_provider()
-    except Exception:  # noqa: BLE001 — 未初始化/扩展缺失都按「不可用」处理
-        provider = None
+        if provider is not None:
+            return provider
+    except Exception:  # noqa: BLE001 — 未初始化/扩展缺失都继续兜底
+        pass
+
+    from jiuwenswarm.common.security import base_crypto
+
+    provider = base_crypto.get_crypto_provider()
+    if provider is not None:
+        return provider
+
+    from jiuwenswarm.common.security.local_crypto import get_local_crypto_provider
+
+    provider = get_local_crypto_provider()
+    base_crypto.set_crypto_provider(provider)
+    return provider
+
+
+def _encrypt_api_key(plain: str) -> str:
+    """加密凭据；加密组件不可用时拒绝落盘，避免明文 Key 进入配置文件。"""
+    if not plain:
+        return ""
+    provider = _crypto_provider()
     if provider is None:
         raise PartnerError("加密组件不可用，拒绝写入明文 Key", code="crypto_unavailable", status=0)
     try:

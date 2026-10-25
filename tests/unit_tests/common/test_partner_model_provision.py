@@ -66,6 +66,32 @@ def crypto(monkeypatch: pytest.MonkeyPatch) -> _FakeCrypto:
     return provider
 
 
+@pytest.fixture
+def data_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """数据根重定向到 tmp_path：本地组件的 .install_key 不许写到真实 home。"""
+    import jiuwenswarm.common.utils as utils
+
+    root = tmp_path / "data"
+    root.mkdir()
+    monkeypatch.setattr(utils, "_workspace_base_dir", root)
+    return root
+
+
+@pytest.fixture
+def real_registry(monkeypatch: pytest.MonkeyPatch):
+    """真实的扩展注册表（不注册 crypto 扩展），验证默认本地组件这条路。"""
+    from openjiuwen.core.runner.callback.framework import AsyncCallbackFramework
+
+    from jiuwenswarm.common.security import base_crypto
+    from jiuwenswarm.extensions.registry import ExtensionRegistry
+
+    ExtensionRegistry.reset_instance()
+    monkeypatch.setattr(base_crypto, "_default_provider", None)
+    instance = ExtensionRegistry.create_instance(AsyncCallbackFramework(), {}, None)
+    yield instance
+    ExtensionRegistry.reset_instance()
+
+
 def _read_defaults(path: Path) -> list[dict[str, Any]]:
     return yaml.safe_load(path.read_text(encoding="utf-8"))["models"]["defaults"]
 
@@ -291,6 +317,50 @@ def test_api_key_is_persisted_encrypted(config_path, crypto, monkeypatch) -> Non
     raw = config_path.read_text(encoding="utf-8")
     assert KEY not in raw
     assert f"cipher::{KEY[::-1]}" in raw
+
+
+def test_real_local_crypto_provider_encrypts_api_key(
+    config_path, data_root, real_registry, monkeypatch
+) -> None:
+    """不打桩：真实注册表 + 默认本地组件，Key 必须密文落盘且可还原。"""
+    from jiuwenswarm.common.security.local_crypto import LocalCryptoProvider
+
+    _serve_models(monkeypatch, ["deepseek-chat", "deepseek-reasoner"])
+
+    result = model_backfill.provision_models("u_1", KEY, "https://api.ccagent.cn")
+
+    assert result["applied"] is True
+    provider = real_registry.get_crypto_provider()
+    assert isinstance(provider, LocalCryptoProvider)
+    entries = _read_defaults(config_path)
+    for entry in entries:
+        cipher = entry["model_client_config"]["api_key"]
+        assert cipher.startswith("{"), "落盘的应是信封密文"
+        assert KEY not in cipher
+        assert provider.decrypt(cipher) == KEY
+    raw = config_path.read_text(encoding="utf-8")
+    assert KEY not in raw
+    assert (data_root / "auth" / ".install_key").exists()
+
+
+def test_provision_falls_back_to_local_provider_without_registry(
+    config_path, data_root, monkeypatch
+) -> None:
+    """注册表未初始化（如后台中的登录流程）也不该报「加密组件不可用」。"""
+    from jiuwenswarm.common.security import base_crypto
+    from jiuwenswarm.common.security.local_crypto import LocalCryptoProvider
+    from jiuwenswarm.extensions.registry import ExtensionRegistry
+
+    ExtensionRegistry.reset_instance()
+    monkeypatch.setattr(base_crypto, "_default_provider", None)
+    _serve_models(monkeypatch, ["deepseek-chat"])
+
+    model_backfill.provision_models("u_1", KEY, "https://api.ccagent.cn")
+
+    cipher = _read_defaults(config_path)[0]["model_client_config"]["api_key"]
+    assert KEY not in cipher
+    assert LocalCryptoProvider().decrypt(cipher) == KEY
+    assert (data_root / "auth" / ".install_key").exists()
 
 
 # ── 校验失败不写盘 ──────────────────────────────────────────────────────

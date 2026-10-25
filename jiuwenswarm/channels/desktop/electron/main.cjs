@@ -35,6 +35,9 @@ const BROWSER_VIEW_MAX_CRASHES = 5;
 const SERVICE_SHUTDOWN_TIMEOUT_MS = 5_000;
 const SERVICE_KILL_TIMEOUT_MS = 1_500;
 const DEFAULT_BROWSER_URL = 'https://cn.bing.com/';
+// 交给系统浏览器打开的外部 host 默认白名单，可用 DEEPSCIENT_EXTERNAL_HOSTS 覆盖（逗号分隔）。
+const DEFAULT_DEEPSCIENT_EXTERNAL_HOSTS = 'deepscient.com,un.ccagent.cn,api.ccagent.cn';
+const SKILLHUB_OAUTH_PATH_PATTERN = /^\/api\/v1\/auth\/oauth\/(gitcode|github)\/start$/;
 const PLAYWRIGHT_MCP_PACKAGE = '@playwright/mcp@0.0.78';
 const TARGET_MCP_WRAPPER_PATH = path.join(__dirname, 'target_mcp_wrapper.cjs');
 const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';
@@ -2219,6 +2222,102 @@ function canUseBackendUpdateHelper() {
   }
 }
 
+/** 外部链接白名单：逗号分隔的 host，默认 DeepScient / ccagent 站点。 */
+function externalAllowedHosts() {
+  const configured = process.env.DEEPSCIENT_EXTERNAL_HOSTS;
+  return (configured === undefined ? DEFAULT_DEEPSCIENT_EXTERNAL_HOSTS : configured)
+    .split(',')
+    .map(entry => normalizeExternalHost(entry))
+    .filter(Boolean);
+}
+
+function skillHubOAuthBaseUrl() {
+  return (
+    process.env.SKILLHUB_OAUTH_BASE_URL
+    || process.env.TEAM_SKILLS_HUB_BASE_URL
+    || 'https://swarmskills.openjiuwen.com'
+  ).replace(/\/$/, '');
+}
+
+function normalizeExternalHost(host) {
+  return String(host || '').trim().toLowerCase().replace(/\.+$/, '');
+}
+
+/** 本机 / 内网 host：只有被显式写进白名单才允许打开。 */
+function isLoopbackOrPrivateHost(host) {
+  let value = normalizeExternalHost(host);
+  if (!value) return true;
+  if (value.startsWith('[') && value.endsWith(']')) value = value.slice(1, -1);
+  if (value === 'localhost' || value.endsWith('.localhost')) return true;
+  if (value === '::1' || value === '::' || value === '0.0.0.0') return true;
+  // 唯一本地 / 链路本地 IPv6
+  if (value.includes(':') && /^(?:fc|fd|fe[89ab])/.test(value)) return true;
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(value);
+  if (!v4) return false;
+  const a = Number(v4[1]);
+  const b = Number(v4[2]);
+  return a === 0 || a === 10 || a === 127
+    || (a === 100 && b >= 64 && b <= 127)
+    || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168);
+}
+
+function hostMatches(host, entries) {
+  return entries.some(entry => {
+    const allowed = normalizeExternalHost(entry);
+    return Boolean(allowed) && (host === allowed || host.endsWith(`.${allowed}`));
+  });
+}
+
+/**
+ * 解析并校验可交给系统浏览器的外部链接。
+ *
+ * 只放行 https、不带账号密码、host 命中 `DEEPSCIENT_EXTERNAL_HOSTS`（含子域）或
+ * skillhub OAuth 白名单的地址；本机 / 内网地址必须在白名单里。skillhub 仍限制为
+ * OAuth start 路径，不比原来放宽。
+ */
+function resolveExternalTarget(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+  let target;
+  try {
+    target = new URL(rawUrl.trim());
+  } catch {
+    return null;
+  }
+  if (target.protocol !== 'https:') return null;
+  if (target.username || target.password) return null;
+  const host = normalizeExternalHost(target.hostname);
+  if (!host) return null;
+
+  const listedByEnv = hostMatches(host, externalAllowedHosts());
+  let listedByHub = false;
+  try {
+    // 与改造前一致：hub 只认配置里的那一个 host，不额外放宽子域。
+    listedByHub = normalizeExternalHost(new URL(skillHubOAuthBaseUrl()).hostname) === host;
+  } catch {
+    listedByHub = false;
+  }
+  if (!listedByEnv && !listedByHub) return null;
+  // 本机 / 内网只认显式配置的白名单条目。
+  if (!listedByEnv && isLoopbackOrPrivateHost(host)) return null;
+  if (!listedByEnv && !SKILLHUB_OAUTH_PATH_PATTERN.test(target.pathname)) return null;
+  return target;
+}
+
+/** 交给系统浏览器打开；一次性链接不入日志。 */
+async function openExternalUrl(rawUrl) {
+  const target = resolveExternalTarget(rawUrl);
+  if (!target) return false;
+  try {
+    await shell.openExternal(target.href);
+    return true;
+  } catch (error) {
+    console.warn('[electron] failed to open external url', { host: target.host, error });
+    return false;
+  }
+}
+
 function registerIpcHandlers() {
   ipcMain.on('desktop:is-frontend-only', event => {
     if (mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents) {
@@ -2245,27 +2344,7 @@ function registerIpcHandlers() {
   registerHandler('desktop:set-close-action', action => (
     process.platform === 'win32' && saveCloseAction(action)
   ));
-  registerHandler('desktop:open-external-url', async url => {
-    const hubBase = (
-      process.env.SKILLHUB_OAUTH_BASE_URL
-      || process.env.TEAM_SKILLS_HUB_BASE_URL
-      || 'https://swarmskills.openjiuwen.com'
-    ).replace(/\/$/, '');
-    try {
-      const target = new URL(String(url));
-      const expected = new URL(hubBase);
-      const allowedPath = /^\/api\/v1\/auth\/oauth\/(gitcode|github)\/start$/;
-      if (target.origin !== expected.origin
-          || target.username || target.password
-          || !allowedPath.test(target.pathname)) {
-        return false;
-      }
-      await shell.openExternal(target.href);
-      return true;
-    } catch {
-      return false;
-    }
-  });
+  registerHandler('desktop:open-external-url', url => openExternalUrl(url));
   registerHandler('desktop:select-project-directory', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory', 'createDirectory'],
@@ -2571,6 +2650,12 @@ async function createMainWindow() {
     },
   });
   mainWindow.once('ready-to-show', () => mainWindow.show());
+  // 主窗口里的 target=_blank / window.open 统一交给系统浏览器（白名单见 openExternalUrl），
+  // 不再新开自建窗口。sideview 浏览器有自己的 handler（initializeBrowserView），不受影响。
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(String(url))) void openExternalUrl(url);
+    return { action: 'deny' };
+  });
   mainWindow.on('close', event => {
     if (process.platform === 'darwin') {
       if (shuttingDown) return;

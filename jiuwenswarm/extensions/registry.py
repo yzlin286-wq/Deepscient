@@ -164,8 +164,28 @@ class ExtensionRegistry:
         return self._crypto_tool
 
     def get_crypto_provider(self) -> CryptoProvider | None:
+        """已注册的扩展优先；没有扩展时回落到全局默认，最后惰性创建本地组件。
+
+        开源发行版没有任何外部扩展注册 crypto utility，若这里返回 ``None``，
+        模型下发会拒绝写入 api_key。本地组件复用本机 ``.install_key``，足以兜底。
+        """
         ext = self._crypto_tool
-        return ext.get_crypto() if ext is not None else None
+        if ext is not None:
+            return ext.get_crypto()
+
+        # 函数内 import：security 层不应在注册表导入期被拉起，也避免循环依赖。
+        from jiuwenswarm.common.security.base_crypto import (
+            get_crypto_provider as get_default_crypto_provider,
+        )
+        from jiuwenswarm.common.security.base_crypto import set_crypto_provider
+        from jiuwenswarm.common.security.local_crypto import get_local_crypto_provider
+
+        provider = get_default_crypto_provider()
+        if provider is not None:
+            return provider
+        provider = get_local_crypto_provider()
+        set_crypto_provider(provider)
+        return provider
 
     def get_third_agent_extension(self) -> ThirdAgentExtension | None:
         return self._third_agent

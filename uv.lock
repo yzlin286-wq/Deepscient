@@ -2003,7 +2003,7 @@ wheels = [
 
 [[package]]
 name = "jiuwenswarm"
-version = "0.2.0"
+version = "0.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "a2ui-agent-sdk" },
@@ -2321,7 +2321,7 @@ test = [
 
 [[package]]
 name = "jiuwenswarm-tui"
-version = "0.2.0"
+version = "0.2.2"
 source = { directory = "packages/jiuwenswarm-tui" }
 
 [[package]]
