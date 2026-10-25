@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "科研伦理与合规专家",
+  "display_name": "科研伦理与合规专家",
+  "display_description": {
+    "zh": "核查伦理审批、知情同意、数据合规与受试者保护要求。",
+    "en": "Reviews ethics approval, consent, data compliance and participant protection."
+  },
+  "description": "负责伦理审查要点、知情同意与数据合规风险提示。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "伦理合规"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

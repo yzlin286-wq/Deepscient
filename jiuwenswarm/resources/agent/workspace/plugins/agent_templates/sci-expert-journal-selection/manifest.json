@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "选刊策略专家",
+  "display_name": "选刊策略专家",
+  "display_description": {
+    "zh": "依据范围匹配、影响指标与周期风险给出选刊梯度。",
+    "en": "Builds a journal shortlist from scope fit, metrics and turnaround risk."
+  },
+  "description": "负责期刊范围匹配、投稿风险与选刊梯度建议。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "选刊策略"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

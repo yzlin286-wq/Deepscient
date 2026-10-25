@@ -43,6 +43,16 @@
       <td width="50%">介绍 JiuwenSwarm 的基础安装、环境准备、启动方式，以及 TUI 模式的安装与运行配置。</td>
     </tr>
     <tr>
+      <td width="22%"><strong>科研版与账号</strong></td>
+      <td width="28%"><a href="zh/DeepScient科研版与账号.md">科研版与账号</a></td>
+      <td width="50%">DeepScient v0.2 的六大科研模块、内置专家团、官网 OAuth 登录、ccagent 中转站额度与购买、模型回填与 GitHub 更新源。</td>
+    </tr>
+    <tr>
+      <td width="22%"><strong>账号对接文档包</strong></td>
+      <td width="28%"><a href="integration/deepscient-oauth/README.md">账号对接文档包</a></td>
+      <td width="50%">面向新应用接入官网账号的 OpenAPI 说明、PKCE / 登录流程 / 密码登录示例与 curl 脚本，可直接转交给对接方。</td>
+    </tr>
+    <tr>
       <th colspan="3" align="left" bgcolor="#f3f4f6"><h3>📘 基础使用</h3></th>
     </tr>
     <tr>
@@ -215,6 +225,11 @@
       <td width="22%"><strong>自动更新</strong></td>
       <td width="28%"><a href="zh/windows自动更新设计.md">桌面端自动更新设计</a></td>
       <td width="50%">Windows 与 macOS 桌面端自动更新方案、流程与关键模块（含预发布版推送）。</td>
+    </tr>
+    <tr>
+      <td width="22%"><strong>版本与发布</strong></td>
+      <td width="28%"><a href="zh/版本与发布.md">版本与发布</a></td>
+      <td width="50%">版本号规则、版本单一来源、release.sh 发布流程、资产命名、GitHub Release 与回滚。</td>
     </tr>
     <tr>
       <td width="22%"><strong>开发者文档</strong></td>

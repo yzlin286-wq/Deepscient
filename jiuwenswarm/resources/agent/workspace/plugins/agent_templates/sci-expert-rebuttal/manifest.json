@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "审稿回应专家",
+  "display_name": "审稿回应专家",
+  "display_description": {
+    "zh": "逐条拆解审稿意见，给出有证据支撑的回应与修改映射。",
+    "en": "Answers reviewer comments point by point with evidence and change mapping."
+  },
+  "description": "负责审稿意见分类、回应策略与修改点对应表。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "审稿回应"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

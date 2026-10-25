@@ -123,11 +123,16 @@ def register_http_routes(app: FastAPI, channel: WebChannel) -> None:
         attach_trajectory_routes,
     )
     from jiuwenswarm.gateway.channel_manager.web.web_http_auth import register_auth_routes
+    from jiuwenswarm.gateway.channel_manager.web.web_http_partner import (
+        register_partner_routes,
+    )
 
     attach_container_file_routes(app, channel)
     attach_trajectory_routes(app, channel)
-    # register auth http routes for huawei account login
+    # register auth http routes for DeepScient OAuth2 login
     register_auth_routes(app)
+    # register ccagent partner routes (relay account/plans/orders + public webhook/return)
+    register_partner_routes(app)
 
 
 async def _serve_channel_websocket(channel: WebChannel, websocket: WebSocket) -> None:

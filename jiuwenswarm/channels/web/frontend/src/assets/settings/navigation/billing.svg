@@ -1,0 +1,6 @@
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" width="16.000000" height="16.000000" fill="none">
+	<rect id="计费" width="15.999998" height="15.999432" x="0.000000" y="0.000000" fill="rgb(255,255,255)" fill-opacity="0" />
+	<path id="卡片" d="M2.4 3.6H13.6C14.0418 3.6 14.4 3.95817 14.4 4.4V11.6C14.4 12.0418 14.0418 12.4 13.6 12.4H2.4C1.95817 12.4 1.6 12.0418 1.6 11.6V4.4C1.6 3.95817 1.95817 3.6 2.4 3.6Z" stroke="currentColor" stroke-width="1.000000" />
+	<path id="磁条" d="M1.6 6.2H14.4" stroke="currentColor" stroke-width="1.000000" />
+	<path id="余额" d="M3.6 9.4H7.2" stroke="currentColor" stroke-width="1.000000" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "论文写作负责人",
+  "display_name": "论文写作负责人",
+  "display_description": {
+    "zh": "统筹学术写作、图表设计与可视化，交付结构完整、论证自洽的论文稿。",
+    "en": "Leads academic writing, figure design and visualization for coherent manuscripts."
+  },
+  "description": "作为论文写作方向负责人，拆解写作任务、统一叙事口径并核验图表与论证一致性。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "论文写作"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

@@ -45,10 +45,10 @@ class ProductNames:
 
 PRODUCT_NAMES: Mapping[str, ProductNames] = {
     "jiuwenswarm": ProductNames(
-        display_name="JiuwenSwarm",
-        executable_name="jiuwenswarm",
-        bundle_identifier="com.jiuwenswarm.desktop",
-        error_log_name="jiuwenswarm_exe_error.log",
+        display_name="DeepScient",
+        executable_name="deepscient",
+        bundle_identifier="com.deepscient.desktop",
+        error_log_name="deepscient_exe_error.log",
         tui_package_name="jiuwenswarm-tui",
     ),
     "workswarm": ProductNames(

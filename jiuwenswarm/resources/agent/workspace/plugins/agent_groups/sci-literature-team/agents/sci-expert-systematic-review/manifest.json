@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "系统综述专家",
+  "display_name": "系统综述专家",
+  "display_description": {
+    "zh": "按 PRISMA 流程完成纳入排除、质量评价与证据分级。",
+    "en": "Runs PRISMA screening, quality appraisal and evidence grading."
+  },
+  "description": "负责系统综述流程设计、纳入排除标准与证据分级。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "系统综述"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

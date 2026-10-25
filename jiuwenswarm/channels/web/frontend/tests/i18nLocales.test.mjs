@@ -1,9 +1,9 @@
 /**
- * 登录与免费模型相关文案的结构性校验。
+ * 登录与账号相关文案的结构性校验。
  *
  * 1. locale 文件任意层级都不允许重复键：JSON 允许重复键、后者静默覆盖前者，
  *    合并分支时往文件末尾追加整段就会把原有文案整段换掉，JSON.parse 和 tsc 都看不出来。
- * 2. 本功能的文案（`auth.*`、`settingsPanel.freeModels.*`、`chat.modelSelector.*`）zh / en 一一对应，
+ * 2. 本功能的文案（`auth.*`、`settingsPanel.account.*`、`chat.modelSelector.*`）zh / en 一一对应，
  *    代码里静态引用到的这些键都存在——缺了界面会直接显示 key 原文。
  *    只查本功能自己的命名空间，别的模块的缺失不该让这里失败。
  */
@@ -19,7 +19,7 @@ const LOCALES_DIR = path.join(ROOT, 'src', 'i18n', 'locales');
 const SRC_DIR = path.join(ROOT, 'src');
 
 /** 本功能负责的文案命名空间。 */
-const OWNED_PREFIXES = ['auth.', 'settingsPanel.freeModels', 'chat.modelSelector'];
+const OWNED_PREFIXES = ['auth.', 'settingsPanel.account', 'chat.modelSelector'];
 const isOwned = (key) => OWNED_PREFIXES.some((prefix) => key === prefix || key.startsWith(prefix));
 
 /**

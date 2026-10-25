@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "科研知识管理专家",
+  "display_name": "科研知识管理专家",
+  "display_description": {
+    "zh": "建立文献库、实验记录与资产目录规范，保证可检索可回溯。",
+    "en": "Curates literature libraries, lab records and asset catalogs."
+  },
+  "description": "负责文献库结构、命名规范、版本与备份策略。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "知识管理"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

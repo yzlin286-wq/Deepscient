@@ -43,6 +43,16 @@ This page collects common JiuwenSwarm usage instructions, feature documentation,
       <td width="50%">Introduces JiuwenSwarm basic installation, environment preparation, startup methods, and TUI mode installation and runtime configuration.</td>
     </tr>
     <tr>
+      <td width="22%"><strong>Research edition</strong></td>
+      <td width="28%"><a href="en/DeepScientEdition.md">Research Edition &amp; Account</a></td>
+      <td width="50%">DeepScient v0.2 six research modules, built-in expert teams, official OAuth login, ccagent relay, model backfill, and the GitHub update source.</td>
+    </tr>
+    <tr>
+      <td width="22%"><strong>Account Integration Pack</strong></td>
+      <td width="28%"><a href="integration/deepscient-oauth/README.md">Account Integration Pack</a></td>
+      <td width="50%">OpenAPI spec, PKCE / login-flow / password-login examples, and curl script for integrating new apps with the official account; ready to hand off to the integrating team.</td>
+    </tr>
+    <tr>
       <th colspan="3" align="left" bgcolor="#f3f4f6"><h3>📘 Basic Usage</h3></th>
     </tr>
     <tr>
@@ -195,6 +205,11 @@ This page collects common JiuwenSwarm usage instructions, feature documentation,
       <td width="22%"><strong>Auto Update</strong></td>
       <td width="28%"><a href="en/WindowsAutoUpdateDesign.md">Desktop Auto-Update Design</a></td>
       <td width="50%">Windows and macOS desktop auto-update design, flow, and key modules (including pre-release pushes).</td>
+    </tr>
+    <tr>
+      <td width="22%"><strong>Versioning and Release</strong></td>
+      <td width="28%"><a href="en/Release.md">Versioning and Release</a></td>
+      <td width="50%">Version rules, single version source, release.sh flow, asset naming, GitHub Release, and rollback.</td>
     </tr>
     <tr>
       <td width="22%"><strong>Developer Documentation</strong></td>

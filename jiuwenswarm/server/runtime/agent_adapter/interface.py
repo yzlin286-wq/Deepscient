@@ -106,6 +106,7 @@ from jiuwenswarm.server.runtime.a2ui.integration import (
 )
 from jiuwenswarm.server.runtime.a2ui.runtime.finalizer import should_finalize_a2ui_content
 from jiuwenswarm.server.runtime import extension_package_manager as package_manager
+from jiuwenswarm.server.runtime import science_modules
 from jiuwenswarm.agents.harness.common.auto_memory import (
     _execute_auto_memory_extraction,
 )
@@ -1038,6 +1039,8 @@ _PACKAGE_ROUTES: dict[ReqMethod, str] = {
     ReqMethod.PLUGIN_PACKAGES_IMPORT_LOCAL: "import_plugin_package",
     ReqMethod.PLUGIN_PACKAGES_INSTALL: "install_plugin_package",
     ReqMethod.PLUGIN_PACKAGES_UNINSTALL: "uninstall_plugin_package",
+    ReqMethod.SCIENCE_MODULES_LIST: "list_science_modules",
+    ReqMethod.SCIENCE_MODULES_ENTER: "enter_science_module",
 }
 
 _AGENT_GROUP_PACKAGE_METHODS: frozenset[ReqMethod] = frozenset(
@@ -2542,6 +2545,10 @@ class JiuWenSwarm:
                 if card is None:
                     raise ValueError(f"plugin not found: {name!r}")
                 payload = {"package": card}
+            elif method == ReqMethod.SCIENCE_MODULES_LIST:
+                payload = {"modules": science_modules.list_science_modules(params)}
+            elif method == ReqMethod.SCIENCE_MODULES_ENTER:
+                payload = science_modules.enter_science_module(params)
             elif method == ReqMethod.AGENT_TEMPLATES_INSTALL:
                 ok, payload = await asyncio.wait_for(
                     package_manager.install_equipment_from_hub_gated("agent_templates", params),

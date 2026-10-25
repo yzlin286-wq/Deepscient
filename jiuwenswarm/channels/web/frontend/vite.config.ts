@@ -1461,6 +1461,14 @@ export default defineConfig({
         target: webTarget,
         changeOrigin: true,
       },
+      '/auth/callback': {
+        target: webTarget,
+        changeOrigin: true,
+      },
+      '/partner': {
+        target: webTarget,
+        changeOrigin: true,
+      },
       '/skillhub-api': {
         target: 'http://119.8.233.112:8080',
         changeOrigin: true,

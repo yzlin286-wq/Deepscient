@@ -1,0 +1,1091 @@
+openapi: 3.0.3
+
+info:
+  title: Deepscient 统一账号中心对接 API
+  version: "2026-10-23"
+  description: |
+    Deepscient 桌面应用（本地运行 http://127.0.0.1:3081，端口占用时顺延 3082–3099）
+    对接官网统一账号中心的 HTTP 契约，可导入 Postman / Apifox。
+
+    - Base URL：https://deepscient.com，所有请求/响应均为 JSON；
+    - client_id 固定为 deepscient-desktop（公开客户端，不使用 client_secret）；
+    - redirect_uri 仅允许 http://127.0.0.1:<1024-65535>/auth/callback 或
+      http://localhost:<同端口>/auth/callback，严格匹配，禁止通配符与外域；
+    - 授权码一次性、5 分钟有效；PKCE 仅支持 S256：
+      code_challenge = BASE64URL(SHA256(code_verifier))，code_verifier 43–128 字符；
+    - access_token 为 Bearer，expires_in = 2592000（30 天），无 refresh_token，
+      收到 401 即清理本地 token 并回到登录流程；
+    - 强制邮箱验证：注册必须以邮箱为账号，注册成功不返回 user、不下发 Cookie，
+      用户完成 POST /api/auth/verify-email 之前，任何登录通道均返回 403 email_not_verified；
+    - 统一错误体：{ "ok": false, "message": <可读英文>, "error": <机器码> }；
+    - 详细接入步骤、时序图与错误码表见同目录 README.md。
+
+servers:
+  - url: https://deepscient.com
+    description: 官网统一账号中心
+
+tags:
+  - name: auth
+    description: 官网账号：注册 / 密码登录 / 当前用户 / 登出
+  - name: email
+    description: 邮箱验证：验证令牌 / 重发验证邮件
+  - name: oauth
+    description: OAuth 接口：授权码签发 / 换取 Token / userinfo / 撤销
+  - name: discovery
+    description: 客户端配置发现文档
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      summary: 注册（强制邮箱验证）
+      description: |
+        以邮箱为账号注册。`email` 与 `password` 必填，`password` 至少 8 位。
+
+        成功仅创建 `email_verified=0` 的待验证账号并投递验证邮件，
+        **不返回 `user`、不下发 Cookie、不自动登录**；
+        用户需完成 `POST /api/auth/verify-email` 后才能登录。
+        验证邮件投递失败不回滚账号，返回 `503 mail_unavailable`，可稍后重发。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: "someone@example.com"
+              password: "********"
+      responses:
+        '201':
+          description: 注册成功，待邮箱验证（不返回 user，不下发 Cookie）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              example:
+                ok: true
+                verification_required: true
+                email: "someone@example.com"
+                resend_after: 60
+        '400':
+          description: |
+            未提供 email（email_required）；邮箱格式非法或长度超限（invalid_email）；
+            密码不足 8 位（weak_password）。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                email_required:
+                  summary: 未提供 email
+                  value:
+                    ok: false
+                    message: "Email is required."
+                    error: "email_required"
+                invalid_email:
+                  summary: 邮箱格式非法或长度超限
+                  value:
+                    ok: false
+                    message: "Email address is invalid."
+                    error: "invalid_email"
+                weak_password:
+                  summary: 密码不足 8 位
+                  value:
+                    ok: false
+                    message: "Password must be at least 8 characters."
+                    error: "weak_password"
+        '409':
+          description: 邮箱已被注册（不区分是否已验证）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Email already registered."
+                error: "email_taken"
+        '403':
+          description: 官网关闭了注册
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Registration is closed."
+                error: "registration_closed"
+        '503':
+          description: 验证邮件投递失败（账号已创建，可调用 resend 重试）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Verification email could not be sent. Please try again later."
+                error: "mail_unavailable"
+
+  /api/auth/session:
+    post:
+      tags: [auth]
+      operationId: createSession
+      summary: 密码登录（官网 Cookie 通道）
+      description: |
+        官网自身登录通道，成功后 `Set-Cookie: ds_local_auth=...`。
+        **桌面应用请勿依赖此 Cookie**，应用内登录请使用
+        `POST /api/oauth/token` 的 `password` 模式。
+
+        邮箱未验证的账号无法登录，返回 `403 email_not_verified`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+            example:
+              username: "someone@example.com"
+              password: "********"
+      responses:
+        '200':
+          description: 登录成功，Set-Cookie 下发官网会话
+          headers:
+            Set-Cookie:
+              description: 官网会话 Cookie（桌面应用请勿依赖）
+              schema:
+                type: string
+                example: "ds_local_auth=<opaque>; ..."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                ok: true
+                user:
+                  id: 12
+                  username: "someone@example.com"
+                  email: "someone@example.com"
+                  email_verified: true
+                  role: "user"
+                  balance: 100.0
+                  created_at: "2026-10-21T09:00:00+00:00"
+                  disabled: false
+        '401':
+          description: 账号或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Invalid username or password."
+                error: "invalid_credentials"
+        '403':
+          description: 账号已被禁用，或邮箱尚未验证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                account_disabled:
+                  summary: 账号已被禁用
+                  value:
+                    ok: false
+                    message: "Account is disabled."
+                    error: "account_disabled"
+                email_not_verified:
+                  summary: 邮箱尚未验证（含 email 与 can_resend）
+                  value:
+                    ok: false
+                    message: "Please verify your email first."
+                    error: "email_not_verified"
+                    email: "someone@example.com"
+                    can_resend: true
+        '429':
+          description: 连续失败过多，触发限流
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Too many requests. Please try again later."
+                error: "too_many_requests"
+
+    delete:
+      tags: [auth]
+      operationId: deleteSession
+      summary: 登出（清 Cookie）
+      description: |
+        登出官网会话并清除 `ds_local_auth` Cookie。
+        仅撤销当前 Cookie 对应的会话，不影响应用侧已签发的 Token；
+        应用内退出登录请调用 `POST /api/oauth/revoke`。
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: 登出成功，并清除 ds_local_auth Cookie
+          headers:
+            Set-Cookie:
+              description: 清除 ds_local_auth Cookie
+              schema:
+                type: string
+                example: "ds_local_auth=; ..."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+              example:
+                ok: true
+
+  /api/auth/verify-email:
+    post:
+      tags: [email]
+      operationId: verifyEmail
+      summary: 验证邮箱（一次性令牌，验证即登录）
+      description: |
+        验证邮件落地页 `https://deepscient.com/verify-email?token=...` 调用。
+        令牌 24 小时有效且只能使用一次；成功后账号 `email_verified=true`，
+        同时下发官网 Cookie（验证即登录）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+            example:
+              token: "<邮件中的令牌>"
+      responses:
+        '200':
+          description: 验证成功，并下发官网 Cookie
+          headers:
+            Set-Cookie:
+              description: 官网会话 Cookie（验证即登录）
+              schema:
+                type: string
+                example: "ds_local_auth=<opaque>; ..."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                ok: true
+                user:
+                  id: 12
+                  username: "someone@example.com"
+                  email: "someone@example.com"
+                  email_verified: true
+                  role: "user"
+                  balance: 100.0
+                  created_at: "2026-10-21T09:00:00+00:00"
+                  disabled: false
+        '400':
+          description: 令牌不存在、已被使用或为空
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Invalid verification token."
+                error: "invalid_token"
+        '404':
+          description: 令牌对应的账号不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "User not found."
+                error: "user_not_found"
+        '410':
+          description: 令牌签发超过 24 小时（页面应提供重发入口）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Verification token has expired."
+                error: "token_expired"
+
+  /api/auth/verify-email/resend:
+    post:
+      tags: [email]
+      operationId: resendVerificationEmail
+      summary: 重发验证邮件
+      description: |
+        恒返回 `200 { ok: true, resend_after: 60 }`，不暴露邮箱是否存在 / 是否已验证。
+        仅当邮箱对应账号存在且未验证时才真正发信。
+        限流：同一邮箱 60 秒 1 次、每小时 5 次；同一 IP 每小时 20 次。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+            example:
+              email: "someone@example.com"
+      responses:
+        '200':
+          description: 已受理（无论邮箱是否存在）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendVerificationResponse'
+              example:
+                ok: true
+                resend_after: 60
+        '400':
+          description: 未提供 email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Email is required."
+                error: "email_required"
+        '429':
+          description: 触发重发限流
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Too many requests."
+                error: "too_many_requests"
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: 当前登录用户
+      description: |
+        支持 `Cookie`（官网会话）或 `Authorization: Bearer <access_token>`
+        两种鉴权方式之一。
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 当前用户信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                ok: true
+                user:
+                  id: 12
+                  username: "someone@example.com"
+                  email: "someone@example.com"
+                  email_verified: true
+                  role: "user"
+                  balance: 100.0
+                  created_at: "2026-10-21T09:00:00+00:00"
+                  disabled: false
+        '401':
+          description: 未携带有效 Cookie / Bearer token，或 token 已过期、已撤销
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Authentication required."
+                error: "unauthorized"
+
+  /api/oauth/token:
+    post:
+      tags: [oauth]
+      operationId: exchangeToken
+      summary: 换取 Token（授权码换 Token / 密码直登）
+      description: |
+        无需鉴权（授权码模式通过 PKCE 校验），两种 `grant_type` 的成功响应一致：
+
+        - `authorization_code`：官网登录后同步登录态，需携带一次性授权码与 `code_verifier`；
+        - `password`：在应用页面里直接登录，密码只在本次请求中使用，不得落盘。
+
+        `access_token` 可直接以 `Authorization: Bearer` 调用官网全部已鉴权 API，
+        有效期与官网会话一致（默认 30 天），**不提供 refresh_token**；
+        任何接口返回 `401` 即回到登录流程。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+            examples:
+              authorization_code:
+                summary: 授权码换 Token（官网登录后同步登录态）
+                value:
+                  grant_type: "authorization_code"
+                  client_id: "deepscient-desktop"
+                  code: "Yt3..."
+                  redirect_uri: "http://127.0.0.1:3081/auth/callback"
+                  code_verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk..."
+              password:
+                summary: 密码直登（在应用页面里直接登录）
+                value:
+                  grant_type: "password"
+                  client_id: "deepscient-desktop"
+                  username: "someone@example.com"
+                  password: "********"
+      responses:
+        '200':
+          description: 换取成功（两种 grant 的响应一致）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                ok: true
+                token_type: "Bearer"
+                access_token: "<opaque access token>"
+                expires_in: 2592000
+                user:
+                  id: 12
+                  username: "someone@example.com"
+                  email: "someone@example.com"
+                  email_verified: true
+                  role: "user"
+                  balance: 100.0
+                  created_at: "2026-10-21T09:00:00+00:00"
+                  disabled: false
+        '400':
+          description: |
+            缺少必填字段、grant_type 与字段组合不匹配（invalid_request）；
+            授权码不存在 / 已过期 / 已被使用 / code_verifier 或 redirect_uri 不匹配
+            （invalid_grant）；grant_type 不是 authorization_code 或 password
+            （unsupported_grant_type）。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_request:
+                  summary: 缺少必填字段、字段组合不匹配
+                  value:
+                    ok: false
+                    message: "Invalid request."
+                    error: "invalid_request"
+                invalid_grant:
+                  summary: 授权码过期 / 已用 / verifier 或 redirect_uri 不匹配
+                  value:
+                    ok: false
+                    message: "Invalid or expired authorization code."
+                    error: "invalid_grant"
+                unsupported_grant_type:
+                  summary: grant_type 非法
+                  value:
+                    ok: false
+                    message: "Unsupported grant type."
+                    error: "unsupported_grant_type"
+        '401':
+          description: password 模式下账号或密码错误、账号被禁用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_credentials:
+                  summary: password 模式下账号或密码错误
+                  value:
+                    ok: false
+                    message: "Invalid username or password."
+                    error: "invalid_credentials"
+                account_disabled:
+                  summary: password 模式下账号被禁用
+                  value:
+                    ok: false
+                    message: "This account has been disabled."
+                    error: "account_disabled"
+        '403':
+          description: client_id 或 redirect_uri 不在白名单；password 模式下邮箱未验证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                client_not_allowed:
+                  summary: client_id 或 redirect_uri 不在白名单
+                  value:
+                    ok: false
+                    message: "Client is not allowed."
+                    error: "client_not_allowed"
+                email_not_verified:
+                  summary: password 模式下邮箱未验证（含 email 与 can_resend）
+                  value:
+                    ok: false
+                    message: "Please verify your email first."
+                    error: "email_not_verified"
+                    email: "someone@example.com"
+                    can_resend: true
+        '429':
+          description: 限流（password 模式 5 次/分钟/IP，其它 20 次/分钟/IP）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Too many requests. Please try again later."
+                error: "too_many_requests"
+
+  /api/oauth/userinfo:
+    get:
+      tags: [oauth]
+      operationId: getUserinfo
+      summary: 校验登录态、取用户
+      description: |
+        携带 `Authorization: Bearer <access_token>` 校验登录态并返回当前用户。
+        应用收到 `401` 应清理本地 token 并展示登录页。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: token 有效，返回当前用户
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                ok: true
+                user:
+                  id: 12
+                  username: "someone@example.com"
+                  email: "someone@example.com"
+                  email_verified: true
+                  role: "user"
+                  balance: 100.0
+                  created_at: "2026-10-21T09:00:00+00:00"
+                  disabled: false
+        '401':
+          description: token 缺失 / 过期 / 已撤销
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Authentication required."
+                error: "unauthorized"
+
+  /api/oauth/revoke:
+    post:
+      tags: [oauth]
+      operationId: revokeToken
+      summary: 撤销 Token（应用内登出）
+      description: |
+        请求体携带 `token`，或直接使用 `Authorization: Bearer <access_token>`（二选一）。
+        响应恒为 `200`（幂等，未知 token 也返回成功）；撤销后原 token 立即失效。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+            example:
+              token: "<opaque access token>"
+      responses:
+        '200':
+          description: 撤销成功（幂等，未知 token 也返回 200）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+              example:
+                ok: true
+
+  /api/oauth/authorize:
+    post:
+      tags: [oauth]
+      operationId: authorize
+      summary: 官网授权页签发授权码
+      description: |
+        由官网 `/oauth/authorize` 授权页在用户确认授权后调用（携带官网 Cookie），
+        桌面应用不直接调用本接口——应用只需用系统浏览器打开
+        `{base}/oauth/authorize?client_id=deepscient-desktop&redirect_uri=...&state=...&code_challenge=...&code_challenge_method=S256`。
+        用户在授权页点击「取消」时不调用本接口，前端直接跳
+        `redirect_uri?error=access_denied&state=...`，应用需处理该分支。
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizeRequest'
+            example:
+              client_id: "deepscient-desktop"
+              redirect_uri: "http://127.0.0.1:3081/auth/callback"
+              state: "<random state>"
+              code_challenge: "<BASE64URL(SHA256(verifier))>"
+              code_challenge_method: "S256"
+      responses:
+        '200':
+          description: 签发成功，返回带回跳地址（含 code 与 state）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizeResponse'
+              example:
+                ok: true
+                redirect_url: "http://127.0.0.1:3081/auth/callback?code=xxx&state=yyy"
+        '400':
+          description: 缺少必填字段、code_challenge 为空、code_challenge_method 非 S256
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Invalid request."
+                error: "invalid_request"
+        '401':
+          description: 用户未登录官网（前端应弹出登录框，登录成功后重试）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Authentication required."
+                error: "unauthorized"
+        '403':
+          description: client_id 或 redirect_uri 不在白名单
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                message: "Client is not allowed."
+                error: "client_not_allowed"
+
+  /.well-known/deepscient-oauth:
+    get:
+      tags: [discovery]
+      operationId: getDiscovery
+      summary: 客户端配置发现
+      description: |
+        应用启动时建议读取该文档获取端点地址，而不是把全部路径写死
+        （`client_id` 与回调路径仍需固定）。
+      responses:
+        '200':
+          description: 发现文档
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResponse'
+              example:
+                issuer: "https://deepscient.com"
+                authorization_endpoint: "https://deepscient.com/oauth/authorize"
+                token_endpoint: "https://deepscient.com/api/oauth/token"
+                userinfo_endpoint: "https://deepscient.com/api/oauth/userinfo"
+                revocation_endpoint: "https://deepscient.com/api/oauth/revoke"
+                registration_endpoint: "https://deepscient.com/api/auth/register"
+                client_id: "deepscient-desktop"
+                grant_types: ["authorization_code", "password"]
+                code_challenge_methods: ["S256"]
+                redirect_uri_patterns:
+                  - "http://127.0.0.1:<port>/auth/callback"
+                  - "http://localhost:<port>/auth/callback"
+                token_ttl_seconds: 2592000
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Authorization: Bearer <access_token>（/api/oauth/token 签发）'
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: ds_local_auth
+      description: 官网会话 Cookie（POST /api/auth/session 登录后下发）
+
+  schemas:
+    User:
+      type: object
+      description: 统一用户对象
+      required: [id, username, email, email_verified, role, balance, created_at, disabled]
+      properties:
+        id:
+          type: integer
+          example: 12
+        username:
+          type: string
+          description: 用户名；邮箱注册时等于小写邮箱
+          example: "someone@example.com"
+        email:
+          type: string
+          description: 邮箱（注册即账号，可用于登录）
+          example: "someone@example.com"
+        email_verified:
+          type: boolean
+          description: 邮箱是否已验证（未验证账号无法登录）
+          example: true
+        role:
+          type: string
+          description: 角色
+          example: "user"
+        balance:
+          type: number
+          format: double
+          description: 余额
+          example: 100.0
+        created_at:
+          type: string
+          description: 创建时间（ISO 8601）
+          example: "2026-10-21T09:00:00+00:00"
+        disabled:
+          type: boolean
+          description: 是否禁用（false=正常）
+          example: false
+
+    Error:
+      type: object
+      description: |
+        统一错误体（HTTP 非 2xx）。`message` 可直接展示，`error` 供程序分支。
+      required: [ok, message, error]
+      properties:
+        ok:
+          type: boolean
+          description: 恒为 false
+          example: false
+        message:
+          type: string
+          description: 可读英文文案，可直接展示
+          example: "Invalid username or password."
+        error:
+          type: string
+          description: 机器可读错误码
+          enum:
+            - invalid_request
+            - invalid_grant
+            - unsupported_grant_type
+            - invalid_email
+            - weak_password
+            - email_required
+            - invalid_token
+            - token_expired
+            - unauthorized
+            - invalid_credentials
+            - account_disabled
+            - email_not_verified
+            - cannot_modify_self
+            - mail_unavailable
+            - client_not_allowed
+            - registration_closed
+            - user_not_found
+            - user_disabled
+            - email_taken
+            - username_taken
+            - too_many_requests
+            - service_unavailable
+            - forbidden
+          example: "invalid_credentials"
+      example:
+        ok: false
+        message: "Invalid username or password."
+        error: "invalid_credentials"
+
+    UserResponse:
+      type: object
+      required: [ok, user]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        user:
+          $ref: '#/components/schemas/User'
+
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          example: true
+
+    TokenResponse:
+      type: object
+      description: 'POST /api/oauth/token 成功响应（authorization_code 与 password 一致）'
+      required: [ok, token_type, access_token, expires_in, user]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        token_type:
+          type: string
+          enum: [Bearer]
+          example: "Bearer"
+        access_token:
+          type: string
+          description: '会话令牌，用于 Authorization: Bearer 调用官网全部已鉴权 API'
+          example: "<opaque access token>"
+        expires_in:
+          type: integer
+          description: 有效期（秒），与官网会话一致（默认 30 天）；无 refresh_token
+          example: 2592000
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      description: 注册请求。email 必填（注册即账号），password 至少 8 位
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          description: 账号邮箱（小写化存储），必须是可收信邮箱
+          maxLength: 254
+          pattern: '^[^@\s]+@[^@\s]+\.[^@\s]{2,}$'
+          example: "someone@example.com"
+        password:
+          type: string
+          description: 密码，至少 8 位
+          minLength: 8
+          example: "********"
+        username:
+          type: string
+          description: 已废弃，注册以邮箱为账号，该字段被忽略
+          deprecated: true
+          example: "u_ab12cd34"
+
+    RegisterResponse:
+      type: object
+      description: |
+        注册成功响应：账号处于待验证状态，不返回 user、不下发 Cookie。
+        需引导用户查收验证邮件并完成 POST /api/auth/verify-email。
+      required: [ok, verification_required, email, resend_after]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        verification_required:
+          type: boolean
+          description: 恒为 true
+          example: true
+        email:
+          type: string
+          description: 目标邮箱（小写）
+          example: "someone@example.com"
+        resend_after:
+          type: integer
+          description: 建议重发间隔（秒）
+          example: 60
+
+    VerifyEmailRequest:
+      type: object
+      description: 邮箱验证请求
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: 验证邮件中的一次性令牌（24 小时有效，仅可使用一次）
+          example: "<邮件中的令牌>"
+
+    ResendVerificationRequest:
+      type: object
+      description: 重发验证邮件请求
+      required: [email]
+      properties:
+        email:
+          type: string
+          description: 注册邮箱
+          example: "someone@example.com"
+
+    ResendVerificationResponse:
+      type: object
+      description: 重发受理响应（无论邮箱是否存在都相同）
+      required: [ok, resend_after]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        resend_after:
+          type: integer
+          description: 下一次允许重发的间隔（秒）
+          example: 60
+
+    SessionRequest:
+      type: object
+      description: 密码登录请求（username 同时接受邮箱，服务端自动识别）
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: 邮箱或用户名
+          example: "someone@example.com"
+        password:
+          type: string
+          description: 密码
+          example: "********"
+
+    TokenRequest:
+      description: |
+        换取 Token 的请求体，两种形态二选一（由 grant_type 区分）。
+      oneOf:
+        - $ref: '#/components/schemas/TokenRequestAuthorizationCode'
+        - $ref: '#/components/schemas/TokenRequestPassword'
+
+    TokenRequestAuthorizationCode:
+      type: object
+      description: 'grant_type=authorization_code（官网登录后同步登录态）'
+      required: [grant_type, client_id, code, redirect_uri, code_verifier]
+      properties:
+        grant_type:
+          type: string
+          enum: [authorization_code]
+        client_id:
+          type: string
+          enum: [deepscient-desktop]
+        code:
+          type: string
+          description: 一次性授权码，5 分钟内有效
+          example: "Yt3..."
+        redirect_uri:
+          type: string
+          description: 必须与授权时使用的值完全一致
+          example: "http://127.0.0.1:3081/auth/callback"
+        code_verifier:
+          type: string
+          description: 原始 PKCE verifier（43–128 字符）
+          minLength: 43
+          maxLength: 128
+          example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk..."
+
+    TokenRequestPassword:
+      type: object
+      description: 'grant_type=password（在应用页面里直接登录；密码只在本次请求中使用，不得落盘）'
+      required: [grant_type, client_id, username, password]
+      properties:
+        grant_type:
+          type: string
+          enum: [password]
+        client_id:
+          type: string
+          enum: [deepscient-desktop]
+        username:
+          type: string
+          description: 邮箱或用户名
+          example: "someone@example.com"
+        password:
+          type: string
+          description: 密码
+          example: "********"
+
+    AuthorizeRequest:
+      type: object
+      description: 官网授权页签发授权码的请求（需官网 Cookie）
+      required: [client_id, redirect_uri, state, code_challenge, code_challenge_method]
+      properties:
+        client_id:
+          type: string
+          enum: [deepscient-desktop]
+        redirect_uri:
+          type: string
+          description: 必须严格匹配白名单（http://127.0.0.1:<port>/auth/callback 或 http://localhost:<port>/auth/callback）
+          example: "http://127.0.0.1:3081/auth/callback"
+        state:
+          type: string
+          description: 应用生成的随机串，原样回传
+          example: "<random state>"
+        code_challenge:
+          type: string
+          description: 'BASE64URL(SHA256(code_verifier))'
+          example: "<BASE64URL(SHA256(verifier))>"
+        code_challenge_method:
+          type: string
+          enum: [S256]
+
+    AuthorizeResponse:
+      type: object
+      required: [ok, redirect_url]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        redirect_url:
+          type: string
+          description: 带授权码与 state 的回调地址
+          example: "http://127.0.0.1:3081/auth/callback?code=xxx&state=yyy"
+
+    RevokeRequest:
+      type: object
+      description: 撤销请求。token 与 Authorization Bearer 头二选一（均有效）
+      properties:
+        token:
+          type: string
+          description: '要撤销的 access_token；也可改用 Authorization: Bearer 头'
+          example: "<opaque access token>"
+
+    DiscoveryResponse:
+      type: object
+      description: 客户端配置发现文档
+      required:
+        - issuer
+        - authorization_endpoint
+        - token_endpoint
+        - userinfo_endpoint
+        - revocation_endpoint
+        - registration_endpoint
+        - client_id
+        - grant_types
+        - code_challenge_methods
+        - redirect_uri_patterns
+        - token_ttl_seconds
+      properties:
+        issuer:
+          type: string
+          example: "https://deepscient.com"
+        authorization_endpoint:
+          type: string
+          description: 官网授权页（浏览器打开）
+          example: "https://deepscient.com/oauth/authorize"
+        token_endpoint:
+          type: string
+          example: "https://deepscient.com/api/oauth/token"
+        userinfo_endpoint:
+          type: string
+          example: "https://deepscient.com/api/oauth/userinfo"
+        revocation_endpoint:
+          type: string
+          example: "https://deepscient.com/api/oauth/revoke"
+        registration_endpoint:
+          type: string
+          description: 注册端点（POST /api/auth/register）
+          example: "https://deepscient.com/api/auth/register"
+        client_id:
+          type: string
+          description: 桌面应用固定 client_id
+          example: "deepscient-desktop"
+        grant_types:
+          type: array
+          items:
+            type: string
+            enum: [authorization_code, password]
+          example: ["authorization_code", "password"]
+        code_challenge_methods:
+          type: array
+          items:
+            type: string
+            enum: [S256]
+          example: ["S256"]
+        redirect_uri_patterns:
+          type: array
+          description: 回调地址白名单模式（端口范围 1024–65535，严格匹配）
+          items:
+            type: string
+          example:
+            - "http://127.0.0.1:<port>/auth/callback"
+            - "http://localhost:<port>/auth/callback"
+        token_ttl_seconds:
+          type: integer
+          description: access_token 有效期（秒）
+          example: 2592000

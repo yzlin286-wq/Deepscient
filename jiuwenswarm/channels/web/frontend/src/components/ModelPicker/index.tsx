@@ -1,10 +1,7 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import { requestSettingsModule } from '../../features/settings/settingsNavigation';
-import { requestLogin } from '../../stores/authStore';
-import { useFreeModelsCampaign } from '../../features/free-models/campaign';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useAdaptiveTooltip } from '../../hooks/useAdaptiveTooltip';
 import { ModelProviderIcon } from '../ModelProviderIcon';
@@ -15,7 +12,7 @@ interface ModelPickerProps {
   onChange: (modelName: string) => void;
   disabled?: boolean;
   onAddModel?: () => void;
-  /** 过滤掉登录/免费模型，用于无法持久化免费模型凭据的场景；默认不过滤。 */
+  /** 兼容旧调用方保留；免费模型已移除，该开关不再过滤任何模型。 */
   excludeFreeModels?: boolean;
   testIdPrefix?: string;
 }
@@ -29,32 +26,16 @@ export default function ModelPicker({
   onChange,
   disabled = false,
   onAddModel,
-  excludeFreeModels = false,
   testIdPrefix = 'model-picker',
 }: ModelPickerProps): JSX.Element {
   const { t } = useTranslation();
-  const allModels = useSessionStore((state) => state.chatAvailableModels);
-  const models = useMemo(
-    () => (excludeFreeModels ? allModels.filter((model) => model.is_free !== true) : allModels),
-    [allModels, excludeFreeModels],
-  );
-  const campaign = useFreeModelsCampaign();
+  const models = useSessionStore((state) => state.chatAvailableModels);
   const { tooltip, handlers } = useAdaptiveTooltip();
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<CSSProperties | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const selected = models.find((model) => model.model_name === value);
-  const freeModels = models.filter((model) => model.is_free === true);
-  const groups = [
-    {
-      id: 'configured',
-      label: t('chat.modelSelector.configured'),
-      models: models.filter((model) => model.is_free !== true),
-    },
-    { id: 'free', label: t('chat.modelSelector.free'), models: freeModels },
-  ];
-  const showFreeModelsCta = !excludeFreeModels && campaign.state !== 'off' && freeModels.length === 0;
 
   useEffect(() => {
     if (disabled) setOpen(false);
@@ -166,89 +147,56 @@ export default function ModelPicker({
             data-testid={`${testIdPrefix}-menu`}
             style={{ position: 'fixed', zIndex: 9999, visibility: position ? 'visible' : 'hidden', ...position }}
           >
-            {models.length === 0 && !showFreeModelsCta && (
+            {models.length === 0 && (
               <div className="px-2 py-2 text-xs text-text-muted" role="status" data-testid={`${testIdPrefix}-empty`}>
                 {t('chat.modelSelector.empty')}
               </div>
             )}
-            {groups
-              .filter((group) => group.models.length > 0 || (group.id === 'free' && showFreeModelsCta))
-              .map((group) => (
-                <Fragment key={group.id}>
-                  <div
-                    className="model-select__section-header"
-                    data-testid={`${testIdPrefix}-section-header`}
-                    data-variant={group.id}
+            {models.length > 0 && (
+              <Fragment>
+                <div
+                  className="model-select__section-header"
+                  data-testid={`${testIdPrefix}-section-header`}
+                  data-variant="configured"
+                >
+                  {t('chat.modelSelector.configured')}
+                </div>
+                {models.map((model, index) => (
+                  <button
+                    key={`${model.model_name}-${index}`}
+                    type="button"
+                    onClick={() => handleSelect(model.model_name)}
+                    className={clsx(
+                      'chat-mode-select__option',
+                      model === selected && 'chat-mode-select__option--active',
+                    )}
+                    role="menuitemradio"
+                    aria-checked={model === selected}
+                    data-testid={`${testIdPrefix}-option`}
+                    data-variant={model.model_name}
                   >
-                    {group.label}
-                  </div>
-                  {group.id === 'free' && showFreeModelsCta && (
-                    <button
-                      type="button"
-                      className="model-select__free-cta"
-                      data-testid={`${testIdPrefix}-free-cta`}
-                      onClick={() => {
-                        setOpen(false);
-                        if (campaign.state === 'active') requestLogin();
-                        else requestSettingsModule('models');
-                      }}
-                    >
-                      <span className="model-select__free-cta-main">
-                        <span className="model-select__free-cta-icon" aria-hidden="true">
-                          <svg viewBox="0 0 20 20" fill="currentColor" width={12} height={12}>
-                            <path d="M10 2.5l1.7 4.3 4.3 1.7-4.3 1.7L10 14.5l-1.7-4.3L4 8.5l4.3-1.7L10 2.5z" />
-                          </svg>
-                        </span>
-                        <span className="chat-mode-select__label">{t('chat.modelSelector.getFreeModels')}</span>
+                    <span className="chat-mode-select__option-main">
+                      <span className="chat-mode-select__icon" aria-hidden="true">
+                        <ModelProviderIcon model={model} />
                       </span>
+                      <span className="chat-mode-select__label">{model.alias || model.model_name}</span>
+                    </span>
+                    {model === selected && (
                       <svg
-                        className="model-select__free-cta-chevron"
+                        className="chat-mode-select__check"
                         viewBox="0 0 20 20"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth={1.8}
+                        strokeWidth={2}
                         aria-hidden="true"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 5l4 5-4 5" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 10.5l3 3L15 6.5" />
                       </svg>
-                    </button>
-                  )}
-                  {group.models.map((model, index) => (
-                    <button
-                      key={`${model.model_name}-${index}`}
-                      type="button"
-                      onClick={() => handleSelect(model.model_name)}
-                      className={clsx(
-                        'chat-mode-select__option',
-                        model === selected && 'chat-mode-select__option--active',
-                      )}
-                      role="menuitemradio"
-                      aria-checked={model === selected}
-                      data-testid={`${testIdPrefix}-option`}
-                      data-variant={model.model_name}
-                    >
-                      <span className="chat-mode-select__option-main">
-                        <span className="chat-mode-select__icon" aria-hidden="true">
-                          <ModelProviderIcon model={model} />
-                        </span>
-                        <span className="chat-mode-select__label">{model.alias || model.model_name}</span>
-                      </span>
-                      {model === selected && (
-                        <svg
-                          className="chat-mode-select__check"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 10.5l3 3L15 6.5" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </Fragment>
-              ))}
+                    )}
+                  </button>
+                ))}
+              </Fragment>
+            )}
             {onAddModel && (
               <button
                 type="button"

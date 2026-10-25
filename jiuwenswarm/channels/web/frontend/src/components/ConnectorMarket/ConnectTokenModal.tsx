@@ -79,7 +79,7 @@ export function ConnectTokenModal({ name, displayName, iconUrl, response, onCanc
         </button>
 
         <div className="mb-4 flex items-center justify-center gap-8">
-          <img src={logoIcon} alt="JiuwenSwarm" className="h-11 w-11 shrink-0 rounded-xl" />
+          <img src={logoIcon} alt="DeepScient" className="h-11 w-11 shrink-0 rounded-xl" />
           {/* 用户反馈两个图标离得太近——把 flex gap 拉大（4→8），并把原来的 lucide ArrowRight
               实心箭头换成"虚线+实心箭头"的自绘样式（虚线用 border-dashed，箭头用零尺寸 div 的
               边框三角形技巧），比单纯拉大 gap 更明确地表达"两者之间有一段连接过程"的观感。 */}

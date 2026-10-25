@@ -1,0 +1,24 @@
+{
+  "name": "sci-experiment-team",
+  "package_type": "agent_group",
+  "display_name": "实验设计专家团",
+  "display_description": {
+    "zh": "把研究假设转成可预注册的实验方案，覆盖设计、功效与伦理合规。",
+    "en": "Turns hypotheses into preregistrable protocols covering design, power and ethics."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "实验设计"
+  ],
+  "instruction": "Leader 先确认研究假设与资源约束，再按设计、功效、伦理分派任务；成员分别提交实验方案、样本量与功效依据、伦理与合规清单；Leader 检查变量、对照、样本量与伦理材料是否闭合后输出可预注册方案。",
+  "agents": [
+    "leader",
+    "sci-expert-experiment-design",
+    "sci-expert-statistical-power",
+    "sci-expert-ethics-compliance"
+  ],
+  "skills": [
+    "sci-experiment-design"
+  ]
+}

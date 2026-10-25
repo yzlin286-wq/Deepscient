@@ -896,7 +896,7 @@ async def test_path_set_reloads_config_and_resets_agent_browser_runtime(
 
 class FakeUpdaterService:
     def get_runtime_config(self):
-        return {"release_api_type": "gitcode", "release_api_url": ""}
+        return {"release_api_type": "github", "release_api_url": ""}
 
 
 @pytest.fixture
@@ -1029,26 +1029,24 @@ async def test_models_list_omits_context_for_empty_template_model(monkeypatch) -
 async def test_models_list_builds_the_list_off_the_event_loop(monkeypatch) -> None:
     seen: dict[str, object] = {}
 
-    def fake_available(config, auth_session=None):
+    def fake_available(config):
         try:
             asyncio.get_running_loop()
             seen["on_event_loop"] = True
         except RuntimeError:
             seen["on_event_loop"] = False
-        seen["auth_session"] = auth_session
         return [{"model_client_config": {"model_name": "m", "api_key": "k"}, "model_config_obj": {}}]
 
     monkeypatch.setattr(app_web_handlers, "get_config", lambda: {"models": {}})
     monkeypatch.setattr(app_web_handlers, "get_available_models", fake_available)
     channel = FakeWebChannel()
     _register_web_handlers(WebHandlersBindParams(channel=channel))
-    ws = SimpleNamespace(_jiuwen_auth_session="auth-sess-1")
+    ws = SimpleNamespace()
 
     await channel.methods["models.list"](ws, "req-models", {}, "session-1")
 
     assert channel.responses[-1]["ok"] is True
     assert seen["on_event_loop"] is False, "get_available_models 不能在事件循环线程上执行"
-    assert seen["auth_session"] == "auth-sess-1", "登录会话仍要按这条连接传进去"
 
 
 @pytest.mark.asyncio
@@ -1141,8 +1139,11 @@ async def test_updater_reset_source_registered_and_restores_defaults(monkeypatch
     await channel.methods["updater.reset_source"](object(), "req-reset", {}, "sess-1")
 
     assert channel.responses[-1]["ok"] is True
-    assert channel.responses[-1]["payload"] == {"release_api_type": "gitcode", "release_api_url": ""}
+    assert channel.responses[-1]["payload"] == {"release_api_type": "github", "release_api_url": ""}
     assert captured == app_web_handlers.DEFAULT_SOURCE_CONFIG
+    assert captured["desktop_release_api_type"] == "github"
+    assert captured["repo_owner"] == "yzlin286-wq"
+    assert captured["repo_name"] == "Deepscient"
 
 
 @pytest.mark.asyncio

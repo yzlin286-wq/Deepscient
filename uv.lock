@@ -2003,7 +2003,7 @@ wheels = [
 
 [[package]]
 name = "jiuwenswarm"
-version = "0.2.5b1"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "a2ui-agent-sdk" },
@@ -2222,8 +2222,8 @@ requires-dist = [
     { name = "mutagen", specifier = ">=1.47.0,<2" },
     { name = "mutagen", marker = "extra == 'harmony'", specifier = ">=1.47.0" },
     { name = "numpy", specifier = ">=1.24.0,<3" },
-    { name = "openjiuwen", specifier = "==0.1.19" },
-    { name = "openjiuwen", marker = "extra == 'harmony'", specifier = "==0.1.19" },
+    { name = "openjiuwen", specifier = "==0.1.19.post2" },
+    { name = "openjiuwen", marker = "extra == 'harmony'", specifier = "==0.1.19.post2" },
     { name = "openjiuwen", extras = ["claude"], marker = "extra == 'claude'" },
     { name = "openjiuwen", extras = ["codex"], marker = "extra == 'codex'" },
     { name = "openjiuwen", extras = ["postgres", "zmq"], marker = "extra == 'distribute'" },
@@ -2321,7 +2321,7 @@ test = [
 
 [[package]]
 name = "jiuwenswarm-tui"
-version = "0.2.5b1"
+version = "0.2.0"
 source = { directory = "packages/jiuwenswarm-tui" }
 
 [[package]]
@@ -3276,7 +3276,7 @@ wheels = [
 
 [[package]]
 name = "openjiuwen"
-version = "0.1.19"
+version = "0.1.19.post2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agentdescent" },
@@ -3321,9 +3321,9 @@ dependencies = [
     { name = "trafilatura" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/34/75/d88edbdb0916dd10266c60eca8461f0b2c3eae95bceddaa33a07e5a6719a/openjiuwen-0.1.19.tar.gz", hash = "sha256:bb830be188968d6f46d83443121e2abf1ca469c187ec64ae443335281c32fbb4", size = 6177143, upload-time = "2026-09-30T02:04:05.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/b1/21be10329f32518bced5febc9c1822af30d606f3456aec4c8d7f75215ee9/openjiuwen-0.1.19.post2.tar.gz", hash = "sha256:351affa2e79b07a2a52646472c923f3a2531a8e38f92b45bb6b01405f8573c40", size = 6179445, upload-time = "2026-10-14T07:51:39.581Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/66/41b5a462a251bcb9b0dee7f2ba3985f0f1404e96524e677da299afd88549/openjiuwen-0.1.19-py3-none-any.whl", hash = "sha256:cfe93af9642325adaabbac1b09630527d181a3af14b4d9e7b91fe1f777f7bf53", size = 7741321, upload-time = "2026-09-30T02:04:02.216Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/c2/231f8ac5967ffa31b04fd216a1c6ecd5b8e65fac351412e77f6744a9bdf3/openjiuwen-0.1.19.post2-py3-none-any.whl", hash = "sha256:79397b169c623ba29ec2df5dc8fc7cc83913dd70dd5d25b60c6e8b338a904319", size = 7742815, upload-time = "2026-10-14T07:51:36.576Z" },
 ]
 
 [package.optional-dependencies]

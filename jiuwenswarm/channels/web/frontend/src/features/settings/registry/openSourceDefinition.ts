@@ -2,6 +2,7 @@ import { createSettingsPageDefinition } from './createSettingsPageDefinition';
 import { openSourceSettingsAccessPolicy } from './accessPolicy';
 import { generalModule } from '../modules/general';
 import { modelsModule } from '../modules/models';
+import { billingModule } from '../modules/billing';
 import { agentModule } from '../modules/agent';
 import { browserModule } from '../modules/browser';
 import { channelsModule } from '../modules/channels';
@@ -16,6 +17,7 @@ export const openSourceSettingsPageDefinition = createSettingsPageDefinition({
   modules: [
     generalModule,
     modelsModule,
+    billingModule,
     agentModule,
     browserModule,
     channelsModule,

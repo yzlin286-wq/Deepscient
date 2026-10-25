@@ -65,8 +65,8 @@ export function PersonalContextSettingsPanel({
     authByProvider,
   } = usePersonalContextStore();
   const availableModels = useSessionStore((s) => s.availableModels);
-  // 上下文整理模型只允许选择已配置模型，登录/免费模型由网关按会话注入凭据，
-  // 无法被 personal_context 持久化保存，选中会触发后端下标越界，这里直接过滤掉。
+  // 上下文整理模型只允许选择可持久化的已配置模型；目录里标了 is_free 的条目由网关按会话
+  // 注入凭据，无法被 personal_context 保存，选中会触发后端下标越界，这里直接过滤掉。
   const visibleModels = availableModels.filter((m) => m.is_free !== true);
   const currentModelName =
     config.model_index != null ? availableModels[config.model_index]?.model_name ?? null : null;

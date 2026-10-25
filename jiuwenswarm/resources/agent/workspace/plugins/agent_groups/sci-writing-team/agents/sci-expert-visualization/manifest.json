@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "科研可视化专家",
+  "display_name": "科研可视化专家",
+  "display_description": {
+    "zh": "用清晰的数据图表达结构与差异，避免误导性视觉编码。",
+    "en": "Designs clear data visuals without misleading encodings."
+  },
+  "description": "负责数据图设计、视觉编码选择与配色可读性。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "科研可视化"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

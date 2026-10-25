@@ -1346,15 +1346,17 @@ browser:
 
 updater:
   enabled: true
-  # 桌面端版本检查源类型：gitcode / github
-  desktop_release_api_type: "gitcode"
-  repo_owner: openJiuwen
-  repo_name: jiuwenswarm 
+  # 桌面端版本检查源类型：github / gitcode
+  desktop_release_api_type: "github"
+  repo_owner: yzlin286-wq
+  repo_name: Deepscient
   release_api_url: ""
-  # Windows/macOS use .exe/.dmg; multiple candidates prefer a unique WorkSwarm name.
-  asset_name_pattern_linux: "JiuwenSwarm-{version}.tar.gz"
+  # GitHub Releases 资产命名：DeepScient-{version}-windows.exe / -macos.dmg / DeepScient-{version}.tar.gz
+  asset_name_pattern_windows: "DeepScient-{version}-windows.exe"
+  asset_name_pattern_macos: "DeepScient-{version}-macos.dmg"
+  asset_name_pattern_linux: "DeepScient-{version}.tar.gz"
   timeout_seconds: 20
-  pypi_mirror: "https://mirrors.aliyun.com/pypi"
+  pypi_mirror: ""
 
 extensions:
   # 扩展包搜索目录（字符串），用 ';' 分割多个目录：
@@ -1642,3 +1644,45 @@ modes:
         # 控制记忆内容如何注入到每个成员的 system prompt 中：
         #   "proactive" — 每轮对话开始时主动注入最新记忆摘要
         member_memory_prompt_mode: "proactive"
+
+# ============================================================
+# DeepScient 官网账号登录（OAuth2 授权码 + PKCE）
+# ============================================================
+# provider 设为 off/none/disabled 或 base_url 留空即关闭登录入口。
+auth:
+  enabled: true
+  provider: deepscient
+  base_url: https://deepscient.com
+  client_id: deepscient-desktop
+  discovery_path: /.well-known/deepscient-oauth
+  authorize_path: /oauth/authorize
+  token_path: /api/oauth/token
+  userinfo_path: /api/oauth/userinfo
+  revoke_path: /api/oauth/revoke
+  callback_path: /auth/callback
+  registration_path: /api/auth/register
+  verify_email_path: /api/auth/verify-email
+  verify_email_resend_path: /api/auth/verify-email/resend
+  register_url: https://deepscient.com
+  account_center_url: https://deepscient.com
+  state_ttl_seconds: 300
+  token_timeout_seconds: 10
+  userinfo_timeout_seconds: 8
+
+# ============================================================
+# ccagent 中转站（合作方接口）
+# ============================================================
+# app_secret 不写在这里：环境变量 CCAGENT_PARTNER_APP_SECRET，
+# 或 <数据根>/science/partner-app-secret（0600，一行）。
+# 两者都没有时整块功能退化为「未配置」，不影响其它设置。
+partner:
+  enabled: true
+  app_id: app_ccagent_prod
+  base_url: https://un.ccagent.cn
+  # 本实例的公网基址，用来拼 return_url 与默认 Webhook 地址；留空则不下发 return_url
+  public_base: ""
+  # 只想覆盖 Webhook 地址时才填；默认 public_base + /partner/webhook
+  webhook_url: ""
+  default_model: deepseek-chat
+  plans_cache_seconds: 60
+  request_timeout_seconds: 10

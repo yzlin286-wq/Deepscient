@@ -1,0 +1,110 @@
+.partner-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px 16px;
+}
+
+.partner-settings__actions--start {
+  padding: 4px 16px 8px;
+}
+
+.partner-settings__meta {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  word-break: break-all;
+}
+
+.partner-settings__ok {
+  color: var(--color-feedback-success);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.partner-settings__warning {
+  display: block;
+  padding: 4px 16px 12px;
+  color: var(--color-feedback-warning);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.partner-settings__error {
+  color: var(--color-settings-status-danger-text);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.partner-settings__hint {
+  margin: 0;
+  padding: 12px 16px 16px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.partner-settings__kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 24px;
+  margin: 0;
+  padding: 12px 16px 16px;
+}
+
+.partner-settings__kv div {
+  min-width: 0;
+}
+
+.partner-settings__kv dt {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.partner-settings__kv dd {
+  margin: 2px 0 0;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  line-height: 20px;
+  word-break: break-all;
+}
+
+.partner-settings__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 4px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.partner-settings__table th {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.partner-settings__table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border-default);
+  vertical-align: middle;
+}
+
+.partner-settings__table tr:last-child td {
+  border-bottom: none;
+}
+
+.partner-settings__cell--action {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.partner-settings__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}

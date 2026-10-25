@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "学术写作专家",
+  "display_name": "学术写作专家",
+  "display_description": {
+    "zh": "按 IMRaD 组织论证，保证段落逻辑与术语一致。",
+    "en": "Structures arguments with IMRaD and consistent terminology."
+  },
+  "description": "负责论文结构、段落论证与学术语言润色。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "学术写作"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import signal
 import sys
@@ -25,31 +26,42 @@ from jiuwenswarm.common.version_source import (
 )
 from jiuwenswarm.common.utils import get_user_workspace_dir
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_RELEASE_API_GITCODE = "https://api.gitcode.com/api/v5/repos/{owner}/{repo}/releases/latest"
 DEFAULT_RELEASE_API_GITHUB = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
 DEFAULT_RELEASE_API_PYPI = "https://pypi.org/simple/{package}/"
-DEFAULT_ASSET_PATTERN_LINUX = "JiuwenSwarm-{version}.tar.gz"
+DEFAULT_ASSET_PATTERN_WINDOWS = "DeepScient-{version}-windows.exe"
+DEFAULT_ASSET_PATTERN_MACOS = "DeepScient-{version}-macos.dmg"
+DEFAULT_ASSET_PATTERN_LINUX = "DeepScient-{version}.tar.gz"
 DEFAULT_TIMEOUT_SECONDS = 20
-DEFAULT_TEXT = "WbrW92Yn6jif-4Ks3kvzhWVv"
+DEFAULT_REPO_OWNER = "yzlin286-wq"
+DEFAULT_REPO_NAME = "Deepscient"
 DESKTOP_ENV_FLAG = "JIUWENSWARM_DESKTOP"
 DESKTOP_INSTALLER_SUFFIXES = (".exe", ".dmg", ".tar.gz")
+ACCESS_TOKEN_ENV_VARS = ("GITHUB_TOKEN", "DEEPSCIENT_GITHUB_TOKEN")
 
 DEFAULT_SOURCE_CONFIG: dict[str, Any] = {
-    "desktop_release_api_type": "gitcode",
-    "repo_owner": "openJiuwen",
-    "repo_name": "jiuwenswarm",
+    "desktop_release_api_type": "github",
+    "repo_owner": DEFAULT_REPO_OWNER,
+    "repo_name": DEFAULT_REPO_NAME,
     "package_name": PACKAGE_NAME,
     "release_api_url": "",
-    "pypi_mirror": "https://mirrors.aliyun.com/pypi",
+    "pypi_mirror": "",
     "asset_name_pattern": "",
-    "asset_name_pattern_windows": "",
-    "asset_name_pattern_macos": "",
+    "asset_name_pattern_windows": DEFAULT_ASSET_PATTERN_WINDOWS,
+    "asset_name_pattern_macos": DEFAULT_ASSET_PATTERN_MACOS,
     "asset_name_pattern_linux": DEFAULT_ASSET_PATTERN_LINUX,
 }
 
 
 def get_access_token() -> str:
-    return os.getenv("GITCODE_TOKEN", "").strip() or DEFAULT_TEXT
+    """Return the GitHub token from the environment, or ``""`` when unset."""
+    for name in ACCESS_TOKEN_ENV_VARS:
+        token = os.getenv(name, "").strip()
+        if token:
+            return token
+    return ""
 
 
 def _is_newer_version(candidate: str, current: str) -> bool:
@@ -144,14 +156,7 @@ class UpdaterService:
             "asset_name_pattern_linux": config["asset_name_pattern_linux"],
             "timeout_seconds": config["timeout_seconds"],
             "pypi_mirror": config["pypi_mirror"],
-            "access_token": self._mask_token(config["access_token"]),
         }
-
-    @staticmethod
-    def _mask_token(token: str) -> str:
-        if len(token) <= 8:
-            return token[:2] + "****" + token[-2:] if len(token) > 4 else "****"
-        return token[:4] + "****" + token[-4:]
 
     def check(self, manual: bool = False) -> dict[str, Any]:
         config = self._load_config()
@@ -280,7 +285,7 @@ class UpdaterService:
             "github": lambda: GitHubReleasesSource(
                 owner=config["repo_owner"],
                 repo=config["repo_name"],
-                token=os.getenv("GITHUB_TOKEN", ""),
+                token=config["access_token"],
                 api_url=api_url,
                 timeout_seconds=timeout,
             ),
@@ -322,15 +327,24 @@ class UpdaterService:
             "win32",
         }
         if timestamp_desktop:
-            if not release.current_release_published_at:
-                raise RuntimeError(
-                    "Current desktop release timestamp is missing for version "
-                    f"{__version__}."
+            if not release.published_at:
+                logger.warning(
+                    "Latest desktop release has no publication timestamp; "
+                    "falling back to version comparison."
                 )
-            has_update = _is_newer_release(
-                release.published_at,
-                release.current_release_published_at,
-            )
+                has_update = _is_newer_version(latest_version, __version__)
+            elif not release.current_release_published_at:
+                logger.warning(
+                    "Installed desktop release %s has no publication timestamp; "
+                    "falling back to version comparison.",
+                    __version__,
+                )
+                has_update = _is_newer_version(latest_version, __version__)
+            else:
+                has_update = _is_newer_release(
+                    release.published_at,
+                    release.current_release_published_at,
+                )
         else:
             has_update = _is_newer_version(latest_version, __version__)
 
@@ -379,13 +393,23 @@ class UpdaterService:
                     "in the latest release."
                 )
             if len(candidates) > 1:
-                preferred_name = (
-                    f"{PACKAGE_NAME}-{release.version}-{platform_key}{desktop_suffix}"
-                ).lower()
+                preferred_names = []
+                pattern = config.get(f"asset_name_pattern_{platform_key}") or ""
+                if pattern:
+                    try:
+                        preferred_names.append(
+                            pattern.format(version=release.version).lower()
+                        )
+                    except (KeyError, IndexError, ValueError):
+                        pass
+                preferred_names.append(
+                    f"{PACKAGE_NAME}-{release.version}-{platform_key}"
+                    f"{desktop_suffix}".lower()
+                )
                 exact_matches = [
                     asset
                     for asset in candidates
-                    if asset.name.lower() == preferred_name
+                    if asset.name.lower() in preferred_names
                 ]
                 compatible_matches = [
                     asset
@@ -510,12 +534,12 @@ class UpdaterService:
         raw = get_config_raw() or {}
         updater = raw.get("updater") or {}
 
-        api_type = str(updater.get("desktop_release_api_type") or "gitcode").strip().lower()
+        api_type = str(updater.get("desktop_release_api_type") or "github").strip().lower()
         desktop_api_type = api_type
         if _detect_install_mode() != "desktop":
             api_type = "pypi"
-        owner = str(updater.get("repo_owner") or "openJiuwen").strip()
-        repo = str(updater.get("repo_name") or "jiuwenswarm").strip()
+        owner = str(updater.get("repo_owner") or DEFAULT_REPO_OWNER).strip()
+        repo = str(updater.get("repo_name") or DEFAULT_REPO_NAME).strip()
         package = PACKAGE_NAME
         release_api_url = str(updater.get("release_api_url") or "").strip()
         if not release_api_url:
@@ -549,12 +573,12 @@ class UpdaterService:
             "asset_name_pattern_windows": str(
                 updater.get("asset_name_pattern_windows")
                 or global_asset_name_pattern
-                or ""
+                or DEFAULT_ASSET_PATTERN_WINDOWS
             ),
             "asset_name_pattern_macos": str(
                 updater.get("asset_name_pattern_macos")
                 or global_asset_name_pattern
-                or ""
+                or DEFAULT_ASSET_PATTERN_MACOS
             ),
             "asset_name_pattern_linux": str(
                 updater.get("asset_name_pattern_linux")

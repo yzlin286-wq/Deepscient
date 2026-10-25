@@ -12,3 +12,148 @@
 .login-dialog__body {
   padding: 1.5rem;
 }
+
+.login-dialog__account {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 1rem;
+}
+
+.login-dialog__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.login-dialog__row dt {
+  color: var(--color-text-meta);
+}
+
+.login-dialog__row dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.login-dialog__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.login-dialog__actions--split {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.login-dialog__links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.login-dialog__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-action-primary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login-dialog__link:disabled {
+  color: var(--color-text-meta);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* ── 双 Tab：官网授权 / 账号密码 ── */
+.login-dialog__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1rem;
+  padding: 3px;
+  border-radius: 0.5rem;
+  background: var(--color-surface-muted);
+}
+
+.login-dialog__tab {
+  flex: 1;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--color-text-meta);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.login-dialog__tab--active {
+  background: var(--color-surface-card);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.login-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.login-dialog__label {
+  color: var(--color-text-meta);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.login-dialog__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 0.5rem;
+  background: var(--color-surface-card);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.login-dialog__input:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+}
+
+.login-dialog__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-dialog__resend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+  padding: 8px 10px;
+  border-radius: 0.5rem;
+  background: var(--color-surface-muted);
+}
+
+/* ── 整页登录（AuthGate）里的卡片 ── */
+.login-dialog__screen {
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface-card);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}

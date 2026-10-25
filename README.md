@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/images/logo.svg" alt="JiuwenSwarm Logo" width="160" />
+  <img src="docs/assets/images/logo.svg" alt="DeepScient Logo" width="160" />
 </p>
 
-<h1 align="center">JiuwenSwarm</h1>
+<h1 align="center">DeepScient</h1>
 
 <p align="center">
   <strong>Understands Your Intent, Evolves Autonomously — Swarm Collaboration for Complex Tasks</strong>
@@ -20,14 +20,14 @@
   ·
   <a href="https://swarmskills.openjiuwen.com/">Swarm Skills Hub</a>
   ·
-  <a href="https://gitcode.com/openJiuwen/jiuwenswarm">GitCode</a>
+  <a href="https://github.com/yzlin286-wq/Deepscient">GitHub</a>
 </p>
 
 <p align="center">
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache--2.0-green.svg" alt="License" />
   </a>
-  <a href="https://github.com/openJiuwen-ai/jiuwenswarm/releases">
+  <a href="https://github.com/yzlin286-wq/Deepscient/releases">
     <img src="https://img.shields.io/pypi/v/jiuwenswarm.svg" alt="Release" />
   </a>
   <img src="https://img.shields.io/badge/python-%E2%89%A53.11-blue.svg" alt="Python Version" />
@@ -36,9 +36,9 @@
 
 [JiuwenSwarm_Introduction.mp4](docs/assets/videos/JiuwenSwarm_Introduction.mp4)
 
-**JiuwenSwarm** is an Agent system that makes multi-agent collaboration truly work. Designed for developers and teams who need to automate complex tasks, it helps users drive multi-agent collaboration, Skill self-evolution, and tool invocation through natural language — delivering end-to-end from intent to result. It runs on a single machine or across a cluster, and you can reach it from a browser, a terminal, or the chat apps you already use.
+**DeepScient 0.2.0** is an Agent system that makes multi-agent collaboration truly work. Designed for developers and teams who need to automate complex tasks, it helps users drive multi-agent collaboration, Skill self-evolution, and tool invocation through natural language — delivering end-to-end from intent to result. It runs on a single machine or across a cluster, and you can reach it from a browser, a terminal, or the chat apps you already use.
 
-### Why JiuwenSwarm
+### Why DeepScient
 
 | Capability                      | Value                                                                                                                                                     |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -55,7 +55,7 @@
 
 ### Desktop
 
-One-click install, no environment setup — the quickest way to try JiuwenSwarm.
+One-click install, no environment setup — the quickest way to try DeepScient. You can also download the latest build from [GitHub Releases](https://github.com/yzlin286-wq/Deepscient/releases).
 
 | Platform  | Download                                                          | Notes                                         |
 | --------- | ----------------------------------------------------------------- | --------------------------------------------- |
@@ -70,38 +70,38 @@ On Linux, install via [Command Line](#pip) or [from source](#from-source) below.
 ### Command Line
 
 ```bash
-# Install JiuwenSwarm
+# Install DeepScient
 pip install jiuwenswarm
 
 # Use China mirror (recommended)
 pip install jiuwenswarm -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# Initialize JiuwenSwarm (first-time setup)
+# Initialize DeepScient (first-time setup)
 jiuwenswarm-init
 
-# Start JiuwenSwarm
+# Start DeepScient
 jiuwenswarm-start
 ```
 
 After launching, visit http://localhost:5173 to open the frontend.
 
-To use TUI (terminal interface), open a new terminal after starting JiuwenSwarm:
+To use TUI (terminal interface), open a new terminal after starting DeepScient:
 
 ```bash
-# Install JiuwenSwarm-tui
+# Install TUI (jiuwenswarm-tui)
 pip install jiuwenswarm-tui
 
 # Use China mirror (recommended)
 pip install jiuwenswarm-tui -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# Start JiuwenSwarm-tui
+# Start DeepScient-tui
 jiuwenswarm-tui
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/openJiuwen-ai/jiuwenswarm.git
+git clone https://github.com/yzlin286-wq/Deepscient.git
 cd jiuwenswarm
 uv venv
 uv pip install -e .
@@ -113,7 +113,7 @@ uv pip install -e .
 
 ### Configure Model
 
-JiuwenSwarm supports multiple model platforms: Huawei Cloud MaaS, OpenAI, DeepSeek, DashScope, SiliconFlow, OpenRouter and other OpenAI-compatible APIs, as well as local model deployment.
+DeepScient supports multiple model platforms: Huawei Cloud MaaS, OpenAI, DeepSeek, DashScope, SiliconFlow, OpenRouter and other OpenAI-compatible APIs, as well as local model deployment.
 
 A default model is the one piece of configuration you cannot skip. Set it in the web UI under **More → Configuration**, or edit `~/.jiuwenswarm/config/config.yaml` directly. The file is created on your first `jiuwenswarm-start`, and saving it reloads the config without a restart.
 
@@ -153,9 +153,9 @@ Example input:
 Check today's weather in Beijing, and recommend 3 books about artificial intelligence.
 ```
 
-In IM channels and the TUI, the `/mode` command switches between finer-grained sub-modes (`agent.plan`, `agent.fast`, `code.normal`, `code.team`, `team`). See [Modes](https://github.com/openJiuwen-ai/jiuwenswarm/blob/develop/docs/en/Modes.md).
+In IM channels and the TUI, the `/mode` command switches between finer-grained sub-modes (`agent.plan`, `agent.fast`, `code.normal`, `code.team`, `team`). See [Modes](https://github.com/yzlin286-wq/Deepscient/blob/develop/docs/en/Modes.md).
 
-By default, tools ask for approval before they run. If you would rather not confirm every step, adjust the policy in [Tool Permissions & Security](https://github.com/openJiuwen-ai/jiuwenswarm/blob/develop/docs/en/ToolPermissionsSecurity.md).
+By default, tools ask for approval before they run. If you would rather not confirm every step, adjust the policy in [Tool Permissions & Security](https://github.com/yzlin286-wq/Deepscient/blob/develop/docs/en/ToolPermissionsSecurity.md).
 
 > For detailed operation guide, see: [Quick Start](docs/en/Quickstart.md)
 
@@ -176,6 +176,10 @@ Capabilities differ per platform. Xiaoyi and WhatsApp are private chat only; Fei
 
 Full index: [Documentation](docs/README_EN.md)
 
+Research modules, official account and relay setup: [Research Edition & Account](docs/en/DeepScientEdition.md)
+
+For a new app integrating with the official account, hand off the [Account Integration Pack](docs/integration/deepscient-oauth/README.md) directly.
+
 - Install and first run: [Install Guide](docs/en/InstallGuide.md) · [Quick Start](docs/en/Quickstart.md)
 - The Web UI layout: [Page Overview](docs/en/Page-Overview.md)
 - Configure providers: [Configuration](docs/en/Configuration.md)
@@ -193,7 +197,7 @@ Full index: [Documentation](docs/README_EN.md)
 - **2026-07-24** — `v0.2.4.beta1` Builds out the Code work-mode system and its front-end support: workspace selection and switching, and code-diff display.
 - **2026-07-14** — `v0.2.3` The collaboration capabilities in cluster mode have been enhanced, with new features such as browser sub-agent isolation and support for online sessions within the same session; image attachments and multimodal conversations; Skill-Omni turns visual knowledge into reusable multimodal Skills, with a usage-experience loop improving skill dispatch; new TUI commands (/keybindings, /simplify, /review, /security-review, /btw); stability fixes..
 
-Full notes for every version are on [GitHub Releases](https://github.com/openJiuwen-ai/jiuwenswarm/releases).
+Full notes for every version are on [GitHub Releases](https://github.com/yzlin286-wq/Deepscient/releases).
 
 ## FAQ
 
@@ -201,17 +205,17 @@ For solutions to common issues, see: [FAQ](docs/en/FAQ.md).
 
 ## Contributing
 
-We welcome developers to contribute to JiuwenSwarm. You can contribute in the following ways:
+We welcome developers to contribute to DeepScient. You can contribute in the following ways:
 
-- Report bugs, feature requests, or usage issues: [Issues](https://github.com/openJiuwen-ai/jiuwenswarm/issues)
-- Submit code, documentation, or examples: [Pull Requests](https://github.com/openJiuwen-ai/jiuwenswarm/pulls)
+- Report bugs, feature requests, or usage issues: [Issues](https://github.com/yzlin286-wq/Deepscient/issues)
+- Submit code, documentation, or examples: [Pull Requests](https://github.com/yzlin286-wq/Deepscient/pulls)
 - Share Skills: [Swarm Skills Hub](https://swarmskills.openjiuwen.com/)
 
 Read the [Contributing Guide](docs/en/Contributing.md) first for the debugging workflow, code style, and commit conventions. The contribution map is on the [openJiuwen contribution page](https://openjiuwen.com/en/contribute).
 
 ### Contributors
 
-Thanks to all developers who have contributed to JiuwenSwarm: [View Contributor List](https://github.com/openJiuwen-ai/jiuwenswarm/graphs/contributors)
+Thanks to all developers who have contributed to DeepScient: [View Contributor List](https://github.com/yzlin286-wq/Deepscient/graphs/contributors)
 
 ## Community
 
@@ -219,7 +223,7 @@ Thanks to all developers who have contributed to JiuwenSwarm: [View Contributor 
 | ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
 | Website          | Product info, updates, and ecosystem                         | [Visit Website](https://openjiuwen.com/en/)                   |
 | SIG              | Technical roadmap, engineering practices, ecosystem building | [Join SIG](https://openjiuwen.com/en/community/sig-center)    |
-| Swarm Skills Hub | Browse, publish, and reuse JiuwenSwarm Skills                | [Visit Swarm Skills Hub](https://swarmskills.openjiuwen.com/) |
+| Swarm Skills Hub | Browse, publish, and reuse DeepScient Skills                | [Visit Swarm Skills Hub](https://swarmskills.openjiuwen.com/) |
 
 ## License
 

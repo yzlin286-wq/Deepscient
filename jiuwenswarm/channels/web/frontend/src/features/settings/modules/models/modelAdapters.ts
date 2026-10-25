@@ -19,6 +19,23 @@ export const CUSTOM_VENDOR_SELECTION = 'custom';
 export const OPENAI_ACCOUNT_SELECTION = 'openai-account';
 export const OPENAI_ACCOUNT_DEFAULT_API_BASE = 'https://chatgpt.com/backend-api/codex';
 
+/** 模型对话框只保留 ccagent 预设；其它供应商仍可通过「自定义」手动接入。 */
+export const CCAGENT_VENDOR_KEY = 'ccagent';
+export const MODEL_DIALOG_PRESET_VENDOR_KEYS: readonly string[] = [CCAGENT_VENDOR_KEY];
+
+/**
+ * 预设是否应出现在模型对话框的供应商选择里。
+ *
+ * 只放行 ccagent；但正在编辑的旧条目所属供应商必须保留，否则其它供应商的
+ * 历史配置会失去当前选项、无法继续展示/编辑。
+ */
+export function isModelDialogVendorVisible(
+  vendorKey: string,
+  selectedVendorKey?: string,
+): boolean {
+  return MODEL_DIALOG_PRESET_VENDOR_KEYS.includes(vendorKey) || vendorKey === selectedVendorKey;
+}
+
 export type ModelDraft = {
   alias: string;
   protocol: ModelProtocol;

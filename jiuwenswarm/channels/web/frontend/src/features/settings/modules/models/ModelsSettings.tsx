@@ -10,11 +10,18 @@ import {
 import { getModelLogoUrl } from '../../../../assets/providers';
 import { buildModelValidationPayload, buildModelsSavePayload } from '../../services/settingsContract';
 import type { SettingsSaveErrorScope } from '../../services/SettingsSaveQueue';
-import { SettingsConfirmDialog, SettingsSection } from '../../components';
+import { SettingRow, SettingsConfirmDialog, SettingsSection } from '../../components';
 import { useSettingsServices } from '../../services/SettingsServicesProvider';
+import {
+  fetchPartnerStatus,
+  refreshPartnerModels,
+  type PartnerModelProvision,
+} from '../../../../services/partnerClient';
+import { formatPartnerTime } from '../billing/presentation';
 import { ModelDialog } from './ModelDialog';
 import { getVendorLabel } from './ModelProviderSelect';
 import { displayModelProtocol, parseVendorCatalog } from './modelAdapters';
+import { useAuthStore } from '../../../../stores/authStore';
 import { useSessionStore } from '../../../../stores/sessionStore';
 import {
   addEditableModel,
@@ -69,8 +76,9 @@ export function parseModelsPayload(payload: unknown): { models: ModelEntry[]; ac
 }
 
 export function ModelsSettings() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isConnected, request, saveQueue } = useSettingsServices();
+  const isLoggedIn = useAuthStore((state) => state.islogin);
   const setAvailableModels = useSessionStore((state) => state.setAvailableModels);
   const [models, setModels] = useState<ModelEntry[]>([]);
   const [catalog, setCatalog] = useState<VendorPresetMap>(EMPTY_VENDOR_CATALOG);
@@ -87,8 +95,14 @@ export function ModelsSettings() {
   const [validationStates, setValidationStates] = useState<Record<string, 'testing' | 'success'>>({});
   const [validationToast, setValidationToast] = useState<ValidationToast | null>(null);
   const [expandedModelGroups, setExpandedModelGroups] = useState<Record<string, boolean>>({});
+  const [partnerConfigured, setPartnerConfigured] = useState(false);
+  const [modelProvision, setModelProvision] = useState<PartnerModelProvision | null>(null);
+  const [provisionError, setProvisionError] = useState('');
+  const [refreshingModels, setRefreshingModels] = useState(false);
   const modelsRequestId = useRef(0);
   const catalogRequestId = useRef(0);
+  const provisionRequestId = useRef(0);
+  const autoRefreshRef = useRef(false);
   const validationRequestIds = useRef<Record<string, number>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,6 +141,41 @@ export function ModelsSettings() {
       if (currentRequestId === modelsRequestId.current) setModelsLoading(false);
     }
   }, [isConnected, request, setAvailableModels, t]);
+
+  const loadPartnerProvision = useCallback(async () => {
+    try {
+      const data = await fetchPartnerStatus();
+      setPartnerConfigured(Boolean(data.configured));
+      setModelProvision(data.binding?.modelProvision ?? null);
+      setProvisionError('');
+    } catch {
+      // 未登录或中转站未配置时静默：模型页其它功能不受影响。
+      setPartnerConfigured(false);
+    }
+  }, []);
+
+  const refreshModels = useCallback(async () => {
+    if (!isConnected) return;
+    const requestId = ++provisionRequestId.current;
+    setRefreshingModels(true);
+    setProvisionError('');
+    try {
+      const result = await refreshPartnerModels();
+      if (requestId !== provisionRequestId.current) return;
+      setPartnerConfigured(true);
+      setModelProvision(result.modelProvision);
+      if (result.modelProvision?.applied) await loadModels();
+    } catch (error) {
+      if (requestId !== provisionRequestId.current) return;
+      setProvisionError(
+        error instanceof Error && error.message
+          ? error.message
+          : t('settingsPanel.models.provisionRefreshFailed'),
+      );
+    } finally {
+      if (requestId === provisionRequestId.current) setRefreshingModels(false);
+    }
+  }, [isConnected, loadModels, t]);
 
   const loadCatalog = useCallback(async () => {
     if (!isConnected) {
@@ -179,12 +228,32 @@ export function ModelsSettings() {
     return () => {
       modelsRequestId.current += 1;
       catalogRequestId.current += 1;
+      provisionRequestId.current += 1;
       Object.keys(validationRequestIds.current).forEach((key) => {
         validationRequestIds.current[key] += 1;
       });
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, [reloadModels]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setPartnerConfigured(false);
+      return;
+    }
+    void loadPartnerProvision();
+  }, [isLoggedIn, loadPartnerProvision]);
+
+  // 登录成功后自动下发一次：同步导入的账号已拿到 binding，模型页无需手动「回填」。
+  useEffect(() => {
+    if (!isConnected || !isLoggedIn) {
+      autoRefreshRef.current = false;
+      return;
+    }
+    if (!partnerConfigured || autoRefreshRef.current) return;
+    autoRefreshRef.current = true;
+    void refreshModels();
+  }, [isConnected, isLoggedIn, partnerConfigured, refreshModels]);
 
   const showValidationToast = useCallback((toast: ValidationToast) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -425,6 +494,55 @@ export function ModelsSettings() {
 
   return (
     <>
+      {partnerConfigured ? (
+        <SettingsSection
+          title={t('settingsPanel.models.provisionTitle')}
+          description={t('settingsPanel.models.provisionHint')}
+          action={
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={!isConnected || refreshingModels || saving}
+              loading={refreshingModels}
+              onClick={() => void refreshModels()}
+              data-testid="settings-models-refresh-provision-btn"
+            >
+              {t(
+                refreshingModels
+                  ? 'settingsPanel.models.refreshingModels'
+                  : 'settingsPanel.models.refreshModels',
+              )}
+            </Button>
+          }
+        >
+          <div className="settings-page__item">
+            <SettingRow
+              title={
+                modelProvision?.applied
+                  ? t('settingsPanel.models.provisionApplied')
+                  : t('settingsPanel.models.provisionPending')
+              }
+              description={
+                <span data-testid="settings-models-provision">
+                  {t('settingsPanel.models.provisionLastSynced')}:{' '}
+                  {modelProvision?.syncedAt
+                    ? formatPartnerTime(modelProvision.syncedAt, i18n.language || 'zh-CN')
+                    : t('settingsPanel.models.provisionNeverSynced')}
+                  {' · '}
+                  {t('settingsPanel.models.provisionModelCount')}: {modelProvision?.modelCount ?? 0}
+                  {' · '}
+                  {t('settingsPanel.models.provisionMaskedKey')}: {modelProvision?.maskedKey || '—'}
+                </span>
+              }
+            />
+            {provisionError ? (
+              <div className="settings-page__error" role="alert" data-testid="settings-models-provision-error">
+                {provisionError}
+              </div>
+            ) : null}
+          </div>
+        </SettingsSection>
+      ) : null}
       <SettingsSection
         title={t('settingsPanel.models.primaryModels')}
         separatedRows

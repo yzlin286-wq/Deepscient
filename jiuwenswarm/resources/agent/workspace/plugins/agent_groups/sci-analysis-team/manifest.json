@@ -1,0 +1,24 @@
+{
+  "name": "sci-analysis-team",
+  "package_type": "agent_group",
+  "display_name": "数据分析专家团",
+  "display_description": {
+    "zh": "从原始数据到可复核统计结论，覆盖清洗、推断与可复现工程。",
+    "en": "From raw data to reviewable conclusions across cleaning, inference and reproducibility."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "数据分析"
+  ],
+  "instruction": "Leader 先对齐数据结构与主要终点，再按清洗、推断、复现分派任务；成员分别提交数据字典与清洗留痕、统计方法与效应量、环境与复现说明；Leader 核验假设检查与结果一致性后汇总分析结论。",
+  "agents": [
+    "leader",
+    "sci-expert-data-cleaning",
+    "sci-expert-statistical-inference",
+    "sci-expert-reproducibility"
+  ],
+  "skills": [
+    "sci-statistics-repro"
+  ]
+}

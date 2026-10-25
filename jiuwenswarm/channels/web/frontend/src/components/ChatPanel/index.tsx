@@ -83,6 +83,8 @@ import {
 } from '../../features/workspace/localFilePicker';
 import { useDesktopLocalFilePickerReady, useWelcomeBubblePosition } from '../../hooks';
 import { ApplicationPluginTaskRuntimes } from '../../applicationPlugins/ApplicationPluginOutlet';
+import { ScienceModules } from '../ScienceModules';
+import type { ScienceModule } from '../ScienceModules/presentation';
 import { generateUuidV4 } from '../../utils/uuid';
 
 export interface ChatHistoryPagerProps {
@@ -171,6 +173,12 @@ interface ChatPanelProps {
   onContinueQueuedSessionMessages?: (sessionId: string) => void | Promise<void>;
   /** 专家团「通过聊天创建」入口的 4.9 高保真欢迎态。 */
   welcomeVariant?: 'group-create' | null;
+  /** 科研首页六模块（仅新建会话欢迎页展示，group-create 变体不展示）。 */
+  scienceModules?: ScienceModule[];
+  scienceModulesLoading?: boolean;
+  scienceModulesError?: string | null;
+  onRetryScienceModules?: () => void;
+  onEnterScienceModule?: (moduleId: string) => void;
 }
 
 // 邀请指令只对 human_agent 成员存在（见 upsertHumanShareCommandFromEvent 的
@@ -653,16 +661,16 @@ function WelcomeHeading() {
   if (isZh) {
     return (
       <>
-        <span className="chat-welcome__heading-highlight">WorkSwarm</span>
-        <span>轻松解决工作每个问题！</span>
+        <span className="chat-welcome__heading-highlight">DeepScient</span>
+        <span>轻松解决科研每个问题！</span>
       </>
     );
   }
 
   return (
     <>
-      <span className="chat-welcome__heading-highlight">WorkSwarm</span>
-      <span>makes work easier!</span>
+      <span className="chat-welcome__heading-highlight">DeepScient</span>
+      <span>makes research easier!</span>
     </>
   );
 }
@@ -1054,6 +1062,11 @@ export const ChatPanel = React.memo(function ChatPanel({
   onDrainTaskQueueIfIdle,
   onContinueQueuedSessionMessages,
   welcomeVariant = null,
+  scienceModules = [],
+  scienceModulesLoading = false,
+  scienceModulesError = null,
+  onRetryScienceModules,
+  onEnterScienceModule,
 }: ChatPanelProps) {
   const { t } = useTranslation();
   const activeSessionId = useChatStore((s) => s.activeSessionId);
@@ -1975,6 +1988,15 @@ export const ChatPanel = React.memo(function ChatPanel({
                   onClearGoal={onClearGoal}
                 />
               </div>
+              {!isGroupCreateWelcome && onEnterScienceModule && (
+                <ScienceModules
+                  modules={scienceModules}
+                  loading={scienceModulesLoading}
+                  error={scienceModulesError}
+                  onRetry={onRetryScienceModules}
+                  onEnter={onEnterScienceModule}
+                />
+              )}
               {isGroupCreateWelcome && (
                 <div className="chat-welcome__capabilities" data-testid="chat-panel-welcome-capabilities">
                   <span className="chat-welcome__capability">

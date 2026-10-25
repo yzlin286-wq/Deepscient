@@ -1,0 +1,24 @@
+{
+  "name": "sci-submission-team",
+  "package_type": "agent_group",
+  "display_name": "投稿与审稿专家团",
+  "display_description": {
+    "zh": "完成选刊、投稿材料准备与审稿回应，交付一致的完整投稿包。",
+    "en": "Handles journal selection, submission materials and reviewer responses."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "投稿与审稿"
+  ],
+  "instruction": "Leader 先明确投稿层级与时间窗口，再按选刊、材料、回应分派任务；成员分别提交选刊梯度、投稿信与声明、审稿回应表；Leader 核对事实与署名一致性后交付完整投稿包。",
+  "agents": [
+    "leader",
+    "sci-expert-journal-selection",
+    "sci-expert-cover-letter",
+    "sci-expert-rebuttal"
+  ],
+  "skills": [
+    "sci-submission-pack"
+  ]
+}

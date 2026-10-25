@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "实验设计专家",
+  "display_name": "实验设计专家",
+  "display_description": {
+    "zh": "把假设转成可执行方案，明确变量、对照、随机化与盲法。",
+    "en": "Turns hypotheses into executable designs with variables, controls and blinding."
+  },
+  "description": "负责实验方案、变量控制、对照设置与操作流程设计。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "实验设计"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

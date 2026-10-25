@@ -1,6 +1,6 @@
 import { settingsNavigationIcons } from '../../../../assets/settings';
 import type { SettingsModuleDefinition } from '../../registry/types';
-import { FreeModelsSettings } from './FreeModelsSettings';
+import { AccountSettings } from './AccountSettings';
 import { ModelsSettings } from './ModelsSettings';
 
 export const modelsModule: SettingsModuleDefinition = {
@@ -10,9 +10,9 @@ export const modelsModule: SettingsModuleDefinition = {
   source: 'config',
   sections: [
     {
-      id: 'limited-free-models',
+      id: 'account',
       separatedRows: true,
-      items: [{ id: 'limited-free-models', component: 'custom', render: FreeModelsSettings }],
+      items: [{ id: 'account', component: 'custom', render: AccountSettings }],
     },
     {
       id: 'model-manager',

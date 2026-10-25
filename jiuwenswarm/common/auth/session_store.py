@@ -2,12 +2,11 @@
 
 """登录会话存储：内存 + 加密落盘。
 
-存档里有 refresh_token——它是长期凭据，明文落盘等于把账号的模型额度交出去，所以
-一律 AES-256-GCM 加密，密钥放在 ``~/.jiuwenswarm/auth/.install_key``（0600），
-每台机器一把。
+存档里有官网签发的 access_token——明文落盘等于把账号交出去，所以一律
+AES-256-GCM 加密，密钥放在 `~/.jiuwenswarm/auth/.install_key`（0600），每台机器一把。
 
-落盘是为了**进程重启后不用重新登录**（id_token 只有 1 小时，靠 refresh_token 续期），
-也是 Gateway 与 AgentServer 两个进程共享登录态的途径。
+落盘是为了**进程重启后不用重新登录**，也是 Gateway 与 AgentServer 两个进程
+共享登录态的途径。
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from typing import Any
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from jiuwenswarm.common.auth.account_kit import Credential, LoginOutcome, mask
+from jiuwenswarm.common.auth.deepscient_oauth import Credential, LoginOutcome, mask
 from jiuwenswarm.common.utils import get_user_workspace_dir
 
 logger = logging.getLogger(__name__)
@@ -38,7 +37,7 @@ _ENVELOPE_ALG = "A256GCM"
 _SESSION_FILE_NAME = "sessions.json"
 #: 会话存档的格式版本。认不出的版本一律当作没登录，不做迁移（重新登录一次即可）。
 _ARCHIVE_VERSION = 2
-# 会话最长存活时间。id_token 只有 1h，会话更长是为了让「续期」有机会跑起来。
+# 会话最长存活时间。token 本身的有效期由官网决定，这里只是兜住长期不用的存档。
 DEFAULT_SESSION_TTL_S = 30 * 24 * 60 * 60.0
 
 
@@ -231,6 +230,10 @@ class AuthSession:
             "userId": self.user_id,
             "userName": self.user_name,
             "createdAt": self.created_at,
+            "email": self.extra.get("email"),
+            "role": self.extra.get("role"),
+            "balance": self.extra.get("balance"),
+            "expiresAt": self.credential.expires_at,
         }
 
 
@@ -282,6 +285,7 @@ class AuthSessionStore:
             credential=outcome.credential,
             created_at=now,
             updated_at=now,
+            extra=dict(outcome.extra or {}),
         )
         with self._lock:
             self._ensure_loaded(force=True)
@@ -307,6 +311,18 @@ class AuthSessionStore:
                 logger.info("[Auth] 会话已不存在，丢弃迟到的凭据更新 session=%s", mask(session_id))
                 return None
             session.credential = credential
+            session.updated_at = time.time()
+            self._flush()
+            return session
+
+    def update_extra(self, session_id: str, extra: dict[str, Any]) -> AuthSession | None:
+        """刷新会话里给前端看的用户字段（email / role / balance / ...）。"""
+        with self._lock:
+            self._ensure_loaded(force=True)
+            session = self._by_session.get(session_id)
+            if session is None:
+                return None
+            session.extra = dict(extra)
             session.updated_at = time.time()
             self._flush()
             return session

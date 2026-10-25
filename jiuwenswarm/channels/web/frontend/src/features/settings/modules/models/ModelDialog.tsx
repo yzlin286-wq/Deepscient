@@ -11,6 +11,7 @@ import { OpenAIAccountSettings, useOpenAIAccountController } from './OpenAIAccou
 import { ModelNameField } from './ModelNameField';
 import { ModelProviderSelect } from './ModelProviderSelect';
 import {
+  CCAGENT_VENDOR_KEY,
   CUSTOM_VENDOR_SELECTION,
   OPENAI_ACCOUNT_SELECTION,
   applyModelProtocol,
@@ -268,7 +269,7 @@ export function ModelDialog({
   const fetchModels = async () => {
     const currentValues = form.getValues();
     const currentPreset = findVendorPreset(catalog, currentValues.vendor_selection);
-    if (!currentPreset || fetching) return;
+    if (!currentPreset || currentPreset.vendor_key !== CCAGENT_VENDOR_KEY || fetching) return;
     if (!currentPreset.models_endpoint || (currentPreset.models_needs_key && !currentValues.api_key.trim())) {
       updateModelOptions([]);
       setFetchStatus(describePresetStatus(currentPreset, currentValues.api_key, []));
@@ -322,7 +323,7 @@ export function ModelDialog({
   const openModelList = () => {
     const currentValues = form.getValues();
     const currentPreset = findVendorPreset(catalog, currentValues.vendor_selection);
-    if (!currentPreset) return;
+    if (!currentPreset || currentPreset.vendor_key !== CCAGENT_VENDOR_KEY) return;
     if (!currentPreset.models_endpoint || (currentPreset.models_needs_key && !currentValues.api_key.trim())) {
       updateModelOptions([]);
       setFetchStatus(describePresetStatus(currentPreset, currentValues.api_key, []));
@@ -357,6 +358,7 @@ export function ModelDialog({
           value={String(value ?? '')}
           protocol={values.protocol}
           catalog={catalog}
+          includeOpenAIAccount={account}
           disabled={disabled}
           invalid={Boolean(error)}
           onChange={updateVendor}
@@ -438,7 +440,7 @@ export function ModelDialog({
         fetchStatus={account ? openAIAccount.modelStatus : fetchStatus}
         fetchStatusTone={account ? openAIAccount.modelStatusTone : 'neutral'}
         fetching={account ? openAIAccount.loadingModels : fetching}
-        showRefresh={account || Boolean(preset)}
+        showRefresh={account || preset?.vendor_key === CCAGENT_VENDOR_KEY}
         fetchDisabled={
           account
             ? !isConnected ||
@@ -448,6 +450,7 @@ export function ModelDialog({
               submitting ||
               saving
             : !isConnected ||
+              preset?.vendor_key !== CCAGENT_VENDOR_KEY ||
               !preset?.models_endpoint ||
               (Boolean(preset?.models_needs_key) && !values.api_key.trim()) ||
               testing ||

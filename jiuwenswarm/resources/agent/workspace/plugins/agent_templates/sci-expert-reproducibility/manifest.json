@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "可复现工程专家",
+  "display_name": "可复现工程专家",
+  "display_description": {
+    "zh": "固化环境、版本与运行入口，使分析结果可被他人复现。",
+    "en": "Pins environments, versions and entrypoints so results can be reproduced."
+  },
+  "description": "负责环境固化、版本锁定、运行脚本与复现说明。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "可复现工程"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

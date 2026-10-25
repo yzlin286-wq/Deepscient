@@ -1,0 +1,24 @@
+{
+  "name": "sci-literature-team",
+  "package_type": "agent_group",
+  "display_name": "文献与选题专家团",
+  "display_description": {
+    "zh": "从研究问题出发完成检索、系统综述与选题论证，产出可追溯的文献证据。",
+    "en": "Literature search, systematic review and topic framing with traceable evidence."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "文献综述"
+  ],
+  "instruction": "Leader 先澄清研究问题与范围，再按检索、综述、选题分派任务；成员分别提交检索式与文献清单、PRISMA 计数与证据分级、候选问题与创新性论证；Leader 核验证据链、消解分歧后汇总为一份可执行的研究方案。",
+  "agents": [
+    "leader",
+    "sci-expert-literature-search",
+    "sci-expert-systematic-review",
+    "sci-expert-topic-framing"
+  ],
+  "skills": [
+    "sci-literature-review"
+  ]
+}

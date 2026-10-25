@@ -8,6 +8,7 @@ import { settingsCustomModelIcon } from '../../../../assets/settings';
 import {
   CUSTOM_VENDOR_SELECTION,
   OPENAI_ACCOUNT_SELECTION,
+  isModelDialogVendorVisible,
   vendorSelectionKey,
   type ModelProtocol,
 } from './modelAdapters';
@@ -33,6 +34,7 @@ const GROUPS: Array<ModelPlan | 'other'> = ['token_plan', 'coding_plan', 'custom
 const VENDOR_TRANSLATION_KEYS: Record<string, string> = {
   alibaba: 'alibaba',
   baidu: 'baidu',
+  ccagent: 'ccagent',
   deepseek: 'deepseek',
   kimi: 'kimi',
   maas: 'maas',
@@ -93,12 +95,24 @@ export function ModelProviderSelect({
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState<ProviderMenuPosition | null>(null);
 
+  const selectedVendorKey = useMemo(() => {
+    for (const group of GROUPS) {
+      if (group === 'other') continue;
+      const found = catalog[group].find(
+        (preset) => vendorSelectionKey(preset.plan, preset.vendor_key) === value,
+      );
+      if (found) return found.vendor_key;
+    }
+    return undefined;
+  }, [catalog, value]);
+
   const allOptions = useMemo<ProviderOption[]>(() => {
     const presets = GROUPS.flatMap((group) =>
       group === 'other'
         ? []
         : catalog[group]
             .filter((preset) => protocol === 'openai' || preset.supports_anthropic)
+            .filter((preset) => isModelDialogVendorVisible(preset.vendor_key, selectedVendorKey))
             .map((preset) => ({
               kind: 'preset' as const,
               value: vendorSelectionKey(preset.plan, preset.vendor_key),
@@ -113,7 +127,7 @@ export function ModelProviderSelect({
         : []),
       { kind: 'custom', value: CUSTOM_VENDOR_SELECTION, plan: 'other' },
     ];
-  }, [catalog, includeOpenAIAccount, protocol]);
+  }, [catalog, includeOpenAIAccount, protocol, selectedVendorKey]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const options = useMemo(

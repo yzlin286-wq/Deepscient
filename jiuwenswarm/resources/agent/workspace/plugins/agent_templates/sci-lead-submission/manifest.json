@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "投稿与审稿负责人",
+  "display_name": "投稿与审稿负责人",
+  "display_description": {
+    "zh": "统筹选刊、投稿材料与审稿回应，交付符合期刊要求的完整投稿包。",
+    "en": "Leads journal selection, submission materials and reviewer responses."
+  },
+  "description": "作为投稿方向负责人，拆解投稿任务、协调选刊/材料/回应成员并核验材料一致性。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "投稿与审稿"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

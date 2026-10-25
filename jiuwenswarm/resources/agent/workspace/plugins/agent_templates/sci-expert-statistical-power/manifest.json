@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "统计功效专家",
+  "display_name": "统计功效专家",
+  "display_description": {
+    "zh": "依据效应量与变异估算样本量，给出可解释的功效分析。",
+    "en": "Estimates sample size and power from effect sizes and variability."
+  },
+  "description": "负责样本量估算、功效分析与检验假设的可识别性。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "统计功效"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

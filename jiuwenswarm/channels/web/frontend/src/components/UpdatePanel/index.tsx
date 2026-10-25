@@ -27,6 +27,8 @@ interface UpdateStatusPayload {
 interface UpdaterConfigPayload {
   release_api_type?: unknown;
   release_api_url?: unknown;
+  repo_owner?: unknown;
+  repo_name?: unknown;
 }
 
 function normalizeString(value: unknown): string {
@@ -225,6 +227,11 @@ export function UpdatePanel({ isConnected, request }: UpdatePanelProps) {
   const totalBytes = normalizeNumber(status?.total_bytes);
   const currentActivity = normalizeString(status?.current_activity);
   const restartCommand = normalizeString(status?.restart_command);
+  const repoOwner = normalizeString(config?.repo_owner);
+  const repoName = normalizeString(config?.repo_name);
+  const repoValue = repoOwner && repoName
+    ? `${repoOwner}/${repoName}`
+    : (repoOwner || repoName || t('updatePanel.repoFallback'));
   const progress = useMemo(() => {
     if (totalBytes <= 0) return 0;
     return Math.max(0, Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)));
@@ -357,16 +364,24 @@ export function UpdatePanel({ isConnected, request }: UpdatePanelProps) {
             <label className="card !p-4" data-testid="update-panel-config-card" data-variant="release_api_type">
               <div className="text-xs uppercase tracking-wide text-text-muted" data-testid="update-panel-config-card-label" data-variant="release_api_type">{t('updatePanel.fields.releaseApiType')}</div>
               <div className="mt-3 text-sm font-mono text-text" data-testid="update-panel-config-card-value" data-variant="release_api_type">
-                {normalizeString(config?.release_api_type) || 'gitcode'}
+                {normalizeString(config?.release_api_type) || 'github'}
+              </div>
+            </label>
+
+            <label className="card !p-4" data-testid="update-panel-config-card" data-variant="repo">
+              <div className="text-xs uppercase tracking-wide text-text-muted" data-testid="update-panel-config-card-label" data-variant="repo">{t('updatePanel.fields.repo')}</div>
+              <div className="mt-3 text-sm font-mono text-text break-all" data-testid="update-panel-config-card-value" data-variant="repo">
+                {repoValue}
               </div>
             </label>
 
             <label className="card !p-4 md:col-span-2" data-testid="update-panel-config-card" data-variant="release_api_url">
               <div className="text-xs uppercase tracking-wide text-text-muted" data-testid="update-panel-config-card-label" data-variant="release_api_url">{t('updatePanel.fields.releaseApiUrl')}</div>
-              <input
-                className="input mt-3 w-full"
+              <textarea
+                className="input mt-3 w-full resize-none overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs"
                 value={normalizeString(config?.release_api_url)}
-                disabled
+                rows={2}
+                readOnly
                 data-testid="update-panel-config-card-input"
                 data-variant="release_api_url"
               />

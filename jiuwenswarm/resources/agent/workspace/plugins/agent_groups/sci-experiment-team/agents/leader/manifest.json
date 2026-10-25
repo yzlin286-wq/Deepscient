@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "实验负责人",
+  "display_name": "实验负责人",
+  "display_description": {
+    "zh": "统筹实验设计、统计功效与伦理合规，交付可执行且可预注册的研究方案。",
+    "en": "Leads experiment design, power analysis and ethics review for executable protocols."
+  },
+  "description": "作为实验方向负责人，拆解实验方案任务、协调设计/功效/伦理成员并核验方案可执行性。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "实验设计"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

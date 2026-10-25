@@ -1,46 +1,48 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 
-"""Gateway Web HTTP 的登录路由（``/api/v1/auth/*``），华为账号 Account Kit。
+"""Gateway Web HTTP 的登录路由（``/api/v1/auth/*``），DeepScient 官网账号。
 
 ====================================  ==========================================
 ``POST /api/v1/auth/authorize``       生成授权地址（后端做 state / PKCE）
-``GET  /api/v1/auth/callback``        华为回调落点：换 token + 建会话 + 下 cookie
+``GET  /api/v1/auth/callback``        官网回调落点：换 token + 建会话 + 下 cookie
+``GET  /auth/callback``               同上（回调地址的根路径形式，经 Web 通道转发）
 ``POST /api/v1/auth/claim``           发起方凭 ``{state, claimToken}`` 取回会话
 ``POST /api/v1/auth/cancel``          发起方凭 ``{state, claimToken}`` 放弃这次登录
+``POST /api/v1/auth/password-login``  应用内密码登录（``grant_type=password``）
+``POST /api/v1/auth/resend-verification``  重发邮箱验证邮件
 ``GET  /api/v1/auth/status``          当前登录状态（不含任何凭据）
-``POST /api/v1/auth/logout``          清会话
-``GET  /api/v1/auth/models``          登录后可用的模型
-``GET  /api/v1/auth/quota``           免费模型额度（走 APIG）
+``POST /api/v1/auth/refresh``         重新拉一次官网用户信息
+``POST /api/v1/auth/logout``          撤销官网 token 并清会话
 ====================================  ==========================================
 
-``/callback`` 只在"回调落本机"的形态下用到（AGC 登记的 ``redirect_uri``）：浏览器直接访问，
-返回我们自己的落地页而不是 JSON。落地页经 ``BroadcastChannel`` 通知同源的应用标签页并自行
-关闭；通知不到的（不同源、桌面端开在系统浏览器里），由应用在窗口重新获得焦点时去 ``/claim``。
-生产形态下回调落 ECS，这个路由用不到。
+回调由浏览器直接访问，返回我们自己的落地页而不是 JSON。落地页经 ``BroadcastChannel``
+通知同源的应用标签页并自行关闭；通知不到的（不同源、桌面端开在系统浏览器里），
+由应用在窗口重新获得焦点时去 ``/claim``。
 
-发起登录 / 认领 / 取消 / 登出这几个 POST 必须带 ``X-Jiuwen-Auth: 1``（见 :data:`AUTH_REQUEST_HEADER`）。
+发起登录 / 密码登录 / 认领 / 取消 / 登出这几个 POST 必须带 ``X-Jiuwen-Auth: 1``
+（见 :data:`AUTH_REQUEST_HEADER`）。
 
 会话 id 同时接受 cookie（``jiuwenswarm_auth``）和 ``X-Auth-Session`` 头——
 浏览器用 cookie，桌面 WebView / TUI 这类拿不到那份 cookie 的前端用请求头。
+
+密码登录的请求体里带着明文密码：**不记录请求体、不记录密码**，只在本次上游请求里
+使用一次，换到 token 后即丢弃（会话里只有 token 与用户字段）。
 """
 
 from __future__ import annotations
 
 import html
 import logging
-from typing import Annotated
+from typing import Annotated, Any
+from urllib.parse import urlparse
 
 from fastapi import Body, FastAPI, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from jiuwenswarm.common.auth.account_kit import OAuthError
-from jiuwenswarm.common.auth.model_catalog import (
-    get_models,
-    model_whitelist,
-)
-from jiuwenswarm.common.auth.service import ModelAuthRequired, get_auth_service, resolve_id_token
+from jiuwenswarm.common.auth.deepscient_oauth import OAuthError
+from jiuwenswarm.common.auth.service import get_auth_service
 from jiuwenswarm.common.auth.session_store import AuthSession
 
 logger = logging.getLogger(__name__)
@@ -58,8 +60,10 @@ AUTH_CALLBACK_MESSAGE = "jiuwenswarm:auth-callback"
 #: SameSite 挡不住：不设防的话，一个网页就能不停地往内存里塞待登录记录。要求自定义头之后，
 #: 跨站请求必须先过预检，而 Gateway 不开 CORS，预检不会通过。
 AUTH_REQUEST_HEADER = "x-jiuwen-auth"
-# cookie 存活时间：比 id_token（1h）长得多，续期失败时由 status 接口判定为未登录。
+# cookie 存活时间与本地会话存档上限一致；token 是否还有效由 status 接口判定。
 _COOKIE_MAX_AGE_S = 30 * 24 * 60 * 60
+#: 这些失败是"连不上官网"，用 502 让前端区分网络问题与授权被拒。
+_UPSTREAM_ERROR_CODES = frozenset({"oauth_network_error"})
 
 
 class AuthClaimBody(BaseModel):
@@ -68,13 +72,23 @@ class AuthClaimBody(BaseModel):
 
 
 class AuthCallbackQuery(BaseModel):
-    """华为账号授权回调的 query 参数。"""
+    """官网授权回调的 query 参数。"""
 
     state: str = ""
     code: str = ""
     error: str = ""
     error_description: str = ""
-    sub_error: str = ""
+
+
+class AuthPasswordLoginBody(BaseModel):
+    """应用内密码登录。缺字段由路由判成 400，避免 pydantic 直接回 422。"""
+
+    username: str = Field("", description="官网邮箱或用户名")
+    password: str = Field("", description="密码，仅用于本次换取 token")
+
+
+class AuthResendVerificationBody(BaseModel):
+    email: str = Field("", description="注册邮箱")
 
 
 def resolve_session_id(request: Request) -> str | None:
@@ -86,8 +100,64 @@ def resolve_session_id(request: Request) -> str | None:
     return cookie or None
 
 
+def request_origin(request: Request) -> str:
+    """回调要回到哪个源：``Origin`` → ``Referer`` 的 scheme://host → 本机 127.0.0.1。"""
+    origin = (request.headers.get("origin") or "").strip()
+    if origin:
+        return origin.rstrip("/")
+    referer = (request.headers.get("referer") or "").strip()
+    if referer:
+        parsed = urlparse(referer)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    port = request.url.port or (443 if request.url.scheme == "https" else 80)
+    return f"http://127.0.0.1:{port}"
+
+
 def _error(message: str, code: str, status: int) -> JSONResponse:
     return JSONResponse({"ok": False, "error": {"code": code, "message": message}}, status_code=status)
+
+
+def _flat_error(
+    message: str,
+    code: str,
+    status: int,
+    *,
+    extra: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
+    """密码登录 / 重发验证邮件的错误体：``{ok,message,error,...}`` 平铺。"""
+    body: dict[str, Any] = {"ok": False, "message": message, "error": code}
+    if extra:
+        body.update(extra)
+    return JSONResponse(body, status_code=status, headers=headers or None)
+
+
+def _oauth_error_response(error: OAuthError) -> JSONResponse:
+    """按官网返回的状态码透传，并保留 ``email`` / ``can_resend`` / ``Retry-After``。"""
+    if isinstance(error.status, int) and 400 <= error.status <= 599:
+        status = error.status
+    elif error.code == "login_disabled":
+        status = 409
+    elif error.code == "session_store_failed":
+        status = 500
+    else:
+        status = 502 if error.code in _UPSTREAM_ERROR_CODES else 400
+
+    payload = error.payload if isinstance(error.payload, dict) else {}
+    extra: dict[str, Any] = {}
+    email = payload.get("email")
+    if isinstance(email, str) and email.strip():
+        extra["email"] = email.strip()
+    can_resend = payload.get("can_resend")
+    if isinstance(can_resend, bool):
+        extra["can_resend"] = can_resend
+
+    headers: dict[str, str] = {}
+    retry_after = payload.get("retry_after")
+    if isinstance(retry_after, int) and not isinstance(retry_after, bool) and retry_after > 0:
+        headers["Retry-After"] = str(retry_after)
+    return _flat_error(str(error), error.code, status, extra=extra, headers=headers)
 
 
 def _reject_without_auth_header(request: Request) -> JSONResponse | None:
@@ -111,7 +181,7 @@ def _attach_session(response: Response, session: AuthSession, request: Request) 
 
 
 def _landing_page(ok: bool, title: str, detail: str, status: int = 200) -> HTMLResponse:
-    """回调落地页，用户在第三方授权页之后看到的唯一页面"""
+    """回调落地页，用户在官网授权页之后看到的唯一页面"""
     auto_close = "setTimeout(function(){window.close();},1200);" if ok else ""
     body = f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
@@ -137,31 +207,12 @@ try{{var c=new BroadcastChannel("{AUTH_CALLBACK_CHANNEL}");c.postMessage({{type:
     )
 
 
-async def _revoke_agent_server_credential(user_id: str) -> None:
-    try:
-        from jiuwenswarm.common.auth.login_credentials import credential_ref_for_user
-        from jiuwenswarm.gateway.message_handler.message_handler import MessageHandler
-
-        handler = MessageHandler.try_get_instance()
-        if handler is None:
-            return
-        await handler.push_login_credential_update(
-            {"credential_ref": credential_ref_for_user(user_id), "revoked": True}
-        )
-    except Exception:  # noqa: BLE001
-        logger.warning("[Auth] 登出后撤销 AgentServer 凭据失败", exc_info=True)
-
-
 def register_auth_routes(app: FastAPI) -> None:
-    from jiuwenswarm.common.auth.remote_config import warm_up_in_background
-
-    # 启动时先在后台把官网配置拉下来：否则第一个请求要么等网络、要么拿到空配置
-    warm_up_in_background()
 
     @app.post(
         "/api/v1/auth/authorize",
         tags=[_OPENAPI_TAG],
-        summary="发起登录：返回浏览器要打开的华为账号授权地址",
+        summary="发起登录：返回浏览器要打开的官网授权地址",
     )
     async def auth_authorize(request: Request) -> Response:
         rejected = _reject_without_auth_header(request)
@@ -171,33 +222,80 @@ def register_auth_routes(app: FastAPI) -> None:
 
         def _authorize() -> Response:
             if not service.enabled:
-                return _error("登录未开启（拉不到官网配置、活动已结束，或本地显式关闭了）", "login_disabled", 404)
+                return _error("登录未开启", "login_disabled", 404)
             try:
-                return JSONResponse(service.create_authorization_request())
+                return JSONResponse(service.create_authorization_request(request_origin(request)))
             except OAuthError as error:
                 logger.warning("[Auth] 无法发起登录: %s (%s)", error, error.code)
                 return _error(str(error), error.code, 503)
 
         return await run_in_threadpool(_authorize)
 
-    @app.get(
-        "/api/v1/auth/callback",
+    @app.post(
+        "/api/v1/auth/password-login",
         tags=[_OPENAPI_TAG],
-        summary="华为账号授权回调（浏览器访问，返回落地页）",
-        response_class=HTMLResponse,
+        summary="应用内密码登录（官网 password grant），成功下发会话",
     )
-    async def auth_callback(
-        request: Request,
-        query: Annotated[AuthCallbackQuery, Query()],
+    async def auth_password_login(
+        request: Request, body: AuthPasswordLoginBody = Body(...)
     ) -> Response:
+        rejected = _reject_without_auth_header(request)
+        if rejected is not None:
+            return rejected
+        username = (body.username or "").strip()
+        # 密码只在这条调用链里出现：不落日志、不进响应。
+        password = body.password or ""
+        if not username or not password:
+            return _flat_error("请填写账号与密码", "invalid_request", 400)
+        service = get_auth_service()
+        if not await run_in_threadpool(lambda: service.enabled):
+            return _flat_error("登录未开启", "auth-disabled", 409)
+        try:
+            session = await run_in_threadpool(service.login_with_password, username, password)
+        except OAuthError as err:
+            logger.warning("[Auth] 密码登录失败 code=%s status=%s", err.code, err.status)
+            return _oauth_error_response(err)
+        status = await run_in_threadpool(service.status, session.session_id)
+        response = JSONResponse({"ok": True, **status})
+        _attach_session(response, session, request)
+        return response
+
+    @app.post(
+        "/api/v1/auth/resend-verification",
+        tags=[_OPENAPI_TAG],
+        summary="重发邮箱验证邮件",
+    )
+    async def auth_resend_verification(
+        request: Request, body: AuthResendVerificationBody = Body(...)
+    ) -> Response:
+        rejected = _reject_without_auth_header(request)
+        if rejected is not None:
+            return rejected
+        email = (body.email or "").strip()
+        if not email:
+            return _flat_error("请填写邮箱", "invalid_request", 400)
+        service = get_auth_service()
+        if not await run_in_threadpool(lambda: service.enabled):
+            return _flat_error("登录未开启", "auth-disabled", 409)
+        try:
+            result = await run_in_threadpool(service.resend_verification, email)
+        except OAuthError as err:
+            logger.warning("[Auth] 重发验证邮件失败 code=%s status=%s", err.code, err.status)
+            return _oauth_error_response(err)
+        resend_after = result.get("resend_after") if isinstance(result, dict) else None
+        if not isinstance(resend_after, int) or isinstance(resend_after, bool) or resend_after <= 0:
+            resend_after = 60
+        return JSONResponse({"ok": True, "resend_after": resend_after})
+
+    async def _handle_callback(request: Request, query: AuthCallbackQuery) -> Response:
         service = get_auth_service()
         if not await run_in_threadpool(lambda: service.enabled):
             return _landing_page(False, "登录未开启", "请回到应用。", 404)
         if query.error:
-            # 华为的错误码（如 1201）本身不说明原因，要靠这两个字段才查得下去
             logger.warning(
-                "[Auth] 华为回调带错误 error=%s sub_error=%s error_description=%s",
-                query.error, query.sub_error or "-", query.error_description or "-",
+                "[Auth] 官网回调带错误 error=%s error_description=%s",
+                query.error,
+                query.error_description or "-",
             )
         try:
             session = await run_in_threadpool(
@@ -212,11 +310,31 @@ def register_auth_routes(app: FastAPI) -> None:
             if err.code == "oauth_state_invalid":
                 # 不回显细节：这不是任何人发起的登录（或已过期），统一一个中性页面
                 return _landing_page(False, "登录链接已失效", "请回到应用重新发起登录。", 400)
-            return _landing_page(False, "登录未完成", f"{err}", 400)
+            status = 502 if err.code in _UPSTREAM_ERROR_CODES else 400
+            return _landing_page(False, "登录未完成", f"{err}", status)
 
-        response = _landing_page(True, "华为账号登录成功", "请回到应用继续使用，这个页面可以关闭。")
+        response = _landing_page(True, "官网账号登录成功", "请回到应用继续使用，这个页面可以关闭。")
         _attach_session(response, session, request)
         return response
+
+    @app.get(
+        "/api/v1/auth/callback",
+        tags=[_OPENAPI_TAG],
+        summary="官网授权回调（浏览器访问，返回落地页）",
+        response_class=HTMLResponse,
+    )
+    @app.get(
+        "/auth/callback",
+        tags=[_OPENAPI_TAG],
+        summary="官网授权回调（根路径形式，经 Web 通道转发）",
+        response_class=HTMLResponse,
+        include_in_schema=False,
+    )
+    async def auth_callback(
+        request: Request,
+        query: Annotated[AuthCallbackQuery, Query()],
+    ) -> Response:
+        return await _handle_callback(request, query)
 
     @app.post(
         "/api/v1/auth/claim",
@@ -231,20 +349,20 @@ def register_auth_routes(app: FastAPI) -> None:
         if not await run_in_threadpool(lambda: service.enabled):
             return _error("登录未开启", "login_disabled", 404)
         try:
-            # 回调落鉴权服务时会当场去鉴权服务取一次，是网络调用
             session = await run_in_threadpool(service.claim, body.state.strip(), body.claimToken.strip())
         except OAuthError as err:
             return _error(str(err), err.code, 400)
         if session is None:
             return JSONResponse({"ok": True, "pending": True}, status_code=202)
-        response = JSONResponse({"ok": True, "islogin": True, **session.public_view()})
+        status = await run_in_threadpool(service.status, session.session_id)
+        response = JSONResponse({"ok": True, **status})
         _attach_session(response, session, request)
         return response
 
     @app.post(
         "/api/v1/auth/cancel",
         tags=[_OPENAPI_TAG],
-        summary="放弃这次登录（停止向鉴权服务认领）",
+        summary="放弃这次登录",
     )
     async def auth_cancel(request: Request, body: AuthClaimBody = Body(...)) -> Response:
         rejected = _reject_without_auth_header(request)
@@ -263,87 +381,35 @@ def register_auth_routes(app: FastAPI) -> None:
         service = get_auth_service()
         return JSONResponse(await run_in_threadpool(service.status, resolve_session_id(request)))
 
+    @app.post(
+        "/api/v1/auth/refresh",
+        tags=[_OPENAPI_TAG],
+        summary="向官网重新拉一次用户信息",
+    )
+    async def auth_refresh(request: Request) -> Response:
+        service = get_auth_service()
+        session_id = resolve_session_id(request)
+        if await run_in_threadpool(lambda: service.resolve_session(session_id)) is None:
+            return _error("请先登录", "not_logged_in", 401)
+        try:
+            session = await run_in_threadpool(service.refresh_user, session_id)
+        except OAuthError as err:
+            status = 502 if err.code in _UPSTREAM_ERROR_CODES else 400
+            return _error(str(err), err.code, status)
+        if session is None:
+            return _error("登录已过期，请重新登录", "oauth_unauthorized", 401)
+        status = await run_in_threadpool(service.status, session.session_id)
+        return JSONResponse({"ok": True, **status})
+
     @app.post("/api/v1/auth/logout", tags=[_OPENAPI_TAG], summary="退出登录")
     async def auth_logout(request: Request) -> Response:
         rejected = _reject_without_auth_header(request)
         if rejected is not None:
             return rejected
         service = get_auth_service()
-        session_id = resolve_session_id(request)
-        # 先取账号再登出：句柄按账号算，会话删了就查不到是谁了
-        session = service.resolve_session(session_id)
-        service.logout(session_id)
-        if session is not None:
-            await _revoke_agent_server_credential(session.user_id)
+        await run_in_threadpool(service.logout, resolve_session_id(request))
         response = JSONResponse({"ok": True, "islogin": False})
         response.delete_cookie(AUTH_SESSION_COOKIE, path="/")
         return response
-
-    @app.get(
-        "/api/v1/auth/models",
-        tags=[_OPENAPI_TAG],
-        summary="登录后自动获得的模型列表",
-        description=(
-            "模型不是配置出来的，是拿登录凭据向 APIG 发现出来的，本地带缓存。"
-            "这些模型同时会并进 `models.list`，和用户自配的模型一起展示。"
-        ),
-    )
-    async def auth_models(request: Request) -> Response:
-        session_id = resolve_session_id(request)
-        service = get_auth_service()
-
-        def _load() -> tuple[list[dict[str, str]] | None, bool]:
-            whitelist_applied = model_whitelist() is not None
-            session = service.resolve_session(session_id)
-            # 没登录 / 已过期时不能拿缓存充数：这些模型此刻用不了，
-            # 报出去会和 models.list（那边已经正确剔掉了）自相矛盾。
-            if session is None or service.ensure_fresh(session) is None:
-                return None, whitelist_applied
-            return [model.to_dict() for model in get_models(session_id)], whitelist_applied
-
-        models, whitelist_applied = await run_in_threadpool(_load)
-        return JSONResponse(
-            {
-                "ok": True,
-                "islogin": models is not None,
-                "whitelistApplied": whitelist_applied,
-                "models": models or [],
-            }
-        )
-
-    @app.get(
-        "/api/v1/auth/quota",
-        tags=[_OPENAPI_TAG],
-        summary="免费模型的积分使用情况",
-        description=(
-            "积分就是 LiteLLM 这把 key 的 `max_budget` / `spend`，1:1 透传，不做换算。"
-            "积分用完时仍然返回 200 且 `exhausted=true`——用户正是这时最需要看到自己的积分。"
-            "未接 APIG 时返回 `available=false`。"
-        ),
-    )
-    async def auth_quota(request: Request) -> Response:
-        from jiuwenswarm.common.auth.apig import ApigError, fetch_quota, resolve_apig_config
-
-        config = await run_in_threadpool(resolve_apig_config)
-        if config is None:
-            # 没接 APIG 不是错误，是"这套部署没有免费额度这回事"。
-            # 前端据此整块不展示，而不是显示一个报错。
-            return JSONResponse({"ok": True, "available": False, "quota": None})
-
-        # 严格按调用方的会话取：没带会话就是没登录，不能退回「本机唯一登录用户」
-        session_id = resolve_session_id(request)
-        if get_auth_service().resolve_session(session_id) is None:
-            return _error("请先登录", "not_logged_in", 401)
-        try:
-            quota = await run_in_threadpool(
-                lambda: fetch_quota(resolve_id_token(session_id), config)
-            )
-        except ModelAuthRequired as error:
-            return _error(str(error), error.reason, 401)
-        except ApigError as error:
-            logger.warning("[Auth] 额度查询失败 code=%s: %s", error.code, error)
-            status = 401 if error.code == "session_expired" else 502
-            return _error(str(error), error.code, status)
-        return JSONResponse({"ok": True, "available": True, "quota": quota.public_view()})
 
     logger.info("[Auth] 已注册 /api/v1/auth/* 登录路由")

@@ -8,7 +8,7 @@ import time
 import pytest
 
 from jiuwenswarm.common.auth import session_store as store_mod
-from jiuwenswarm.common.auth.account_kit import Credential, LoginOutcome
+from jiuwenswarm.common.auth.deepscient_oauth import Credential, LoginOutcome
 from jiuwenswarm.common.auth.session_store import AuthSessionStore
 
 
@@ -23,12 +23,13 @@ def _isolated_auth_dir(tmp_path, monkeypatch):
 def _outcome(user_id: str = "openid-1", refresh: str = "SUPER-SECRET-REFRESH") -> LoginOutcome:
     return LoginOutcome(
         credential=Credential(
-            id_token="ID-TOKEN-123",
+            access_token="ACCESS-TOKEN-123",
             refresh_token=refresh,
             expires_at=time.time() + 3600,
         ),
         user_id=user_id,
-        user_name="138******00",
+        user_name="alice",
+        extra={"email": "alice@example.com", "role": "admin", "balance": 12.5},
     )
 
 
@@ -44,8 +45,12 @@ def test_public_view_never_leaks_credentials(_isolated_auth_dir):
     store = AuthSessionStore()
     view = store.create(_outcome()).public_view()
     serialized = json.dumps(view)
-    for leaked in ("ID-TOKEN-123", "SUPER-SECRET-REFRESH"):
+    for leaked in ("ACCESS-TOKEN-123", "SUPER-SECRET-REFRESH"):
         assert leaked not in serialized
+    assert view["email"] == "alice@example.com"
+    assert view["role"] == "admin"
+    assert view["balance"] == 12.5
+    assert view["expiresAt"] > time.time()
 
 
 def test_persisted_file_is_encrypted(_isolated_auth_dir):
@@ -53,7 +58,7 @@ def test_persisted_file_is_encrypted(_isolated_auth_dir):
     store.create(_outcome())
     raw = (_isolated_auth_dir / "sessions.json").read_text(encoding="utf-8")
     assert "SUPER-SECRET-REFRESH" not in raw
-    assert "ID-TOKEN-123" not in raw
+    assert "ACCESS-TOKEN-123" not in raw
     assert set(json.loads(raw)) == {"v", "payload"}
     assert json.loads(raw)["v"] == 2
 
@@ -66,7 +71,8 @@ def test_reload_restores_session(_isolated_auth_dir):
     assert restored is not None
     assert restored.user_id == "openid-1"
     assert restored.credential.refresh_token == "SUPER-SECRET-REFRESH"
-    assert restored.credential.id_token == "ID-TOKEN-123"
+    assert restored.credential.access_token == "ACCESS-TOKEN-123"
+    assert restored.extra["email"] == "alice@example.com"
 
 
 def test_relogin_replaces_old_session(_isolated_auth_dir):
@@ -115,9 +121,17 @@ def test_update_credential_persists(_isolated_auth_dir):
     store = AuthSessionStore()
     session = store.create(_outcome())
     store.update_credential(
-        session.session_id, Credential(id_token="ID-NEW", refresh_token="R", expires_at=time.time() + 3600)
+        session.session_id, Credential(access_token="AT-NEW", refresh_token="R", expires_at=time.time() + 3600)
     )
-    assert AuthSessionStore().get(session.session_id).credential.id_token == "ID-NEW"
+    assert AuthSessionStore().get(session.session_id).credential.access_token == "AT-NEW"
+
+
+def test_update_extra_persists(_isolated_auth_dir):
+    store = AuthSessionStore()
+    session = store.create(_outcome())
+    updated = store.update_extra(session.session_id, {"email": "new@example.com", "balance": 7})
+    assert updated is not None and updated.extra["balance"] == 7
+    assert AuthSessionStore().get(session.session_id).extra["email"] == "new@example.com"
 
 
 def test_no_persist_mode_writes_nothing(_isolated_auth_dir):
@@ -146,7 +160,7 @@ def test_logout_preserves_other_process_update_when_archive_mtime_is_unchanged(_
 
     agent_server = AuthSessionStore()
     agent_server.update_credential(
-        bob.session_id, Credential(id_token="ID-RENEWED", refresh_token="R", expires_at=time.time() + 3600)
+        bob.session_id, Credential(access_token="AT-RENEWED", refresh_token="R", expires_at=time.time() + 3600)
     )
     # Some filesystems report the same mtime for two rapid atomic replacements.
     os.utime(path, ns=(original_mtime_ns, original_mtime_ns))
@@ -155,4 +169,4 @@ def test_logout_preserves_other_process_update_when_archive_mtime_is_unchanged(_
 
     fresh = AuthSessionStore()
     assert fresh.get(alice.session_id) is None
-    assert fresh.get(bob.session_id).credential.id_token == "ID-RENEWED"
+    assert fresh.get(bob.session_id).credential.access_token == "AT-RENEWED"

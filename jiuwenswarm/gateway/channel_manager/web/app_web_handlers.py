@@ -45,7 +45,6 @@ from openjiuwen.extensions.external_provider.openai_auth.openai_account_models i
     OpenAIAccountModelListError,
 )
 
-from jiuwenswarm.common.auth.model_catalog import is_login_model
 from jiuwenswarm.common.config import (
     DEFAULT_SWARMFLOW_ENABLED,
     EXTERNAL_CLI_AGENTS_CONFIG_PATH,
@@ -57,7 +56,6 @@ from jiuwenswarm.common.config import (
     get_default_models,
     replace_teams_in_config,
     update_default_models_in_config,
-    update_login_model_settings_in_config,
     update_health_check_in_config,
     update_channel_in_config,
     replace_channel_subsection_with_cleanup,
@@ -3683,31 +3681,8 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
         await _clear_agent_config_cache(_resolve(agent_client))
         return True
 
-    def _parse_login_model_settings(raw: Any) -> dict[str, int | None]:
-        if not isinstance(raw, dict):
-            raise _ConfigBadRequest("login_model_settings must be object")
-        parsed: dict[str, int | None] = {}
-        for name, item in raw.items():
-            model_name = str(name or "").strip()
-            if not model_name or not isinstance(item, dict) or "context_window" not in item:
-                raise _ConfigBadRequest(f"login_model_settings[{name!r}].context_window is required")
-            value = item["context_window"]
-            if value is None:
-                parsed[model_name] = None
-                continue
-            context_window = parse_positive_int(value)
-            if context_window is None:
-                raise _ConfigBadRequest(f"login_model_settings[{name!r}].context_window must be positive")
-            parsed[model_name] = context_window
-        return parsed
-
     def _build_models_defaults_from_frontend(raw_models: Any) -> list[dict[str, Any]]:
-        if not isinstance(raw_models, list):
-            raise _ConfigBadRequest("models must be a non-empty list")
-        # 登录送的模型是运行时叠加的，前端回传时要去掉，不能写进 config.yaml：
-        # 它们的凭据会过期，换账号后模型也该跟着变。
-        raw_models = [item for item in raw_models if not is_login_model(item)]
-        if not raw_models:
+        if not isinstance(raw_models, list) or not raw_models:
             raise _ConfigBadRequest("models must be a non-empty list")
 
         available_model_providers = [p.value for p in ProviderType]
@@ -4029,18 +4004,10 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
 
         每条带 ``origin_index`` 指向 ``models.defaults`` 中的位置，配合 replace_all
         在保存时识别"未编辑字段"并保留原 YAML 占位符（如 ``${API_KEY}``）。
-
-        **登录会话 id 必须从这条连接上取。** 免费模型是「这个登录用户」的模型，
-        不传的话 ``get_available_models`` 只能退回「当前唯一登录会话」的假设——
-        一旦机器上存在两个活跃会话（换个浏览器再登一次就够了），那个假设会拒绝
-        猜是谁，于是登录了却一个免费模型都列不出来。
         """
         try:
             config = get_config()
-            auth_session = getattr(ws, "_jiuwen_auth_session", "") or None
-            # 放到线程池里跑：目录缓存过期或凭据要续期时这里会同步请求 APIG（超时 10～15 秒），
-            # 在事件循环上跑会让整个 Gateway 的连接陪着等。
-            models = await asyncio.to_thread(get_available_models, config, auth_session)
+            models = await asyncio.to_thread(get_available_models, config)
             result = []
             active_model = ""
             for idx, entry in enumerate(models):
@@ -4052,7 +4019,7 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
                     "model_name": model_name,
                     "api_base": mcc.get("api_base", ""),
                     # 凭据绝不能随列表下发到浏览器
-                    "api_key": "" if is_login_model(entry) else mcc.get("api_key", ""),
+                    "api_key": mcc.get("api_key", ""),
                     "model_provider": mcc.get("client_provider", ""),
                     "temperature": mco.get("temperature"),
                     "reasoning_level": _reasoning_level_display(mco.get("reasoning_level")),
@@ -4078,9 +4045,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
                         parse_positive_int(mco.get("context_window"))
                         or DEFAULT_CONTEXT_WINDOW_TOKENS
                     )
-                if is_login_model(entry):
-                    # 登录送的模型：前端据此置灰编辑
-                    result_entry.update(source=entry.get("source"), read_only=True)
                 result.append(result_entry)
             # Zen 免费模型仅存在于进程内缓存，不能写回 models.defaults；但需要
             # 与普通模型一同出现在会话选择器中。is_default 保持 None（而不是
@@ -4172,7 +4136,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
         Accepted payload keys:
         - config: config.set-style key/value updates
         - models: complete models.defaults draft list
-        - login_model_settings: per-login-model user settings (context window)
         - agents/team: team editor payload
         """
         if not isinstance(params, dict):
@@ -4187,9 +4150,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
             new_models: list[dict[str, Any]] | None = None
             if "models" in params:
                 new_models = _build_models_defaults_from_frontend(params.get("models"))
-            login_model_settings: dict[str, int | None] | None = None
-            if "login_model_settings" in params:
-                login_model_settings = _parse_login_model_settings(params.get("login_model_settings"))
 
             config_params: dict[str, Any] = {}
             raw_config_params = params.get("config")
@@ -4230,10 +4190,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
                 update_default_models_in_config(new_models)
                 yaml_updated.append("models.defaults")
                 models_count = len(new_models)
-
-            if login_model_settings:
-                update_login_model_settings_in_config(login_model_settings)
-                yaml_updated.append("models.login_model_settings")
 
             kvc_config_changed = new_models is not None or any(
                 key in config_params for key in KVC_CONFIG_KEYS
@@ -6793,10 +6749,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
             # 否则 CreateSandbox 拉不起 → 60s 超时（见 plan-cron-user-id）。
             if user_id:
                 params["user_id"] = str(user_id).strip()
-            # 登录会话 id：服务端专有键，无条件覆盖客户端传值。controller 用它给
-            # 登录免费模型绑定华为账号凭据句柄（与路由 user_id 是两套独立用户
-            # 体系），用后即弃、不落任务数据。
-            params["_auth_session"] = getattr(ws, "_jiuwen_auth_session", "") or ""
             is_agentos = is_agentos_routing_client(_resolve(agent_client))
             # 仅共享目录单用户可由 Gateway 从 session metadata 补 project_dir。
             # AgentOS 下 metadata 在目标 AgentServer 用户目录，Gateway 读部署目录会
@@ -6935,9 +6887,6 @@ def _register_web_handlers(bind: WebHandlersBindParams) -> None:
                 })
                 patch.pop("project_dir", None)
                 patch["_agentos_project_binding_verified"] = True
-            # 登录会话 id（服务端专有键，见 _cron_job_create）：改选登录免费模型时
-            # 重绑华为账号凭据句柄；无条件覆盖客户端传值。
-            patch["_auth_session"] = getattr(ws, "_jiuwen_auth_session", "") or ""
             job = await cc.update_job(job_id, patch)
             await channel.send_response(ws, req_id, ok=True, payload={"job": job})
         except KeyError:

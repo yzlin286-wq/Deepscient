@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "文献与选题负责人",
+  "display_name": "文献与选题负责人",
+  "display_description": {
+    "zh": "统筹文献检索、系统综述与选题论证，输出可追溯的研究问题与文献证据。",
+    "en": "Leads literature search, systematic review and topic framing with traceable evidence."
+  },
+  "description": "作为文献与选题方向的专家团负责人，负责拆解检索与选题任务、协调成员并核验证据链。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "文献与选题"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "投稿材料专家",
+  "display_name": "投稿材料专家",
+  "display_description": {
+    "zh": "撰写 cover letter 与作者贡献声明，保证材料口径一致。",
+    "en": "Drafts cover letters and contribution statements with consistent claims."
+  },
+  "description": "负责投稿信、作者贡献、数据可用性等材料撰写。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "投稿材料"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

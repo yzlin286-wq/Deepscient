@@ -1,0 +1,24 @@
+{
+  "name": "sci-writing-team",
+  "package_type": "agent_group",
+  "display_name": "论文写作专家团",
+  "display_description": {
+    "zh": "把研究结果组织成结构完整、图表规范、论证自洽的论文稿。",
+    "en": "Builds a coherent manuscript with journal-compliant figures and argumentation."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "论文写作"
+  ],
+  "instruction": "Leader 先确认目标期刊与核心论点，再按写作、图表、可视化分派任务；成员分别提交章节稿、图表与图注、可视化方案；Leader 统一术语与论证口径，检查图表与正文一致后输出稿件。",
+  "agents": [
+    "leader",
+    "sci-expert-academic-writing",
+    "sci-expert-figure-design",
+    "sci-expert-visualization"
+  ],
+  "skills": [
+    "sci-paper-writing"
+  ]
+}

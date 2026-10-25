@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "统计推断专家",
+  "display_name": "统计推断专家",
+  "display_description": {
+    "zh": "选择匹配设计假设的统计方法，报告效应量与置信区间。",
+    "en": "Selects inference methods and reports effect sizes with confidence intervals."
+  },
+  "description": "负责统计方法选择、模型假设检查与效应量报告。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "统计推断"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "科研知识资产负责人",
+  "display_name": "科研知识资产负责人",
+  "display_description": {
+    "zh": "统筹文献库、数据字典与实验记录，交付可检索、可复用的科研资产。",
+    "en": "Leads literature library, data dictionary and lab records as reusable assets."
+  },
+  "description": "作为科研知识资产方向负责人，拆解资产整理任务并核验目录规范、版本与备份。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "知识资产"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

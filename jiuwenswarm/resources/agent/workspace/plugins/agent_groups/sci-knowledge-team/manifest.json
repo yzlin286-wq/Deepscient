@@ -1,0 +1,24 @@
+{
+  "name": "sci-knowledge-team",
+  "package_type": "agent_group",
+  "display_name": "科研知识资产专家团",
+  "display_description": {
+    "zh": "沉淀文献库、数据字典与实验记录，形成可检索、可复用的科研资产。",
+    "en": "Curates literature, data dictionaries and lab records into reusable assets."
+  },
+  "category": "科研",
+  "tags": [
+    "科研",
+    "知识资产"
+  ],
+  "instruction": "Leader 先界定资产范围与保留周期，再按文献库、数据字典、实验记录分派任务；成员分别提交条目模板、字典与清洗规则、记录规范；Leader 核验命名、版本与备份后输出资产目录。",
+  "agents": [
+    "leader",
+    "sci-expert-knowledge-curation",
+    "sci-expert-data-cleaning",
+    "sci-expert-reproducibility"
+  ],
+  "skills": [
+    "sci-research-asset"
+  ]
+}

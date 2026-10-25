@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "id": "literature",
+      "title": {
+        "zh": "文献与选题",
+        "en": "Literature & Framing"
+      },
+      "description": {
+        "zh": "检索、筛选与综合文献，收敛研究问题并形成可验证的选题假设。",
+        "en": "Search, screen and synthesize the literature, then turn it into a testable research question."
+      },
+      "icon": "book-open",
+      "agentGroup": "sci-literature-team",
+      "experts": [
+        "sci-expert-literature-search",
+        "sci-expert-systematic-review",
+        "sci-expert-topic-framing"
+      ],
+      "quickPrompt": {
+        "zh": "帮我完成一个文献综述：主题是「大模型辅助科研写作」。请先给出中英文检索式与纳入/排除标准，再输出证据表（作者、年份、方法、样本、主要结论、局限），最后总结 3 个可推进的研究缺口。",
+        "en": "Help me build a literature review on 'LLM-assisted academic writing'. Start with the search strings and inclusion/exclusion criteria, then produce an evidence table (authors, year, method, sample, key findings, limitations) and finish with three research gaps worth pursuing."
+      },
+      "tags": [
+        "科研",
+        "文献"
+      ]
+    },
+    {
+      "id": "experiment",
+      "title": {
+        "zh": "实验设计与执行",
+        "en": "Experiment Design & Execution"
+      },
+      "description": {
+        "zh": "把研究问题转成可执行实验：设计分组与变量、估算样本量、提前排查伦理风险。",
+        "en": "Turn a research question into an executable study: arms and variables, sample size, and early ethics screening."
+      },
+      "icon": "flask-conical",
+      "agentGroup": "sci-experiment-team",
+      "experts": [
+        "sci-expert-experiment-design",
+        "sci-expert-statistical-power",
+        "sci-expert-ethics-compliance"
+      ],
+      "quickPrompt": {
+        "zh": "帮我设计一个实验：研究假设是「间歇性禁食能改善 2 型糖尿病患者的血糖控制」。请输出分组与对照方案、自变量/因变量及测量方式、样本量估算所需的参数与公式、以及伦理审查需要准备的材料清单。",
+        "en": "Design an experiment for the hypothesis 'intermittent fasting improves glycemic control in type 2 diabetes'. Give me the arms and controls, independent/dependent variables and how to measure them, the parameters and formula for a sample-size calculation, and the materials needed for ethics review."
+      },
+      "tags": [
+        "科研",
+        "实验"
+      ]
+    },
+    {
+      "id": "analysis",
+      "title": {
+        "zh": "数据分析与复现",
+        "en": "Data Analysis & Reproducibility"
+      },
+      "description": {
+        "zh": "清洗数据、选择统计模型，并打包可复现的分析代码与结果说明。",
+        "en": "Clean the data, choose the statistics, and package reproducible analysis code with result notes."
+      },
+      "icon": "chart-column",
+      "agentGroup": "sci-analysis-team",
+      "experts": [
+        "sci-expert-data-cleaning",
+        "sci-expert-statistical-inference",
+        "sci-expert-reproducibility"
+      ],
+      "quickPrompt": {
+        "zh": "帮我复现一份数据分析：我有一份 CSV，字段包含组别（对照/干预）、前后测指标与若干协变量。请给出数据清洗检查清单与适用的统计检验及前提检验步骤，并输出可直接运行的 Python 代码和结果解读模板。",
+        "en": "Reproduce an analysis for me: my CSV has group (control/intervention), pre/post measures and several covariates. Give me a data-cleaning checklist, the appropriate statistical tests with assumption checks, runnable Python code, and a template for interpreting the results."
+      },
+      "tags": [
+        "科研",
+        "数据"
+      ]
+    },
+    {
+      "id": "writing",
+      "title": {
+        "zh": "论文写作与作图",
+        "en": "Paper Writing & Figures"
+      },
+      "description": {
+        "zh": "从提纲到成稿打磨学术表达，并产出符合期刊规范的图表与图注。",
+        "en": "Polish academic prose from outline to draft, and produce journal-ready figures and captions."
+      },
+      "icon": "pen-line",
+      "agentGroup": "sci-writing-team",
+      "experts": [
+        "sci-expert-academic-writing",
+        "sci-expert-figure-design",
+        "sci-expert-visualization"
+      ],
+      "quickPrompt": {
+        "zh": "帮我把这批结果写成论文的 Results 与 Discussion：请先给出段落提纲，再逐段改写为学术英文（保持被动语态与过去时），最后给出 3 张主图的图注草稿与配色建议。",
+        "en": "Turn these results into the Results and Discussion sections. Start with a paragraph-level outline, rewrite each paragraph in academic English (passive voice, past tense), and then draft captions and color guidance for three main figures."
+      },
+      "tags": [
+        "科研",
+        "写作"
+      ]
+    },
+    {
+      "id": "submission",
+      "title": {
+        "zh": "投稿与审稿",
+        "en": "Submission & Peer Review"
+      },
+      "description": {
+        "zh": "匹配目标期刊、撰写投稿信，并系统拆解与回应审稿意见。",
+        "en": "Match the right journal, draft the cover letter, and answer reviewer comments systematically."
+      },
+      "icon": "send",
+      "agentGroup": "sci-submission-team",
+      "experts": [
+        "sci-expert-journal-selection",
+        "sci-expert-cover-letter",
+        "sci-expert-rebuttal"
+      ],
+      "quickPrompt": {
+        "zh": "帮我完成投稿准备：论文主题是「基于多模态传感器的睡眠分期」，目标是影响因子 5 以上的期刊。请给出 3 个候选期刊及匹配理由、投稿信（Cover Letter）全文草稿，以及审稿人常见质疑与逐条 rebuttal 的应答框架。",
+        "en": "Prepare my submission on 'multimodal sensor-based sleep staging' targeting journals with an impact factor above 5. Recommend three candidate journals with fit rationale, draft the full cover letter, and outline a point-by-point rebuttal framework for likely reviewer objections."
+      },
+      "tags": [
+        "科研",
+        "投稿"
+      ]
+    },
+    {
+      "id": "knowledge",
+      "title": {
+        "zh": "科研知识与资产",
+        "en": "Research Knowledge & Assets"
+      },
+      "description": {
+        "zh": "沉淀检索记录、数据与代码资产，建立可检索、可复用的科研知识库。",
+        "en": "Curate search logs, data and code assets into a searchable, reusable research knowledge base."
+      },
+      "icon": "archive",
+      "agentGroup": "sci-knowledge-team",
+      "experts": [
+        "sci-expert-knowledge-curation",
+        "sci-expert-data-cleaning",
+        "sci-expert-reproducibility"
+      ],
+      "quickPrompt": {
+        "zh": "帮我整理这个课题的科研资产：请为文献笔记、原始数据、清洗脚本与图表分别设计目录结构与命名规范，输出一份 README 模板（含数据字典与版本记录），并给出 3 条让这些资产可被检索和复用的规范。",
+        "en": "Organize the research assets for this project. Design directory structures and naming conventions for literature notes, raw data, cleaning scripts and figures; produce a README template with a data dictionary and version log; and propose three rules that keep the assets searchable and reusable."
+      },
+      "tags": [
+        "科研",
+        "知识管理"
+      ]
+    }
+  ]
+}

@@ -249,7 +249,7 @@ test('registry definition preserves the registered module order and fails invali
   const definition = source('src/features/settings/registry/openSourceDefinition.ts');
   assert.match(
     definition,
-    /generalModule,\s*modelsModule,\s*agentModule,\s*browserModule,\s*channelsModule,\s*personalContextSettingsModule,\s*archivedTasksModule,\s*experimentalModule/,
+    /generalModule,\s*modelsModule,\s*billingModule,\s*agentModule,\s*browserModule,\s*channelsModule,\s*personalContextSettingsModule,\s*archivedTasksModule,\s*experimentalModule/,
   );
   assert.doesNotMatch(definition, /securityModule/);
   for (const removedPath of [

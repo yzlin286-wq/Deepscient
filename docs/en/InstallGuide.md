@@ -1,6 +1,6 @@
-# JiuwenSwarm install guide
+# DeepScient install guide
 
-> **Important:** Finishing installation does not mean the app is ready to use. You must complete model configuration first. See [Configuration](https://gitcode.com/openJiuwen/jiuwenswarm/blob/develop/docs/en/Configuration.md) ([Chinese](https://gitcode.com/openJiuwen/jiuwenswarm/blob/develop/docs/zh/%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.md)) for model setup.
+> **Important:** Finishing installation does not mean the app is ready to use. You must complete model configuration first. See [Configuration](https://github.com/yzlin286-wq/Deepscient/blob/develop/docs/en/Configuration.md) ([Chinese](https://github.com/yzlin286-wq/Deepscient/blob/develop/docs/zh/%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.md)) for model setup.
 
 ---
 
@@ -8,14 +8,16 @@
 
 ### Option 1: Desktop installer (dmg / exe)
 
-For Windows and macOS users who want a ready-to-run app without setting up Python / Node.js themselves. Download the installer for your platform from the gitcode [Release](https://gitcode.com/openJiuwen/jiuwenswarm/releases) page.
+For Windows and macOS users who want a ready-to-run app without setting up Python / Node.js themselves. Download the installer for your platform from the GitHub [Releases](https://github.com/yzlin286-wq/Deepscient/releases) page.
 
 | Platform | Artifact |
 |----------|----------|
-| Windows | `JiuwenSwarm-setup-<version>.exe` |
-| macOS | `JiuwenSwarm-<version>.dmg` |
+| Windows | `DeepScient-<version>-windows.exe` |
+| macOS | `DeepScient-<version>-macos.dmg` |
 
-Releases: https://gitcode.com/openJiuwen/jiuwenswarm/releases
+Releases: https://github.com/yzlin286-wq/Deepscient/releases
+
+> **Update source:** DeepScient 0.2.0 desktop builds check for and download updates from GitHub Releases by default, using the `yzlin286-wq/Deepscient` repository — no GitCode configuration is required. To inspect or restore the default source, open **Settings → App Updates → Update Source Config**.
 
 ##### System requirements
 
@@ -42,20 +44,34 @@ If you are unsure of your Mac chip, run `uname -m` in a terminal: `arm64` is App
 > ⚠️ **Important:** A `.dmg` downloaded through a browser gets a macOS quarantine flag (`com.apple.quarantine`). When opened it triggers a Gatekeeper check and may report "damaged and can't be opened" or "can't be verified developer". Downloading from the terminal with `curl` does not add the quarantine flag, so the dmg mounts and installs normally.
 
 ```bash
-# Replace <version> with the target version
-curl -L --fail -o JiuwenSwarm-<version>.dmg \
-  https://gitcode.com/openJiuwen/jiuwenswarm/releases/download/JiuwenSwarm<version>/JiuwenSwarm-<version>.dmg
+# Replace <version> with the target version (the Release tag is v<version>)
+curl -L --fail -o DeepScient-<version>-macos.dmg \
+  https://github.com/yzlin286-wq/Deepscient/releases/download/v<version>/DeepScient-<version>-macos.dmg
 ```
 
 #### 2. Install and first launch
 
-- **macOS**: double-click to mount the dmg, then drag `JiuwenSwarm.app` into `Applications`. If macOS blocks the first launch, right-click it in Finder and choose "Open".
+- **macOS**: double-click to mount the dmg, then drag `DeepScient.app` into `Applications`. If macOS blocks the first launch, right-click it in Finder and choose "Open".
 - **Windows**: double-click the downloaded installer (`.exe`) and follow the prompts. The installer requests **administrator privileges** (a UAC elevation prompt); click "Yes" to continue. It initializes the workspace automatically. For the portable onedir build, run `jiuwenswarm.exe init` once manually.
   > ⚠️ Only the **64-bit** edition of Windows 10 / 11 is supported; 32-bit systems and earlier Windows versions are not.
 
 On first launch the app creates `~/.jiuwenswarm/`. Then follow [Post-start verification](#3-post-start-verification) to finish model configuration.
 
 > Match the version to the actual download link on the Release page. For desktop auto-update behavior (Windows and macOS), see [Desktop auto-update design](WindowsAutoUpdateDesign.md).
+
+#### Release asset naming convention
+
+Desktop auto-update depends on the Release asset names and tag. Follow this convention when publishing:
+
+| Platform | Asset name | Example |
+|----------|------------|---------|
+| macOS | `DeepScient-{version}-macos.dmg` | `DeepScient-0.2.0-macos.dmg` |
+| Windows | `DeepScient-{version}-windows.exe` | `DeepScient-0.2.0-windows.exe` |
+| Linux | `DeepScient-{version}.tar.gz` | `DeepScient-0.2.0.tar.gz` |
+
+- Use `v{version}` as the Release tag (for example `v0.2.0`); the checker also accepts tags without the `v` prefix.
+- Update checks call `api.github.com` (`https://api.github.com/repos/yzlin286-wq/Deepscient/releases/latest`); make sure it is reachable.
+- GitHub rate-limits anonymous API requests. If you hit the limit, set `GITHUB_TOKEN` (or `DEEPSCIENT_GITHUB_TOKEN`) and restart the app.
 
 ---
 
@@ -106,7 +122,7 @@ jiuwenswarm-env\Scripts\activate
 # macOS/Linux:
 source jiuwenswarm-env/bin/activate
 
-# Install JiuwenSwarm
+# Install DeepScient
 ## Option 1: default install (stable release)
 pip install jiuwenswarm
 
@@ -131,9 +147,9 @@ pip install jiuwenswarm==0.2.4b3
 #### 2. First launch
 
 ```bash
-# Initialize JiuwenSwarm (first run)
+# Initialize DeepScient (first run)
 jiuwenswarm-init
-# Start JiuwenSwarm
+# Start DeepScient
 jiuwenswarm-start
 ```
 
@@ -156,7 +172,7 @@ After a successful start, verify the installation:
 
 #### 4. Restarting the service
 
-If you closed JiuwenSwarm and want to run it again:
+If you closed DeepScient and want to run it again:
 
 ```bash
 # Start again
@@ -183,7 +199,7 @@ uv --version
 
 ```bash
 # Clone the repository
-git clone https://gitcode.com/openJiuwen/jiuwenswarm.git
+git clone https://github.com/yzlin286-wq/Deepscient.git
 
 # Enter project directory
 cd jiuwenswarm
@@ -226,7 +242,7 @@ cd ../../../..
 # macOS/Linux:
 source .venv/bin/activate
 
-# Initialize JiuwenSwarm (first run)
+# Initialize DeepScient (first run)
 jiuwenswarm-init
 # Start
 jiuwenswarm-start
@@ -277,7 +293,7 @@ conda activate jiuwenswarm
 
 ```bash
 # Clone the repository
-git clone https://gitcode.com/openJiuwen/jiuwenswarm.git
+git clone https://github.com/yzlin286-wq/Deepscient.git
 
 # Enter project directory
 cd jiuwenswarm
@@ -313,7 +329,7 @@ cd ../../../..
 #### 5. First launch
 
 ```bash
-# Initialize JiuwenSwarm (first run)
+# Initialize DeepScient (first run)
 jiuwenswarm-init
 # Start
 jiuwenswarm-start
@@ -418,7 +434,7 @@ rsync -av ~/.jiuwenswarm ~/.jiuwenswarm_backup
 
 #### 2. Perform the upgrade
 
-Pick the steps that match how you installed JiuwenSwarm:
+Pick the steps that match how you installed DeepScient:
 
 ##### pip install upgrade
 
@@ -439,7 +455,7 @@ After upgrading, migrate data so config and stores match the new version.
 cat jiuwenswarm/resources/config.yaml
 
 # Or read the changelog
-# https://gitcode.com/openJiuwen/jiuwenswarm/blob/develop/docs/CHANGELOG.md
+# https://github.com/yzlin286-wq/Deepscient/blob/develop/docs/CHANGELOG.md
 ```
 
 ##### Step 2: Migrate configuration
@@ -506,7 +522,7 @@ jiuwenswarm-start
 
 ### Q: On start I see "Python version not supported"
 
-JiuwenSwarm requires Python **3.11, 3.12, or 3.13** (i.e. ≥3.11 and <3.14). 3.10 and earlier, as well as 3.14 and newer, are not supported. 3.11 and 3.12 have the best compatibility. See [Environment check](#environment-check) for details.
+DeepScient requires Python **3.11, 3.12, or 3.13** (i.e. ≥3.11 and <3.14). 3.10 and earlier, as well as 3.14 and newer, are not supported. 3.11 and 3.12 have the best compatibility. See [Environment check](#environment-check) for details.
 
 > ℹ️ If a page renders something like `Python >=3.11 ❤️ 3.14` or `Python 3.11 3.14`, that is the `<=` angle brackets being parsed as an HTML tag or triggering an emoji substitution. The full intent is `≥3.11, <3.14`.
 
@@ -524,7 +540,7 @@ Install Node.js 18.x or newer to rebuild the front end. Browser runtime use in a
 
 ### Q: How do I install a beta pre-release?
 
-JiuwenSwarm pre-releases follow the PEP 440 pre-release format, e.g. `0.2.4b3` (`b3` means the 3rd beta — note it is `0.2.4b3`, not `0.2.4.beta3`). pip installs only stable releases by default; install a beta in one of two ways:
+DeepScient pre-releases follow the PEP 440 pre-release format, e.g. `0.2.4b3` (`b3` means the 3rd beta — note it is `0.2.4b3`, not `0.2.4.beta3`). pip installs only stable releases by default; install a beta in one of two ways:
 
 Add the `--pre` flag and let pip pick the latest pre-release:
 
@@ -558,9 +574,9 @@ pip uninstall jiuwenswarm
 
 ## Related links
 
-- **Repository:** https://gitcode.com/openJiuwen/jiuwenswarm
-- **Issues:** https://gitcode.com/openJiuwen/jiuwenswarm/issues
-- **Docs:** https://gitcode.com/openJiuwen/jiuwenswarm/tree/develop/docs
+- **Repository:** https://github.com/yzlin286-wq/Deepscient
+- **Issues:** https://github.com/yzlin286-wq/Deepscient/issues
+- **Docs:** https://github.com/yzlin286-wq/Deepscient/tree/develop/docs
 
 ---
 

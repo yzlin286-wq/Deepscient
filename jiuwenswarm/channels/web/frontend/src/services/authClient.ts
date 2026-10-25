@@ -1,8 +1,14 @@
 /**
- * 华为账号（Account Kit）登录客户端：只做 HTTP 调用，状态在 `stores/authStore.ts`。
+ * DeepScient 官网账号登录客户端：只做 HTTP 调用，状态在 `stores/authStore.ts`。
  *
- * 流程：`authorize()` 拿地址 → 打开新标签页授权 → 回调
- * → 回到应用后 `claim()` 取回会话。后端接口见 `gateway/channel_manager/web/web_http_auth.py`。
+ * 两种登录方式共用同一份会话机制（cookie + `X-Auth-Session`）：
+ * - 官网授权：`authorize()` 拿地址 → 打开新标签页授权 → 官网回调
+ *   → 回到应用后 `claim()` 取回会话；
+ * - 账号密码：`passwordLogin()` 直接换会话，授权码流程不受影响。
+ *
+ * 后端接口见 `gateway/channel_manager/web/web_http_auth.py`。
+ *
+ * **密码只作为参数传一次**，不落 localStorage / sessionStorage，也不进 store。
  */
 
 import { getApiBase } from '../utils/env';
@@ -32,25 +38,27 @@ export interface AuthorizeResponse {
   /** 只下发给发起方的认领凭证，不出现在授权 URL 里。 */
   claimToken: string;
   expiresIn?: number;
+  redirectUri?: string;
 }
-
-/**
- * 活动状态，决定界面显示什么对应：`campaign_state`：
- * `active` 正常；`ended` 活动已结束；`unavailable` 拉不到配置；
- * `off` 本地关掉了，什么都不显示。老版本 Gateway 不返回这个字段。
- */
-export type CampaignState = 'active' | 'ended' | 'unavailable' | 'off';
 
 export interface AuthStatus {
   islogin: boolean;
   enabled: boolean;
-  state?: CampaignState;
-  accountCenterUrl?: string;
   provider?: string;
   userId?: string | null;
   userName?: string | null;
+  email?: string | null;
+  role?: string | null;
+  balance?: number | null;
+  expiresAt?: string | null;
   sessionId?: string;
+  accountCenterUrl?: string;
+  registerUrl?: string;
   expired?: boolean;
+  /** 邮箱是否已验证；官网没给就是 null（后端当前不下发这个字段）。 */
+  emailVerified?: boolean | null;
+  /** 这次会话是用哪种方式登录的；官网没给就是 null。 */
+  loginMethod?: string | null;
 }
 
 export interface AuthErrorBody {
@@ -58,15 +66,34 @@ export interface AuthErrorBody {
   message: string;
 }
 
+/** 密码登录 / 重发验证邮件的错误额外字段。 */
+interface AuthErrorDetails {
+  email?: string | null;
+  canResend?: boolean;
+  retryAfter?: number | null;
+}
+
 export class AuthApiError extends Error {
   readonly code: string;
   readonly status: number;
+  /** 403 `email_not_verified` 时官网回带的邮箱，用来展示「重发验证邮件」。 */
+  readonly email: string | null;
+  /** 官网说这封验证邮件可以重发（`can_resend`）。 */
+  readonly canResend: boolean;
+  /** 429 时建议等待的秒数（优先取响应头 `Retry-After`）。 */
+  readonly retryAfter: number | null;
 
-  constructor(message: string, code: string, status: number) {
+  constructor(message: string, code: string, status: number, details: AuthErrorDetails = {}) {
     super(message);
     this.name = 'AuthApiError';
     this.code = code;
     this.status = status;
+    this.email = details.email ?? null;
+    this.canResend = details.canResend === true;
+    this.retryAfter =
+      typeof details.retryAfter === 'number' && Number.isFinite(details.retryAfter) && details.retryAfter > 0
+        ? Math.ceil(details.retryAfter)
+        : null;
   }
 }
 
@@ -87,12 +114,16 @@ function writeStoredSessionId(sessionId: string): void {
   }
 }
 
-/** 会改登录状态的请求（发起 / 认领 / 登出）用的请求头。 */
+/** 会改登录状态的请求（发起 / 认领 / 刷新 / 登出）用的请求头。 */
 function stateChangingHeaders(extra?: Record<string, string>): Record<string, string> {
-  return authHeaders({ ...(extra || {}), [AUTH_REQUEST_HEADER]: '1' });
+  return authSessionHeaders({ ...(extra || {}), [AUTH_REQUEST_HEADER]: '1' });
 }
 
-function authHeaders(extra?: Record<string, string>): Record<string, string> {
+/**
+ * 本机会话请求头：没有 cookie 的环境（桌面 WebView / TUI）靠 `X-Auth-Session` 带会话。
+ * 中转站等其它本机端点复用这一份逻辑，避免各自实现一遍 localStorage 读写。
+ */
+export function authSessionHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...(extra || {}) };
   const sessionId = readStoredSessionId();
   if (sessionId) headers[SESSION_HEADER] = sessionId;
@@ -106,21 +137,48 @@ function authUrl(path: string): string {
   return `${getApiBase()}/api/v1/auth${path}`;
 }
 
+function positiveSeconds(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  return Math.ceil(value);
+}
+
+/**
+ * 解析错误响应。两种形状都要认：
+ * - 授权码流程与 `auth_header_required` 等：`{ error: { code, message } }`
+ * - 密码登录 / 重发验证邮件（后端 `_flat_error`）：`{ ok: false, message, error: "code", email?, can_resend? }`
+ *   429 的等待秒数只在响应头 `Retry-After` 里。
+ */
 async function readError(response: Response, fallback: string): Promise<AuthApiError> {
   let code = `http_${response.status}`;
   let message = fallback;
+  const details: AuthErrorDetails = {};
   try {
-    const body = (await response.json()) as { error?: AuthErrorBody; message?: string };
-    if (body?.error?.message) {
+    const body = (await response.json()) as {
+      error?: AuthErrorBody | string;
+      message?: string;
+      email?: string;
+      can_resend?: boolean;
+      retry_after?: number;
+    };
+    if (typeof body?.error === 'string') {
+      code = body.error || code;
+      if (body.message) message = body.message;
+    } else if (body?.error?.message) {
       message = body.error.message;
       code = body.error.code || code;
     } else if (body?.message) {
       message = body.message;
     }
+    if (typeof body?.email === 'string' && body.email.trim()) details.email = body.email.trim();
+    if (typeof body?.can_resend === 'boolean') details.canResend = body.can_resend;
+    const bodyRetryAfter = positiveSeconds(body?.retry_after);
+    if (bodyRetryAfter) details.retryAfter = bodyRetryAfter;
   } catch {
     /* 非 JSON 响应，用兜底文案 */
   }
-  return new AuthApiError(message, code, response.status);
+  const headerRetryAfter = positiveSeconds(Number(response.headers.get('Retry-After')));
+  if (headerRetryAfter) details.retryAfter = headerRetryAfter;
+  return new AuthApiError(message, code, response.status, details);
 }
 
 /** 发起登录：拿到浏览器要打开的授权地址。 */
@@ -156,12 +214,53 @@ export async function claim(state: string, claimToken: string): Promise<ClaimOut
   const headerSession = response.headers.get(SESSION_HEADER);
   const data = (await response.json()) as AuthStatus;
   writeStoredSessionId(headerSession || data.sessionId || '');
-  // claim 的响应里没有 enabled 字段——能认领成功，登录当然是开着的
-  return { kind: 'done', status: { ...data, enabled: true } };
+  // claim 的响应现在带 enabled；老版本不带时按"能认领成功就是开着的"处理
+  return { kind: 'done', status: { ...data, enabled: data.enabled !== false } };
 }
 
 /**
- * 放弃这次登录，让Gateway别再替它向鉴权服务认领。发不出去时Gateway也会在state过期后自己停。
+ * 账号密码登录（`grant_type=password`）。成功后与 `claim` 一样收下会话：
+ * 响应头 / body 里的 session id 写进 localStorage，cookie 由浏览器自己存。
+ *
+ * 失败时抛 `AuthApiError`，`status` / `code` / `email` / `canResend` / `retryAfter`
+ * 都保留着，交给 store 和 UI 决定怎么提示。密码不做任何留存。
+ */
+export async function passwordLogin(username: string, password: string): Promise<AuthStatus> {
+  const response = await fetch(authUrl('/password-login'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: stateChangingHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) throw await readError(response, '登录失败，请重试');
+  const headerSession = response.headers.get(SESSION_HEADER);
+  const data = (await response.json()) as AuthStatus;
+  writeStoredSessionId(headerSession || data.sessionId || '');
+  return { ...data, enabled: data.enabled !== false, islogin: data.islogin !== false };
+}
+
+/** 重发邮箱验证邮件。返回冷却秒数（后端缺省 60）。 */
+export async function resendVerification(email: string): Promise<{ resendAfter: number }> {
+  const response = await fetch(authUrl('/resend-verification'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: stateChangingHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) throw await readError(response, '发送验证邮件失败，请稍后重试');
+  let resendAfter = 60;
+  try {
+    const data = (await response.json()) as { resend_after?: number };
+    const seconds = positiveSeconds(data?.resend_after);
+    if (seconds) resendAfter = seconds;
+  } catch {
+    /* 空响应按默认冷却处理 */
+  }
+  return { resendAfter };
+}
+
+/**
+ * 放弃这次登录，让Gateway别再替它向官网认领。发不出去时Gateway也会在state过期后自己停。
  * `keepalive` 让页面关闭时发起的这次请求也能送达。
  */
 export async function cancelLogin(state: string, claimToken: string): Promise<void> {
@@ -195,67 +294,26 @@ export async function status(): Promise<AuthStatus> {
   const response = await fetch(authUrl('/status'), {
     method: 'GET',
     credentials: 'include',
-    headers: authHeaders({ Accept: 'application/json' }),
+    headers: authSessionHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok) throw await readError(response, '获取登录状态失败');
   const data = (await response.json()) as AuthStatus;
   // 会话确实过期了才丢掉本地句柄：它的优先级高于 cookie，留着会把还能用的 cookie 挡住。
-  // 未登录状态不算，活动下线时也是未登录，那时清掉，活动恢复后还需要重登一次
+  // 未登录状态不算，功能下线时也是未登录，那时清掉，功能恢复后还需要重登一次
   if (data.expired) writeStoredSessionId('');
   return data;
 }
 
-export interface LoginModelInfo {
-  model_name: string;
-  display_name: string;
-  description?: string;
-}
-
-/** 登录后自动获得的模型。它们同时也并进了普通模型列表，这里是给账号面板看的。 */
-export async function listLoginModels(): Promise<LoginModelInfo[]> {
-  const response = await fetch(authUrl('/models'), {
-    method: 'GET',
+/** 重新向 DeepScient 官网拉一次用户信息。未登录 / 已过期时后端回 401。 */
+export async function refreshAccount(): Promise<AuthStatus> {
+  const response = await fetch(authUrl('/refresh'), {
+    method: 'POST',
     credentials: 'include',
-    headers: authHeaders({ Accept: 'application/json' }),
+    headers: stateChangingHeaders({ Accept: 'application/json' }),
   });
-  if (!response.ok) throw await readError(response, '获取模型列表失败');
-  const data = (await response.json()) as { models?: LoginModelInfo[] };
-  return data.models ?? [];
-}
-
-/**
- * 免费积分：LiteLLM key 上的 `max_budget` / `spend`，1:1，不带币种。
- * `-1` 表示未知，**不要当成 0 展示**（0 会被读成"用完了"）。
- */
-export interface ModelQuota {
-  total: number;
-  balance: number;
-  used: number;
-  /** 后端判定的"所剩不多"（已用达到总量 90%），前端不自己按阈值算。 */
-  low_balance: boolean;
-  exhausted: boolean;
-  /** 额度刷新周期（LiteLLM `budget_duration` 原文，如 `7d`）；空串 = 用完不会自动恢复。 */
-  reset_period: string;
-  /** 下次刷新时间（ISO 8601）；没有周期时为空串。 */
-  reset_at: string;
-}
-
-export interface QuotaResult {
-  /** 这套部署有没有接 APIG。false 时整块额度 UI 不展示，而不是显示报错。 */
-  available: boolean;
-  quota: ModelQuota | null;
-}
-
-/** 查免费积分。积分用完了也是正常返回（`exhausted=true`），不是错误。 */
-export async function fetchQuota(): Promise<QuotaResult> {
-  const response = await fetch(authUrl('/quota'), {
-    method: 'GET',
-    credentials: 'include',
-    headers: authHeaders({ Accept: 'application/json' }),
-  });
-  if (!response.ok) throw await readError(response, '获取额度失败');
-  const data = (await response.json()) as QuotaResult;
-  return { available: Boolean(data?.available), quota: data?.quota ?? null };
+  if (!response.ok) throw await readError(response, '刷新账号信息失败');
+  const data = (await response.json()) as AuthStatus;
+  return { ...data, enabled: data.enabled !== false };
 }
 
 export async function logout(): Promise<void> {

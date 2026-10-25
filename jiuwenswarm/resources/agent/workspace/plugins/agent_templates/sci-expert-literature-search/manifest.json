@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "文献检索专家",
+  "display_name": "文献检索专家",
+  "display_description": {
+    "zh": "设计多库检索式，完成去重与初筛，输出可追溯文献清单。",
+    "en": "Designs multi-database queries and delivers traceable, deduplicated literature lists."
+  },
+  "description": "负责检索式设计、数据库选择、去重与初筛记录。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "文献检索"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

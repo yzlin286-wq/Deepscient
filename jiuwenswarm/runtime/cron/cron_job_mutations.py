@@ -332,8 +332,7 @@ def apply_cron_job_patch(existing: CronJob, patch: dict[str, Any]) -> CronJob:
         )
         updated = replace(updated, model_name=new_model_name)
     if "credential_ref" in patch:
-        # 模型来源切换时由 controller 重算：登录模型 → 绑定创建会话的华为账号
-        # 句柄；自配模型/清除模型 → 解绑（空串）。
+        # 历史字段：登录模型已移除后不再写入；保留清空语义以兼容旧存档。
         updated = replace(
             updated,
             credential_ref=str(patch.get("credential_ref") or "").strip(),

@@ -230,23 +230,18 @@ def normalize_cron_job_mcp(raw: Any) -> list[str] | None:
     return out or None
 
 
-# resolve_cron_model 返回的模型来源标记：config.yaml 自配 / Zen 免费缓存 / 登录模型目录。
+# resolve_cron_model 返回的模型来源标记：config.yaml 自配 / Zen 免费缓存。
 CRON_MODEL_SOURCE_CONFIG = "config"
 CRON_MODEL_SOURCE_ZEN = "zen"
-CRON_MODEL_SOURCE_LOGIN = "login"
 
 
 def resolve_cron_model(raw: Any) -> tuple[str | None, str]:
     """Resolve a cron model name/alias to ``(canonical_model_name, source)``.
 
-    source ∈ ``{"", "config", "zen", "login"}``；``""`` 表示未指定模型（None/空）。
-    命中顺序 config → zen → login，同名时自配优先（与 ``get_available_models``
+    source ∈ ``{"", "config", "zen"}``；``""`` 表示未指定模型（None/空）。
+    命中顺序 config → zen，同名时自配优先（与 ``get_available_models``
     的去重规则一致）。未知模型抛 ``ValueError``，语义与
     :func:`validate_cron_model`（本函数去掉来源信息的封装）完全一致。
-
-    ``login`` 来源对调用方另有含义：controller 需在此情况下从创建连接的
-    登录会话捕获凭据绑定（``CronJob.credential_ref``）；执行侧凭据注入只认
-    该绑定，不再按模型名猜测来源。
 
     If the input is an alias, resolves to the underlying ``model_client_config.model_name``
     (including environment placeholders) so the stored value is always a key
@@ -256,11 +251,6 @@ def resolve_cron_model(raw: Any) -> tuple[str | None, str]:
     Opencode Zen free models are in-memory only, so a configured-model miss
     also checks the live free-model cache.  A cache failure never blocks the
     normal configured-model validation path.
-
-    登录送的免费模型（华为账号登录，``common/auth/model_catalog``）同样只在缓存里、
-    永不写入 config.yaml（未登录/活动未生效时目录为空，与前端"未登录不展示
-    免费模型"一致）。Gateway 与 AgentServer 读同一份缓存，两个进程里的调用方
-    （controller / cron_tools）行为一致。
     """
     if raw is None:
         return None, ""
@@ -301,19 +291,6 @@ def resolve_cron_model(raw: Any) -> tuple[str | None, str]:
                 return model_name, CRON_MODEL_SOURCE_ZEN
     except Exception as exc:  # noqa: BLE001 - optional cache must not break cron
         logger.debug("[cron] zen free-model lookup failed for %r: %s", value, exc)
-
-    # 登录送的免费模型：Zen 停用后免费模型的唯一来源。名字可能带 "#index"
-    # 通道侧全局序号后缀，取前半段再匹配（与 passthrough._build_model_auth 一致）。
-    try:
-        from jiuwenswarm.common.auth.login_credentials import bare_model_name
-        from jiuwenswarm.common.auth.model_catalog import get_models
-
-        bare = bare_model_name(value)
-        for login_model in get_models(allow_refresh=False):
-            if value == login_model.model_name or bare == login_model.model_name:
-                return login_model.model_name, CRON_MODEL_SOURCE_LOGIN
-    except Exception as exc:  # noqa: BLE001 - optional catalog must not break cron
-        logger.debug("[cron] login model lookup failed for %r: %s", value, exc)
 
     available = get_model_names()
     hint = ", ".join(available[:20]) if available else "(no models configured)"
@@ -415,11 +392,8 @@ class CronJob:
     # 否则 CreateSandbox 拉不起导致 60s 超时（见 plan-cron-user-id）。
     # 默认空串兼容旧数据；语义=创建者，创建后不可变。
     user_id: str = ""
-    # 登录免费模型的凭据句柄绑定：创建/改选登录模型时，由创建连接上的华为账号
-    # 登录会话派生（credential_ref_for_user）。路由 user_id 与华为账号是两套
-    # 独立用户体系，互不可推导，绑定只能来自服务端登录会话。空串=未绑定
-    # （自配模型/未选模型）；执行侧凭据注入只认该绑定——它同时就是"所选模型
-    # 是登录模型"的标记，自配模型即使与登录模型同名也不会被误注入登录凭据。
+    # 历史字段：曾用于绑定登录免费模型的凭据句柄。登录链路已移除，保留字段只为
+    # 兼容旧存档（from_dict 读到就带上，新任务为空）。
     credential_ref: str = ""
     # 工作模式派生快照：由 project_id 归属推导（"code" / "work"）。
     # 不作为独立隔离维度，任务归属仍以 project_id 为准。

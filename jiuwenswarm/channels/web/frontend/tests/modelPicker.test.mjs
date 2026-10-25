@@ -74,6 +74,12 @@ async function withFixture(run, language = 'en') {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     url: 'http://localhost/',
   });
+  // jsdom 没有 ResizeObserver；弹层与搜索框挂载时会 new 它，缺了会在 effect 里直接抛错
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
   const previousGlobals = new Map();
   for (const [name, value] of Object.entries({
     window: dom.window,
@@ -82,6 +88,8 @@ async function withFixture(run, language = 'en') {
     // 组件里会 new CustomEvent（如 requestLogin 派发的 jiuwen:auth-required），
     // 不挂到全局的话那句直接 ReferenceError
     CustomEvent: dom.window.CustomEvent,
+    MutationObserver: dom.window.MutationObserver,
+    ResizeObserver: ResizeObserverStub,
     IS_REACT_ACT_ENVIRONMENT: true,
   })) {
     previousGlobals.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
@@ -90,9 +98,8 @@ async function withFixture(run, language = 'en') {
   const previousSession = useSessionStore.getState();
   const previousChat = useChatStore.getState();
   const previousAuth = useAuthStore.getState();
-  // 预置成「状态已查过、活动没开」：否则组件挂载时会真的去查登录状态，测试环境里
+  // 预置成「状态已查过、登录功能未开启」：否则组件挂载时会真的去查登录状态，测试环境里
   // 没有后端，查询失败会起一条最长 60 秒的退避重试，整个测试文件被拖到一分半钟。
-  // 需要活动开着的用例在 run 里自己改。
   useAuthStore.setState({ initialized: true, enabled: false, islogin: false });
   const i18n = i18next.createInstance();
   await i18n.init({ lng: language, resources, initImmediate: false, showSupportNotice: false });
@@ -140,6 +147,10 @@ function cronDrawer(overrides = {}) {
   });
 }
 
+/** 菜单里应当展示的模型名，和 store 里实际的可选模型保持一致。 */
+const optionLabels = () =>
+  useSessionStore.getState().chatAvailableModels.map((model) => model.alias || model.model_name);
+
 test('chat and scheduled tasks show identical grouped options, excluding secondary connections', async () => {
   await withFixture(async ({ mount, click, byId }) => {
     await mount(createElement(ChatModelSelector), cronDrawer());
@@ -148,11 +159,11 @@ test('chat and scheduled tasks show identical grouped options, excluding seconda
       const menu = byId(`${prefix}-menu`);
       assert.deepEqual(
         [...menu.querySelectorAll('.model-select__section-header')].map((node) => node.textContent),
-        ['Configured Models', 'Limited-time Free Models'],
+        ['Configured Models'],
       );
       assert.deepEqual(
         [...menu.querySelectorAll('[role="menuitemradio"]')].map((node) => node.textContent),
-        ['Configured A', 'Configured B', 'Free Alias'],
+        optionLabels(),
       );
       assert.equal(menu.querySelector('[aria-checked="true"]').dataset.variant, 'configured-a');
       await click(document.body);
@@ -160,58 +171,23 @@ test('chat and scheduled tasks show identical grouped options, excluding seconda
   });
 });
 
-test('限时免费模型：没登录拿到之前，这一栏只放一个「获取」入口', async () => {
+test('免费模型不再有独立分组，也没有登录获取入口', async () => {
   await withFixture(async ({ mount, click, byId }) => {
-    // 活动在跑但还没登录：免费模型一个都没有
     useAuthStore.setState({ enabled: true, initialized: true, islogin: false });
-    useSessionStore.getState().setAvailableModels(
-      catalog.filter((model) => model.is_free !== true),
-      'configured-a',
-    );
     await mount(createElement(ChatModelSelector));
     await click(byId('chat-panel-model-selector-trigger'));
     const menu = byId('chat-panel-model-selector-menu');
 
-    // 分组标题还在——用户得先知道有这回事，再点进去拿
-    assert.deepEqual(
-      [...menu.querySelectorAll('.model-select__section-header')].map((node) => node.textContent),
-      ['Configured Models', 'Limited-time Free Models'],
-    );
-    const cta = byId('chat-panel-model-selector-free-cta');
-    assert.ok(cta, '未登录时应出现「获取限时免费模型」入口');
-    // 它不是可选项：选中态和模型条目不能混在一起
-    assert.equal(cta.getAttribute('role'), null);
-    assert.deepEqual(
-      [...menu.querySelectorAll('[role="menuitemradio"]')].map((node) => node.textContent),
-      ['Configured A', 'Configured B'],
-    );
-
-    // 点它派发登录事件（LoginDialog 监听），并收起下拉
-    let requested = 0;
-    const onRequest = () => { requested += 1; };
-    window.addEventListener('jiuwen:auth-required', onRequest);
-    await click(cta);
-    window.removeEventListener('jiuwen:auth-required', onRequest);
-    assert.equal(requested, 1);
-    assert.equal(byId('chat-panel-model-selector-menu'), null);
-  });
-});
-
-test('限时免费模型：活动没在跑时，这一栏整个不出现', async () => {
-  await withFixture(async ({ mount, click, byId }) => {
-    useAuthStore.setState({ enabled: false, initialized: true, islogin: false });
-    useSessionStore.getState().setAvailableModels(
-      catalog.filter((model) => model.is_free !== true),
-      'configured-a',
-    );
-    await mount(createElement(ChatModelSelector));
-    await click(byId('chat-panel-model-selector-trigger'));
-    const menu = byId('chat-panel-model-selector-menu');
+    // 只剩「已配置模型」一组；免费模型作为普通模型排在同一个列表里
     assert.deepEqual(
       [...menu.querySelectorAll('.model-select__section-header')].map((node) => node.textContent),
       ['Configured Models'],
     );
     assert.equal(byId('chat-panel-model-selector-free-cta'), null);
+    assert.deepEqual(
+      [...menu.querySelectorAll('[role="menuitemradio"]')].map((node) => node.textContent),
+      optionLabels(),
+    );
   });
 });
 
@@ -380,10 +356,7 @@ for (const language of ['zh', 'en']) {
         await act(async () => useSessionStore.getState().setAvailableModels([model]));
         const headings = [...document.querySelectorAll('.model-select__section-header')];
         assert.equal(headings.length, 1);
-        assert.equal(
-          headings[0].textContent,
-          resources[language].translation.chat.modelSelector[model.is_free ? 'free' : 'configured'],
-        );
+        assert.equal(headings[0].textContent, resources[language].translation.chat.modelSelector.configured);
         assert.equal(byId('model-picker-empty'), null);
       }
     }, language);

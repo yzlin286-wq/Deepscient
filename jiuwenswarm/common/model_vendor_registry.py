@@ -457,6 +457,21 @@ _PRESETS: list[VendorPreset] = [
         models_needs_key=True,
         anthropic_base="https://api.xiaomimimo.com/anthropic",
     ),
+    # ccagent 中转站：账号同步（/partner/v1/users/sync）返回的 api_base_url 会覆盖
+    # 这里的预设 api_base，预设只用于首次回填/展示兜底。模型调用走
+    # https://api.ccagent.cn（OpenAI 兼容，见对接文档第 8 节）。
+    VendorPreset(
+        vendor_key="ccagent", display_name="ccagent 中转站", plan=PlanKind.CUSTOM_API,
+        client_provider="OpenAI",
+        api_base="https://api.ccagent.cn/v1",
+        endpoint_profile="openai_compatible",
+        default_model="deepseek-chat",
+        model_options=("deepseek-chat", "deepseek-reasoner"),
+        icon_key="openai",
+        models_endpoint="https://api.ccagent.cn/v1/models",
+        models_needs_key=True,
+        anthropic_base=None,
+    ),
 ]
 
 

@@ -1,34 +1,27 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 
-"""华为账号 Account Kit 登录（本地回环回调）+ APIG 免费模型。
+"""DeepScient 官网账号登录（OAuth2 授权码 + PKCE）。
 
 用法速查::
 
-    from jiuwenswarm.common.auth import get_auth_service, resolve_id_token
+    from jiuwenswarm.common.auth import get_auth_service
 
     service = get_auth_service()
-    req = service.create_authorization_request()      # 打开 req["authorizeUrl"]
-    ...                                               # 华为回调 → service.complete_callback(...)
+    req = service.create_authorization_request(origin)   # 打开 req["authorizeUrl"]
+    ...                                                  # 官网回调 → service.complete_callback(...)
     session = service.claim(req["state"], req["claimToken"])
-
-    token = resolve_id_token()                        # 调 APIG：Authorization: Bearer <token>
 """
 
-from jiuwenswarm.common.auth.account_kit import (
-    AccountKitFlow,
+from jiuwenswarm.common.auth.deepscient_oauth import (
     Credential,
+    DeepScientOAuthConfig,
+    DeepScientOAuthFlow,
     LoginOutcome,
-    OAuthConfig,
     OAuthError,
     login_enabled,
+    mask,
 )
-from jiuwenswarm.common.auth.service import (
-    AuthService,
-    ModelAuthRequired,
-    get_auth_service,
-    live_session,
-    resolve_id_token,
-)
+from jiuwenswarm.common.auth.service import AuthService, get_auth_service
 from jiuwenswarm.common.auth.session_store import (
     AuthSession,
     AuthSessionStore,
@@ -36,18 +29,16 @@ from jiuwenswarm.common.auth.session_store import (
 )
 
 __all__ = [
-    "AccountKitFlow",
     "AuthService",
     "AuthSession",
     "AuthSessionStore",
     "Credential",
+    "DeepScientOAuthConfig",
+    "DeepScientOAuthFlow",
     "LoginOutcome",
-    "ModelAuthRequired",
-    "OAuthConfig",
     "OAuthError",
     "get_auth_service",
     "get_session_store",
-    "live_session",
     "login_enabled",
-    "resolve_id_token",
+    "mask",
 ]

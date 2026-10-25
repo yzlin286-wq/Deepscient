@@ -2,6 +2,7 @@ import type { FunctionComponent, SVGProps } from 'react';
 import { Play as TestIcon } from 'lucide-react';
 import GeneralIcon from './navigation/general.svg?react';
 import ModelsIcon from './navigation/models.svg?react';
+import BillingIcon from './navigation/billing.svg?react';
 import AgentIcon from './navigation/agent.svg?react';
 import BrowserIcon from './navigation/browser.svg?react';
 import ChannelsIcon from './navigation/channels.svg?react';
@@ -27,6 +28,7 @@ export type SettingsNavigationIcon = FunctionComponent<SVGProps<SVGSVGElement>>;
 export const settingsNavigationIcons = {
   general: GeneralIcon,
   models: ModelsIcon,
+  billing: BillingIcon,
   agent: AgentIcon,
   browser: BrowserIcon,
   channels: ChannelsIcon,

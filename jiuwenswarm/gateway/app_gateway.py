@@ -227,61 +227,6 @@ def _build_event_frame(msg) -> dict[str, Any]:
     return {"type": "event", "event": event_name, "payload": payload}
 
 
-def _auth_session_id(msg) -> str | None:
-    """从入站消息里取调用方的**登录会话** id（不是对话 session_id）。
-
-    浏览器在 HTTP 上用 cookie，但对话走的是 WebSocket，cookie 不会出现在每条
-    消息里，所以前端把登录会话 id 放进 ``metadata.auth_session``。它就是
-    ``X-Auth-Session`` 头里的那个值——同一个凭据换了条通道，不构成新的信任假设。
-    """
-    metadata = getattr(msg, "metadata", None)
-    if not isinstance(metadata, dict):
-        return None
-    value = str(metadata.get("auth_session") or "").strip()
-    return value or None
-
-
-def _normalize_model_auth(params: dict[str, Any], msg) -> None:
-    """给登录模型挂上本次调用方的凭据。失败不阻断转发。"""
-    try:
-        from jiuwenswarm.common.auth.passthrough import normalize_model_auth
-
-        normalize_model_auth(params, _auth_session_id(msg))
-    except Exception:  # noqa: BLE001 — 凭据注入失败不该让整条消息发不出去
-        logger.debug("[App] 模型凭据注入失败", exc_info=True)
-
-
-#: 转发前等登录凭据续期的上限。续期本身的 HTTP 超时是 15 秒，这里只是兜住排队等锁等意外。
-_LOGIN_REFRESH_WAIT_S = 20.0
-
-
-async def _refresh_expired_login_credential(msg) -> None:
-    """用登录模型、而凭据已过期时，先把凭据续好再转发。
-
-    放置超过id_token有效期1小时后发的第一条消息，转发时 token 已过期，挂不上
-    凭据，AgentServer会当成未登录；用户点一下账号再回来又好了。
-    这里把续期提前到转发之前：放线程里等，不卡事件循环；每条入站消息各自一个 task，
-    也不挡同一连接的其他请求；同一账号并发的几次续期在 ``try_refresh`` 里合并成一次。
-    续不了（refresh_token失效等）就照旧转发，由AgentServer提示重新登录。
-    """
-    try:
-        from jiuwenswarm.common.auth.passthrough import expired_login_session
-        from jiuwenswarm.common.auth.service import get_auth_service
-
-        params = msg.params if isinstance(msg.params, dict) else {}
-        session = expired_login_session(params, _auth_session_id(msg))
-        if session is None:
-            return
-        await asyncio.wait_for(
-            asyncio.to_thread(get_auth_service().try_refresh, session),
-            timeout=_LOGIN_REFRESH_WAIT_S,
-        )
-    except asyncio.TimeoutError:
-        logger.warning("[App] 转发前续期登录凭据超时，本次按原凭据转发 id=%s", getattr(msg, "id", None))
-    except Exception:  # noqa: BLE001 — 续期失败不该让整条消息发不出去
-        logger.debug("[App] 转发前续期登录凭据失败", exc_info=True)
-
-
 def _normalize_gateway_message(msg):
 
     req_method = getattr(msg, "req_method", None) or ReqMethod.CHAT_SEND
@@ -297,9 +242,6 @@ def _normalize_gateway_message(msg):
         msg.is_stream
         or method_val in (ReqMethod.CHAT_SEND.value, ReqMethod.HISTORY_GET.value)
     )
-
-    # 登录模型的凭据在这里挂上，随请求带给AgentServer
-    _normalize_model_auth(params, msg)
 
     return Message(
         id=msg.id,
@@ -320,7 +262,6 @@ def _normalize_gateway_message(msg):
 
 
 async def _normalize_and_forward_message(msg, channel_manager) -> bool:
-    await _refresh_expired_login_credential(msg)
     normalized = _normalize_gateway_message(msg)
     # ACP/直连转发路径(session.create 等)也需注入 work_mode 归一化,
     # 与 _norm_and_forward(Web/TUI 主路径)保持一致。否则直连 AgentServer 的
@@ -2221,7 +2162,6 @@ async def _run(
             method_val = getattr(getattr(msg, "req_method", None), "value", None) or ""
             if method_val not in forward_methods:
                 return False
-            await _refresh_expired_login_credential(msg)
             normalized = _normalize_gateway_message(msg)
             # session.create 主路径注入 work_mode 归一化(与 fallback _session_create
             # 共用同一 helper resolve_session_work_mode_params,保持主路径/fallback 一致):

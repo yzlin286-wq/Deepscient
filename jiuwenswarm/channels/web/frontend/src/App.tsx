@@ -9,6 +9,13 @@ import { AssetPublishHost } from './components/AssetPublishDrawer';
 
 import { useState, useCallback, useEffect, useRef, Component, ReactNode, useMemo, lazy, Suspense, type PointerEvent as ReactPointerEvent } from 'react';
 import { ChatPanel } from './components/ChatPanel';
+import {
+  normalizeScienceModules,
+  pickLocalizedText,
+  resolveScienceModuleError,
+  type LocalizedText,
+  type ScienceModule,
+} from './components/ScienceModules/presentation';
 import { DesktopTextEditContextMenu } from './components/DesktopTextEditContextMenu';
 import { SessionSidebar } from './components/SessionSidebar';
 import { SkillPanel } from './components/SkillPanel';
@@ -38,6 +45,7 @@ import {
 } from './features/settings/settingsNavigation';
 import { ConnectorMarketPanel } from './components/ConnectorMarket';
 import { LoginDialog } from './components/LoginDialog';
+import { AuthGate } from './components/AuthGate';
 import type { CodeReviewTarget } from './features/code-mode/types';
 
 import { FEATURE_APP_UPDATER_UI, FEATURE_PERSONAL_CONTEXT_UI } from './featureFlags';
@@ -387,6 +395,10 @@ function AppContent({
   });
   const [chatSurfaceViews, setChatSurfaceViews] = useState<Record<string, ChatSurfaceView>>({});
   const [chatWelcomeVariant, setChatWelcomeVariant] = useState<'group-create' | null>(null);
+  const [scienceModules, setScienceModules] = useState<ScienceModule[]>([]);
+  const [scienceModulesLoading, setScienceModulesLoading] = useState(false);
+  const [scienceModulesError, setScienceModulesError] = useState<string | null>(null);
+  const scienceModulesLoadedRef = useRef(false);
   const [trajectoryUiRequested, setTrajectoryUiRequested] = useState(false);
 
   const [activeNav, setActiveNav] = useState<MainNavKey>('chat');
@@ -2043,6 +2055,35 @@ function AppContent({
     })();
   }, [fetchConfig, initialDataLoaded, isConnected]);
 
+  const loadScienceModules = useCallback(async () => {
+    if (scienceModulesLoadedRef.current) return;
+    setScienceModulesLoading(true);
+    setScienceModulesError(null);
+    try {
+      const payload = await request<{ modules?: unknown }>('science_modules.list', {});
+      setScienceModules(normalizeScienceModules(payload));
+      scienceModulesLoadedRef.current = true;
+    } catch (error) {
+      console.error('Failed to load science modules:', error);
+      setScienceModulesError(
+        resolveScienceModuleError(error, t('scienceModules.loadFailed')),
+      );
+    } finally {
+      setScienceModulesLoading(false);
+    }
+  }, [request, t]);
+
+  const handleRetryScienceModules = useCallback(() => {
+    scienceModulesLoadedRef.current = false;
+    void loadScienceModules();
+  }, [loadScienceModules]);
+
+  // 科研首页只在新建会话首页拉取一次，失败时由欢迎页的「重试」按钮重新触发。
+  useEffect(() => {
+    if (!isConnected || activeNav !== 'chat' || sessionId !== NEW_CONVERSATION_ID) return;
+    void loadScienceModules();
+  }, [activeNav, isConnected, loadScienceModules, sessionId]);
+
   const initialProjectsLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -2863,6 +2904,28 @@ function AppContent({
     enterNewConversation('team', { initialInputValue: prompt, forceMode: 'team' });
     useSessionStore.getState().setAgentGroupSelectionIntent(NEW_CONVERSATION_ID, { kind: 'select', id: groupId });
   }, [enterNewConversation]);
+
+  const handleEnterScienceModule = useCallback(async (moduleId: string) => {
+    try {
+      const result = await request<{
+        agentGroupName?: string;
+        quickPrompt?: LocalizedText;
+      }>('science_modules.enter', { moduleId });
+      const agentGroupName = typeof result?.agentGroupName === 'string'
+        ? result.agentGroupName.trim()
+        : '';
+      if (!agentGroupName) {
+        throw new Error(`science module ${moduleId} returned no agent group`);
+      }
+      handleUseGroupPrompt(
+        agentGroupName,
+        pickLocalizedText(result.quickPrompt, i18n.language),
+      );
+    } catch (error) {
+      console.error('Failed to enter science module:', error);
+      toast.open({ content: t('scienceModules.enterFailed'), variant: 'error' });
+    }
+  }, [handleUseGroupPrompt, i18n.language, request, t]);
 
   const handleSendMessage = useCallback(async (content: string, mediaItems?: MediaItem[], options?: ChatSendOptions) => {
     const currentSessionId = sessionIdRef.current;
@@ -3703,6 +3766,11 @@ const showWorkspaceDivider = effectiveTeamAreaExpanded && !showConversationNotFo
                         sessionProjectName={sessionProjectName}
                         sessionProject={sessionProject}
                         welcomeVariant={sessionId === NEW_CONVERSATION_ID ? chatWelcomeVariant : null}
+                        scienceModules={scienceModules}
+                        scienceModulesLoading={scienceModulesLoading}
+                        scienceModulesError={scienceModulesError}
+                        onRetryScienceModules={handleRetryScienceModules}
+                        onEnterScienceModule={handleEnterScienceModule}
                         teamAreaExpanded={toolPanelHidden ? null : isTeamAreaExpanded}
                         autoFocusKey={composerFocusKey}
                         onNavigateToSkills={() => handleNavigate('skills')}
@@ -4007,7 +4075,7 @@ const showWorkspaceDivider = effectiveTeamAreaExpanded && !showConversationNotFo
       {authToastVisible && (
         <div className="app-toast-wrapper app-toast-wrapper--top-center" data-testid="app-auth-toast">
           <div className="app-session-toast animate-rise" data-testid="app-auth-toast-message">
-            {t('auth.huawei.loginSuccessToast')}
+            {t('auth.deepscient.loginSuccessToast')}
           </div>
         </div>
       )}
@@ -4123,12 +4191,16 @@ function App({
 }) {
   return (
     <ErrorBoundary>
-      <DesktopTextEditContextMenu />
-      <AppContent
-        settingsPageDefinition={settingsPageDefinition}
-        resolveSettingsRequest={resolveSettingsRequest}
-      />
-      <AssetPublishHost />
+      {/* 登录门：登录功能开启且未登录时整页挡住主界面；登录成功后原地切换，不需要刷新。
+          AppContent 里的 LoginDialog 仍保留，用于会话过期后 requestLogin() 弹窗。 */}
+      <AuthGate>
+        <DesktopTextEditContextMenu />
+        <AppContent
+          settingsPageDefinition={settingsPageDefinition}
+          resolveSettingsRequest={resolveSettingsRequest}
+        />
+        <AssetPublishHost />
+      </AuthGate>
     </ErrorBoundary>
   );
 }

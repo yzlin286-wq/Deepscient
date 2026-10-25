@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "数据分析负责人",
+  "display_name": "数据分析负责人",
+  "display_description": {
+    "zh": "统筹数据清洗、统计推断与可复现工程，交付可复核的分析结论。",
+    "en": "Leads data cleaning, statistical inference and reproducible analysis."
+  },
+  "description": "作为数据分析方向负责人，拆解分析任务、协调成员并核验统计结论与复现条件。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "数据分析"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

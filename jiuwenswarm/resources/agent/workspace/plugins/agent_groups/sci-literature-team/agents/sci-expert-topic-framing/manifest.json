@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "选题与创新性专家",
+  "display_name": "选题与创新性专家",
+  "display_description": {
+    "zh": "从文献缺口提炼研究问题，评估创新性、可行性与贡献边界。",
+    "en": "Frames research questions from literature gaps and assesses novelty and feasibility."
+  },
+  "description": "负责研究问题凝练、创新性论证与可行边界评估。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "选题论证"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

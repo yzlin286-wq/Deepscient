@@ -88,10 +88,19 @@ workspace/agent/memory/*.db-shm
 workspace/agent/memory/*.db-wal
 
 jiuwenswarm/workspace/.whatsapp-auth/
-jiuwenswarm/resources/agent/workspace/
+# 运行期工作区不跟踪；随包内置的专家/专家团与科研技能例外。
+jiuwenswarm/resources/agent/workspace/*
+!jiuwenswarm/resources/agent/workspace/plugins/
+!jiuwenswarm/resources/agent/workspace/plugins/**
+!jiuwenswarm/resources/agent/workspace/skills/
+jiuwenswarm/resources/agent/workspace/skills/*
+!jiuwenswarm/resources/agent/workspace/skills/sci-*/
+!jiuwenswarm/resources/agent/workspace/skills/sci-*/**
 jiuwenswarm/resources/tui/bin/
 packages/jiuwenswarm-tui/jiuwenswarm_tui/resources/tui/bin/
 packages/jiuwenswarm-tui/jiuwenswarm_tui/resources/tui-bin/
+# 科研版 partner app secret：只允许通过 CCAGENT_PARTNER_APP_SECRET 或本机密文件注入，绝不入库。
+jiuwenswarm/resources/science/partner-app-secret
 
 .crossnote/
 .trae/

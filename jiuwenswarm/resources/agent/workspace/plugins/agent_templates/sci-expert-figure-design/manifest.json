@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "图表设计专家",
+  "display_name": "图表设计专家",
+  "display_description": {
+    "zh": "设计符合期刊规范的图表，保证信息层级与可读性。",
+    "en": "Designs journal-compliant figures with clear information hierarchy."
+  },
+  "description": "负责图版布局、图注规范与期刊图表要求核对。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "图表设计"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}

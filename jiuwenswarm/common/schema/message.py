@@ -349,6 +349,8 @@ class ReqMethod(Enum):
     PLUGIN_PACKAGES_IMPORT_LOCAL = "plugin_packages.import_local"
     PLUGIN_PACKAGES_INSTALL = "plugin_packages.install"
     PLUGIN_PACKAGES_UNINSTALL = "plugin_packages.uninstall"
+    SCIENCE_MODULES_LIST = "science_modules.list"
+    SCIENCE_MODULES_ENTER = "science_modules.enter"
 
     HOOKS_LIST = "hooks.list"
 

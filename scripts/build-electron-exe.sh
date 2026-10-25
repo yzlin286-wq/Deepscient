@@ -36,6 +36,20 @@ DESKTOP_DIR="$PROJECT_ROOT/jiuwenswarm/channels/desktop/electron"
 DIST_DIR="$PROJECT_ROOT/dist"
 # ELECTRON_APP_DIR 依赖 build_config 的显示名，在下方 build_config 解析后定义。
 
+# 中转站合作方密钥：构建环境有值就临时写进资源目录，随包内置；构建结束（或失败）
+# 由 trap 删除，确保工作区里不残留 secret。文件权限固定 0600，且不在日志里回显。
+PARTNER_SECRET_BUNDLE="$PROJECT_ROOT/jiuwenswarm/resources/science/partner-app-secret"
+cleanup_partner_secret() {
+    rm -f "$PARTNER_SECRET_BUNDLE"
+}
+trap cleanup_partner_secret EXIT
+if [ -n "${CCAGENT_PARTNER_APP_SECRET:-}" ]; then
+    echo "  Bundling partner app secret for this build..."
+    mkdir -p "$(dirname "$PARTNER_SECRET_BUNDLE")"
+    ( umask 077; printf '%s\n' "$CCAGENT_PARTNER_APP_SECRET" > "$PARTNER_SECRET_BUNDLE" )
+    chmod 600 "$PARTNER_SECRET_BUNDLE"
+fi
+
 # Node 运行时解析/绑定实现在 scripts/build-runtimes.sh，与 build-macos.sh 单一来源；
 # 契约测试 tests/unit_tests/test_desktop_electron_contract.py 钉住两侧同步。
 # macOS 冻结后端入口在 <.app>/Contents/Resources/node-runtime/bin 查找并前置
@@ -152,7 +166,8 @@ BUILD_EXECUTABLE_NAME="$(printf '%s\n' "$BUILD_VALUES" | sed -n 's/^BUILD_EXECUT
 BUILD_VERSION="$(printf '%s\n' "$BUILD_VALUES" | sed -n 's/^BUILD_VERSION=//p')"
 BUILD_BUNDLE_IDENTIFIER="$(printf '%s\n' "$BUILD_VALUES" | sed -n 's/^BUILD_BUNDLE_IDENTIFIER=//p')"
 BUILD_DISPLAY_NAME="$(printf '%s\n' "$BUILD_VALUES" | sed -n 's/^BUILD_DISPLAY_NAME=//p')"
-if [ -z "$BUILD_VERSION" ] || [ -z "$BUILD_BUNDLE_IDENTIFIER" ] || [ -z "$BUILD_DISPLAY_NAME" ]; then
+BUILD_DMG_FILENAME="$(printf '%s\n' "$BUILD_VALUES" | sed -n 's/^BUILD_DMG_FILENAME=//p')"
+if [ -z "$BUILD_VERSION" ] || [ -z "$BUILD_BUNDLE_IDENTIFIER" ] || [ -z "$BUILD_DISPLAY_NAME" ] || [ -z "$BUILD_DMG_FILENAME" ]; then
     echo "ERROR: failed to resolve build config from build_config.py"
     exit 1
 fi
@@ -298,12 +313,22 @@ APP_BUNDLE="$ELECTRON_APP_DIR/$BUILD_DISPLAY_NAME.app"
 DMG_DIR="$DIST_DIR"
 VERSION="$BUILD_VERSION"
 
+# 安装包内置的中转站密钥只允许当前用户读取（PyInstaller 复制后权限可能被重置）。
+if [ -d "$APP_BUNDLE" ]; then
+    find "$APP_BUNDLE" -name partner-app-secret -type f -exec chmod 600 {} + 2>/dev/null || true
+fi
+if [ -d "$DIST_DIR/deepscient" ]; then
+    find "$DIST_DIR/deepscient" -name partner-app-secret -type f -exec chmod 600 {} + 2>/dev/null || true
+fi
+
 if [ "$FRONTEND_ONLY" = true ]; then
     DMG_NAME="$BUILD_DISPLAY_NAME-frontend-test-$VERSION.dmg"
 elif [ "$TEST" = true ]; then
     DMG_NAME="$BUILD_DISPLAY_NAME-test-$VERSION.dmg"
 else
-    DMG_NAME="$BUILD_DISPLAY_NAME-setup-$VERSION.dmg"
+    # 生产包名必须与 build_config/更新器资产契约一致：
+    # DeepScient-<version>-macos.dmg。
+    DMG_NAME="$BUILD_DMG_FILENAME"
 fi
 
 DMG_PATH="$DMG_DIR/$DMG_NAME"

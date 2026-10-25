@@ -65,8 +65,7 @@ import {
   pendingQuestionIdentity,
   shouldClearPermissionQuestionsForLifecycleEvent,
 } from '../stores/pendingQuestionQueue';
-import { requestLogin } from '../stores/authStore';
-import { describeChatError } from '../features/free-models/chatError';
+import { describeChatError } from '../features/chatErrors';
 import { webClient, requestGoalAction, sendGoalStreamCommand } from '../services/webClient';
 import { createStreamDeltaBatcher } from '../services/streamDeltaBatcher';
 import {
@@ -4601,11 +4600,6 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         // 忽略 "invalid page_idx or session history not found" 错误，因为这是新会话的正常情况
         if (rawErrorMsg.includes('invalid page_idx or session history not found')) {
           return;
-        }
-        // 选了免费模型但没登录 / 登录已过期（后端预检 interface_deep._model_config_error，
-        // 或推理时被 APIG 认证器拒绝）：直接把登录框顶到用户面前，错误文案照常进对话。
-        if (payload.code === 'login_required') {
-          requestLogin('login_required');
         }
         // §8 步骤4：Heartbeat 轮的 chat.error 按 run_id 去重（id=heartbeat-error-<run_id>），
         // 并关掉该 run 的 assistant streaming，避免光标永久闪烁。

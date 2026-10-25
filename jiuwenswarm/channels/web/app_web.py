@@ -496,6 +496,14 @@ class _SpaStaticHandler(SimpleHTTPRequestHandler):
     def _is_api_route(self) -> bool:
         return urlparse(self.path).path.startswith("/api")
 
+    def _is_auth_callback_route(self) -> bool:
+        """官网 OAuth 回调落在根路径 ``/auth/callback``，同样要转给 Gateway。"""
+        return urlparse(self.path).path.rstrip("/") == "/auth/callback"
+
+    def _is_partner_route(self) -> bool:
+        """中转站 Webhook 与回跳落在根路径 ``/partner/*``，同样要转给 Gateway。"""
+        return urlparse(self.path).path.startswith("/partner/")
+
     def _is_ws_route(self) -> bool:
         return urlparse(self.path).path.startswith("/ws")
 
@@ -949,7 +957,7 @@ class _SpaStaticHandler(SimpleHTTPRequestHandler):
         return True
 
     def _dispatch_proxy(self) -> bool:
-        if self._is_api_route():
+        if self._is_api_route() or self._is_auth_callback_route() or self._is_partner_route():
             self._proxy_http()
             return True
         if self._is_ws_route():

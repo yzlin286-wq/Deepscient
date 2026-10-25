@@ -1,0 +1,18 @@
+{
+  "package_type": "agent_template",
+  "name": "数据清洗专家",
+  "display_name": "数据清洗专家",
+  "display_description": {
+    "zh": "建立数据字典与清洗规则，保留可回溯的清洗留痕。",
+    "en": "Builds data dictionaries and cleaning rules with traceable logs."
+  },
+  "description": "负责数据字典、缺失值处理、异常值规则与清洗留痕。",
+  "category": "科研",
+  "tags": [
+    "科研",
+    "数据清洗"
+  ],
+  "persona": {
+    "dir": "./persona"
+  }
+}
